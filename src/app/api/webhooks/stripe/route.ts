@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   const payload = await request.text();
   const signature = request.headers.get('stripe-signature') ?? '';
 
-  const event = verifyStripeWebhook(payload, signature) as { type: string; data: { object: { id: string; metadata?: Record<string, string> } } } | null;
+  const event = (await verifyStripeWebhook(payload, signature)) as { type: string; data: { object: { id: string; metadata?: Record<string, string> } } } | null;
   if (!event) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }

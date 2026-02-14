@@ -12,6 +12,7 @@ const updateSchema = z.object({
   videoUrl: z.string().url().optional(),
   thumbnailUrl: z.string().optional(),
   featured: z.boolean().optional(),
+  categoryId: z.string().optional().nullable(),
 });
 
 export async function GET(
@@ -22,7 +23,7 @@ export async function GET(
   if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
   }
-  const game = await prisma.game.findUnique({ where: { id: (await params).id } });
+  const game = await prisma.game.findUnique({ where: { id: (await params).id }, include: { category: true } });
   if (!game) return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
   return NextResponse.json(game);
 }
@@ -59,6 +60,7 @@ export async function PATCH(
     if (data.videoUrl !== undefined) update.videoUrl = data.videoUrl;
     if (data.thumbnailUrl !== undefined) update.thumbnailUrl = data.thumbnailUrl === '' ? null : data.thumbnailUrl;
     if (data.featured !== undefined) update.featured = data.featured;
+    if (data.categoryId !== undefined) update.categoryId = data.categoryId || null;
     if (data.title && data.title !== existing.title) {
       const existingSlugs = (await prisma.game.findMany({ where: { id: { not: id } }, select: { slug: true } })).map((g) => g.slug);
       update.slug = uniqueSlug(data.title, existingSlugs);

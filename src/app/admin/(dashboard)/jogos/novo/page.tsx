@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { extractYouTubeVideoId, getYouTubeThumbnailUrl } from '@/lib/youtube';
 
 export default function NewGamePage() {
@@ -10,6 +10,7 @@ export default function NewGamePage() {
   const fileInput = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [form, setForm] = useState({
     title: '',
     championship: '',
@@ -17,8 +18,16 @@ export default function NewGamePage() {
     description: '',
     videoUrl: '',
     thumbnailUrl: '',
+    categoryId: '' as string,
     featured: false,
   });
+
+  useEffect(() => {
+    fetch('/api/admin/categories')
+      .then((r) => r.json())
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -44,6 +53,7 @@ export default function NewGamePage() {
         body: JSON.stringify({
           ...form,
           thumbnailUrl: form.thumbnailUrl || undefined,
+          categoryId: form.categoryId || null,
         }),
       });
       const data = await res.json();
@@ -95,6 +105,19 @@ export default function NewGamePage() {
             placeholder="Ex: Liga Municipal, Copa da Várzea"
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">Categoria</label>
+          <select
+            value={form.categoryId}
+            onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          >
+            <option value="">Nenhuma</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Data do jogo *</label>

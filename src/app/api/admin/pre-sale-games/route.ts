@@ -1,0 +1,69 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { createPreSaleGameSchema } from '@/lib/pre-sale/validations';
+import { uniqueSlug } from '@/lib/slug';
+
+export async function GET() {
+  const session = await getSession();
+  if (!session || session.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
+  }
+  const games = await prisma.preSaleGame.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      specialCategory: true,
+      normalCategories: { include: { category: true } },
+      clubSlots: { orderBy: { slotIndex: 'asc' } },
+    },
+  });
+  return NextResponse.json(games);
+}
+
+export async function POST(request: NextRequest) {
+  const session = await getSession();
+  if (!session || session.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
+  }
+  try {
+    const body = await request.json();
+    const parsed = createPreSaleGameSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.errors[0]?.message ?? 'Dados inválidos' },
+        { status: 400 }
+      );
+    }
+    const data = parsed.data;
+    const existingSlugs = (await prisma.preSaleGame.findMany({ select: { slug: true } })).map((g) => g.slug);
+    const slug = uniqueSlug(data.title, existingSlugs);
+
+    const normalCatIds = Array.isArray(data.normalCategoryIds) ? data.normalCategoryIds.filter(Boolean) : [];
+    const game = await prisma.preSaleGame.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        thumbnailUrl: data.thumbnailUrl,
+        videoUrl: data.videoUrl?.trim() || null,
+        specialCategoryId: data.specialCategoryId,
+        clubAPrice: data.clubAPrice,
+        clubBPrice: data.clubBPrice,
+        maxSimultaneousPerClub: data.maxSimultaneousPerClub,
+        featured: data.featured ?? false,
+        slug,
+        normalCategories: normalCatIds.length > 0
+          ? { create: normalCatIds.map((categoryId: string) => ({ categoryId })) }
+          : undefined,
+      },
+      include: {
+        specialCategory: true,
+        normalCategories: { include: { category: true } },
+        clubSlots: true,
+      },
+    });
+    return NextResponse.json(game);
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: 'Erro ao criar jogo' }, { status: 500 });
+  }
+}

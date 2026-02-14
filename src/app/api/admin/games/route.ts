@@ -12,6 +12,7 @@ const createSchema = z.object({
   videoUrl: z.string().url('URL do vídeo inválida'),
   thumbnailUrl: z.string().optional(),
   featured: z.boolean().optional(),
+  categoryId: z.string().optional().nullable(),
 });
 
 export async function GET() {
@@ -19,7 +20,9 @@ export async function GET() {
   if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
   }
-  const games = await prisma.game.findMany({ orderBy: { gameDate: 'desc' } });
+  const games = await prisma.game.findMany({
+    orderBy: [{ order: 'asc' }, { gameDate: 'desc' }],
+  });
   return NextResponse.json(games);
 }
 
@@ -46,6 +49,8 @@ export async function POST(request: NextRequest) {
     const existingSlugs = (await prisma.game.findMany({ select: { slug: true } })).map((g) => g.slug);
     const slug = uniqueSlug(data.title, existingSlugs);
 
+    const maxOrder = await prisma.game.aggregate({ _max: { order: true } }).then((r) => r._max.order ?? -1);
+
     const game = await prisma.game.create({
       data: {
         title: data.title,
@@ -56,6 +61,8 @@ export async function POST(request: NextRequest) {
         videoUrl: data.videoUrl,
         thumbnailUrl: data.thumbnailUrl || null,
         featured: data.featured ?? false,
+        categoryId: data.categoryId || null,
+        order: maxOrder + 1,
       },
     });
 

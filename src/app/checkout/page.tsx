@@ -167,7 +167,7 @@ function CheckoutContent() {
 
           <div>
             <label className="block text-sm font-medium text-futvar-light mb-2">Forma de pagamento</label>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <label className="flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border cursor-pointer border-futvar-green/30 hover:bg-futvar-green/10">
                 <input type="radio" name="method" value="pix" checked={method === 'pix'} onChange={() => setMethod('pix')} className="text-futvar-green" />
                 <span className="text-white">Pix</span>

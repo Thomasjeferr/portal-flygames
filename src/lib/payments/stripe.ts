@@ -20,9 +20,17 @@ export interface StripeSubscriptionInput {
 
 let stripeInstance: { paymentIntents: { create: (opts: unknown) => Promise<{ client_secret: string; id: string }> }; webhooks: { constructEvent: (payload: string, sig: string, secret: string) => unknown } } | null = null;
 
-function getStripe() {
+async function getStripeKey(): Promise<string | null> {
+  const envKey = process.env.STRIPE_SECRET_KEY;
+  if (envKey) return envKey;
+  const { getPaymentConfig } = await import('@/lib/payment-config');
+  const config = await getPaymentConfig();
+  return config.stripeSecretKey;
+}
+
+async function getStripe() {
   if (stripeInstance) return stripeInstance;
-  const key = process.env.STRIPE_SECRET_KEY;
+  const key = await getStripeKey();
   if (!key) return null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -35,7 +43,7 @@ function getStripe() {
 }
 
 export async function createStripePaymentIntent(input: StripePaymentIntentInput): Promise<{ clientSecret: string; paymentIntentId: string } | null> {
-  const stripe = getStripe();
+  const stripe = await getStripe();
   if (!stripe) {
     console.warn('Stripe não configurado');
     return null;
@@ -59,9 +67,14 @@ export async function createStripePaymentIntent(input: StripePaymentIntentInput)
   }
 }
 
-export function verifyStripeWebhook(payload: string, signature: string): unknown {
-  const stripe = getStripe();
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+export async function verifyStripeWebhook(payload: string, signature: string): Promise<unknown> {
+  const stripe = await getStripe();
+  let secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) {
+    const { getPaymentConfig } = await import('@/lib/payment-config');
+    const config = await getPaymentConfig();
+    secret = config.stripeWebhookSecret ?? undefined;
+  }
   if (!stripe || !secret) return null;
   try {
     return stripe.webhooks.constructEvent(payload, signature, secret);

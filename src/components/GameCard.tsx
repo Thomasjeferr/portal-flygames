@@ -8,9 +8,14 @@ interface GameCardProps {
   thumbnailUrl: string | null;
   gameDate: string;
   featured?: boolean;
+  /** Se definido, usa este href em vez de /jogo/[slug] (ex: pre-estreia) */
+  href?: string;
+  /** Texto do badge (padrao: ASSISTIR) */
+  badgeText?: string;
 }
 
-export function GameCard({ slug, title, championship, thumbnailUrl, gameDate, featured }: GameCardProps) {
+export function GameCard({ slug, title, championship, thumbnailUrl, gameDate, featured, href, badgeText = 'ASSISTIR' }: GameCardProps) {
+  const linkHref = href ?? `/jogo/${slug}`;
   const date = new Date(gameDate).toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'short',
@@ -18,7 +23,7 @@ export function GameCard({ slug, title, championship, thumbnailUrl, gameDate, fe
   });
 
   return (
-    <Link href={`/jogo/${slug}`} className="block game-card rounded-xl overflow-hidden bg-futvar-darker border group">
+    <Link href={linkHref} className="block game-card rounded-xl overflow-hidden bg-futvar-darker border group">
       <div className="relative aspect-video bg-futvar-gray overflow-hidden">
         {thumbnailUrl ? (
           <Image
@@ -40,7 +45,7 @@ export function GameCard({ slug, title, championship, thumbnailUrl, gameDate, fe
           </span>
         )}
         <span className="absolute top-3 right-3 px-2 py-1 bg-futvar-green/90 text-white text-xs font-semibold rounded">
-          ASSISTIR
+          {badgeText}
         </span>
         <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/30">
           <span className="w-16 h-16 rounded-full bg-futvar-green flex items-center justify-center text-white text-2xl pl-1 shadow-xl shadow-futvar-green/40 animate-pulse">

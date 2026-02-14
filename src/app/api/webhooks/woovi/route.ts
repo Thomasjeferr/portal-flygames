@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { markSlotAsPaid } from '@/services/pre-sale-slot.service';
+import { Provider } from '@/lib/pre-sale/enums';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const event = body.event ?? body.status;
-    const externalId = body.externalId ?? body.customId;
+    const externalId = (body.externalId ?? body.customId ?? body.id) as string | undefined;
 
     if (event !== 'charge.paid' && body.status !== 'COMPLETED') {
       return NextResponse.json({ received: true });
     }
     if (!externalId) return NextResponse.json({ error: 'externalId missing' }, { status: 400 });
+
+    // Pré-estreia: externalId = presale-{slotId}
+    if (typeof externalId === 'string' && externalId.startsWith('presale-')) {
+      const slotId = externalId.replace('presale-', '');
+      await markSlotAsPaid(slotId, Provider.WOOVI, body.id ?? externalId);
+      return NextResponse.json({ received: true });
+    }
 
     const purchase = await prisma.purchase.findUnique({
       where: { id: externalId },

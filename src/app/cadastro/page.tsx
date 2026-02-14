@@ -1,11 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 
-export default function RegisterPage() {
+function safeRedirect(path: string | null): string {
+  if (!path || typeof path !== 'string') return '/';
+  if (!path.startsWith('/') || path.startsWith('//')) return '/';
+  return path;
+}
+
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = safeRedirect(searchParams.get('redirect'));
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -27,7 +35,7 @@ export default function RegisterPage() {
         setError(data.error || 'Erro ao cadastrar');
         return;
       }
-      router.push('/');
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setError('Erro de conexão');
@@ -104,12 +112,20 @@ export default function RegisterPage() {
           </form>
           <p className="mt-6 text-center text-futvar-light text-sm">
             Já tem conta?{' '}
-            <Link href="/entrar" className="text-white hover:underline">
+            <Link href={redirectTo === '/' ? '/entrar' : `/entrar?redirect=${encodeURIComponent(redirectTo)}`} className="text-white hover:underline">
               Entrar
             </Link>
           </p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen pt-28 flex items-center justify-center text-futvar-light">Carregando...</div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }

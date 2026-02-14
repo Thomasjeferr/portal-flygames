@@ -24,7 +24,12 @@ export interface WooviChargeResponse {
 }
 
 export async function createWooviCharge(input: WooviChargeInput): Promise<WooviChargeResponse | null> {
-  const apiKey = process.env.WOOVI_API_KEY;
+  let apiKey = process.env.WOOVI_API_KEY;
+  if (!apiKey) {
+    const { getPaymentConfig } = await import('@/lib/payment-config');
+    const config = await getPaymentConfig();
+    apiKey = config.wooviApiKey ?? undefined;
+  }
   if (!apiKey) {
     console.warn('WOOVI_API_KEY não configurada');
     return null;

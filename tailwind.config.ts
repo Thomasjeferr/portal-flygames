@@ -42,6 +42,40 @@ const config: Config = {
         'card': '0 4px 20px -4px rgba(0,0,0,0.4)',
         'card-hover': '0 12px 40px -8px rgba(34,197,94,0.2)',
       },
+      keyframes: {
+        'fade-in-up': {
+          '0%': { opacity: '0', transform: 'translateY(24px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'slide-down': {
+          '0%': { opacity: '0', transform: 'translateY(-16px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'scale-in': {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+      },
+      animation: {
+        'fade-in-up': 'fade-in-up 0.6s ease-out both',
+        'fade-in': 'fade-in 0.5s ease-out both',
+        'slide-down': 'slide-down 0.5s ease-out both',
+        'scale-in': 'scale-in 0.4s ease-out both',
+      },
+      animationDelay: {
+        '75': '75ms',
+        '100': '100ms',
+        '150': '150ms',
+        '200': '200ms',
+        '250': '250ms',
+        '300': '300ms',
+        '350': '350ms',
+        '400': '400ms',
+      },
     },
   },
   plugins: [],

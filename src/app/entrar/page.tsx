@@ -1,11 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 
-export default function LoginPage() {
+function safeRedirect(path: string | null): string {
+  if (!path || typeof path !== 'string') return '/';
+  if (!path.startsWith('/') || path.startsWith('//')) return '/';
+  return path;
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = safeRedirect(searchParams.get('redirect'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -26,7 +34,7 @@ export default function LoginPage() {
         setError(data.error || 'Erro ao entrar');
         return;
       }
-      router.push('/');
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setError('Erro de conexão');
@@ -94,12 +102,20 @@ export default function LoginPage() {
           </form>
           <p className="mt-6 text-center text-futvar-light text-sm">
             Não tem conta?{' '}
-            <Link href="/cadastro" className="text-white hover:underline">
+            <Link href={redirectTo === '/' ? '/cadastro' : `/cadastro?redirect=${encodeURIComponent(redirectTo)}`} className="text-white hover:underline">
               Cadastre-se
             </Link>
           </p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen pt-28 flex items-center justify-center text-futvar-light">Carregando...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

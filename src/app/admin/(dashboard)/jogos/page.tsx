@@ -18,6 +18,7 @@ export default function AdminGamesPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [reordering, setReordering] = useState<string | null>(null);
 
   const fetchGames = async () => {
     const res = await fetch('/api/admin/games');
@@ -40,6 +41,26 @@ export default function AdminGamesPage() {
       if (res.ok) fetchGames();
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const moveGame = async (index: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= games.length) return;
+    const newOrder = [...games];
+    const [removed] = newOrder.splice(index, 1);
+    newOrder.splice(newIndex, 0, removed);
+    const gameIds = newOrder.map((g) => g.id);
+    setReordering(games[index].id);
+    try {
+      const res = await fetch('/api/admin/games/reorder', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameIds }),
+      });
+      if (res.ok) setGames(newOrder);
+    } finally {
+      setReordering(null);
     }
   };
 
@@ -68,11 +89,33 @@ export default function AdminGamesPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {games.map((game) => (
+          {games.map((game, index) => (
             <div
               key={game.id}
               className="flex flex-wrap items-center gap-4 bg-netflix-dark border border-white/10 rounded-lg p-4"
             >
+              <div className="flex flex-col gap-0.5 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => moveGame(index, 'up')}
+                  disabled={index === 0 || reordering === game.id}
+                  className="p-1.5 rounded bg-netflix-gray text-white hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Subir"
+                  aria-label="Subir posição"
+                >
+                  ▲
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveGame(index, 'down')}
+                  disabled={index === games.length - 1 || reordering === game.id}
+                  className="p-1.5 rounded bg-netflix-gray text-white hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Descer"
+                  aria-label="Descer posição"
+                >
+                  ▼
+                </button>
+              </div>
               <div className="relative w-24 h-14 rounded overflow-hidden bg-netflix-gray flex-shrink-0">
                 {game.thumbnailUrl ? (
                   <Image

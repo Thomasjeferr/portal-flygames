@@ -50,6 +50,18 @@ model Subscription {
   plan Plan? @relation(fields: [planId], references: [id], onDelete: SetNull)
 }
 
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @map("name")
+  slug      String   @unique @map("slug")
+  order     Int      @default(0) @map("order")
+  active    Boolean  @default(true) @map("active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  games Game[]
+}
+
 model Game {
   id           String    @id @default(cuid())
   title        String
@@ -60,10 +72,13 @@ model Game {
   videoUrl     String    @map("video_url")
   thumbnailUrl String?   @map("thumbnail_url")
   featured     Boolean   @default(false)
+  categoryId   String?   @map("category_id")
+  order        Int       @default(0) @map("order")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  purchases Purchase[]
+  category   Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  purchases  Purchase[]
 }
 
 model Plan {
@@ -83,6 +98,116 @@ model Plan {
   purchases     Purchase[]
   subscriptions Subscription[]
 }
+
+model PaymentConfig {
+  id                     String   @id @default(cuid())
+  wooviApiKey            String?  @map("woovi_api_key")
+  wooviWebhookSecret     String?  @map("woovi_webhook_secret")
+  stripeSecretKey        String?  @map("stripe_secret_key")
+  stripeWebhookSecret    String?  @map("stripe_webhook_secret")
+  stripePublishableKey   String?  @map("stripe_publishable_key")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+}
+
+// Banner frontal da home: imagem ou vídeo (YouTube/PandaVideo) + overlay
+model HeroConfig {
+  id                String   @id @default(cuid())
+  heroType          String   @default("none") @map("hero_type") // none | image | youtube | pandavideo
+  heroMediaUrl      String?  @map("hero_media_url")
+  overlayColor      String   @default("#000000") @map("overlay_color") // hex
+  overlayOpacity    Float    @default(0.5) @map("overlay_opacity") // 0-1
+  videoStartSeconds Int?    @map("video_start_seconds") // ex: 60 = inicia em 1min
+  videoEndSeconds   Int?    @map("video_end_seconds")   // ex: 180 = finaliza em 3min
+  videoLoop         Boolean  @default(true) @map("video_loop")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+}
+
+// ========== PRÉ-ESTREIA CLUBES ==========
+// Categorias para pré-estreia (NORMAL = catálogo, SPECIAL = pré-venda)
+model PreSaleCategory {
+  id        String   @id @default(cuid())
+  name      String   @map("name")
+  slug      String   @unique @map("slug")
+  type      String   @map("type") // NORMAL | SPECIAL
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  preSaleGamesAsSpecial PreSaleGame[]           @relation("SpecialCategory")
+  preSaleGameCategories PreSaleGameCategory[]
+}
+
+model PreSaleGame {
+  id                    String    @id @default(cuid())
+  title                 String    @map("title")
+  description           String    @map("description")
+  thumbnailUrl          String    @map("thumbnail_url")
+  videoUrl              String?   @map("video_url")
+  status                String    @default("PRE_SALE") @map("status") // PRE_SALE | FUNDED | PUBLISHED
+  specialCategoryId     String    @map("special_category_id")
+  featured              Boolean   @default(false) @map("featured")
+  maxSimultaneousPerClub Int      @map("max_simultaneous_per_club")
+  clubAPrice            Float     @map("club_a_price")
+  clubBPrice            Float     @map("club_b_price")
+  fundedClubsCount      Int       @default(0) @map("funded_clubs_count")
+  slug                  String    @unique @map("slug")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  specialCategory   PreSaleCategory       @relation("SpecialCategory", fields: [specialCategoryId], references: [id], onDelete: Restrict)
+  normalCategories  PreSaleGameCategory[]
+  clubSlots         PreSaleClubSlot[]
+  streamSessions    ClubStreamSession[]
+}
+
+model PreSaleGameCategory {
+  id             String      @id @default(cuid())
+  preSaleGameId  String      @map("pre_sale_game_id")
+  categoryId     String      @map("category_id")
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  preSaleGame PreSaleGame    @relation(fields: [preSaleGameId], references: [id], onDelete: Cascade)
+  category    PreSaleCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([preSaleGameId, categoryId])
+}
+
+model PreSaleClubSlot {
+  id                 String    @id @default(cuid())
+  preSaleGameId      String    @map("pre_sale_game_id")
+  slotIndex          Int       @map("slot_index") // 1 or 2
+  clubCode           String    @unique @map("club_code")
+  responsibleName    String    @map("responsible_name")
+  clubName           String    @map("club_name")
+  teamMemberCount    Int       @map("team_member_count")
+  contractVersion    String    @map("contract_version")
+  termsAcceptedAt    DateTime  @map("terms_accepted_at")
+  paymentStatus      String    @default("PENDING") @map("payment_status") // PENDING | PAID | FAILED
+  paymentProvider    String?   @map("payment_provider") // WOOVI | STRIPE
+  paymentReference   String?   @map("payment_reference")
+  paidAt             DateTime? @map("paid_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  preSaleGame PreSaleGame @relation(fields: [preSaleGameId], references: [id], onDelete: Cascade)
+}
+
+model ClubStreamSession {
+  id             String    @id @default(cuid())
+  preSaleGameId  String    @map("pre_sale_game_id")
+  clubCode       String    @map("club_code")
+  sessionToken   String    @unique @map("session_token")
+  userId         String?   @map("user_id")
+  deviceId       String?   @map("device_id")
+  lastHeartbeatAt DateTime @map("last_heartbeat_at")
+  expiresAt      DateTime  @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  preSaleGame PreSaleGame @relation(fields: [preSaleGameId], references: [id], onDelete: Cascade)
+}
+
+// ========== FIM PRÉ-ESTREIA ==========
 
 model Purchase {
   id               String    @id @default(cuid())

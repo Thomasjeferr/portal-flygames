@@ -14,12 +14,14 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
   background: var(--futvar-dark);
   color: #F8FAFC;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Scrollbar estilo futebol */

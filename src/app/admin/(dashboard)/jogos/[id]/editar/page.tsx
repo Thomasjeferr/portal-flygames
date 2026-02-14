@@ -13,6 +13,7 @@ export default function EditGamePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [form, setForm] = useState({
     title: '',
     championship: '',
@@ -20,8 +21,16 @@ export default function EditGamePage() {
     description: '',
     videoUrl: '',
     thumbnailUrl: '',
+    categoryId: '' as string,
     featured: false,
   });
+
+  useEffect(() => {
+    fetch('/api/admin/categories')
+      .then((r) => r.json())
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch(`/api/admin/games/${id}`)
@@ -43,6 +52,7 @@ export default function EditGamePage() {
           description: data.description || '',
           videoUrl: data.videoUrl || '',
           thumbnailUrl,
+          categoryId: data.categoryId || '',
           featured: data.featured ?? false,
         });
       })
@@ -74,6 +84,7 @@ export default function EditGamePage() {
         body: JSON.stringify({
           ...form,
           thumbnailUrl: form.thumbnailUrl || '',
+          categoryId: form.categoryId || null,
         }),
       });
       const data = await res.json();
@@ -142,6 +153,19 @@ export default function EditGamePage() {
             required
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">Categoria</label>
+          <select
+            value={form.categoryId}
+            onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          >
+            <option value="">Nenhuma</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Data do jogo *</label>

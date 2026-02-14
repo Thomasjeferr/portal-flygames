@@ -26,7 +26,7 @@ export default async function GamePage({ params }: Props) {
   });
 
   return (
-    <div className="pt-24 pb-16 px-4 lg:px-12 min-h-screen bg-futvar-darker">
+    <div className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
       <div className="max-w-5xl mx-auto">
         <div className="mb-6">
           <Link href="/" className="text-futvar-green hover:text-futvar-green-light text-sm font-semibold inline-flex items-center gap-2 transition-colors">
@@ -49,13 +49,22 @@ export default async function GamePage({ params }: Props) {
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                     <div className="text-center">
                     <p className="text-lg text-white mb-4">Assinatura ou compra necessária para assistir</p>
-                    <div className="flex flex-wrap items-center justify-center gap-4">
-                      <Link
-                        href="/entrar?redirect=/planos"
-                        className="inline-block px-8 py-4 bg-futvar-green text-futvar-darker font-bold rounded-lg hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
-                      >
-                        Entrar ou assinar
-                      </Link>
+                    <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4">
+                      {session ? (
+                        <Link
+                          href="/planos"
+                          className="inline-block px-8 py-4 bg-futvar-green text-futvar-darker font-bold rounded-lg hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
+                        >
+                          Ver planos e assinar
+                        </Link>
+                      ) : (
+                        <Link
+                          href="/entrar?redirect=/planos"
+                          className="inline-block px-8 py-4 bg-futvar-green text-futvar-darker font-bold rounded-lg hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
+                        >
+                          Entrar ou cadastrar para assinar
+                        </Link>
+                      )}
                       <BuyGameButton gameId={game.id} className="inline-block px-6 py-4 border-2 border-futvar-gold/50 text-futvar-gold font-bold rounded-lg hover:bg-futvar-gold/10 transition-colors" />
                     </div>
                   </div>

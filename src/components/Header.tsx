@@ -21,7 +21,8 @@ export function Header() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isAdmin = pathname.startsWith('/admin');
   const isAuthPage = ['/entrar', '/cadastro', '/recuperar-senha', '/admin/entrar'].some((p) => pathname.startsWith(p));
@@ -41,7 +42,8 @@ export function Header() {
     await fetch('/api/auth/logout', { method: 'POST' });
     setUser(null);
     setSubscription(null);
-    setMenuOpen(false);
+    setUserMenuOpen(false);
+    setMobileMenuOpen(false);
     if (isAdmin) router.push('/admin/entrar');
     else router.push('/');
     router.refresh();
@@ -54,7 +56,7 @@ export function Header() {
   if (isAdmin && pathname.startsWith('/admin/entrar')) {
     return (
       <header className="fixed top-0 left-0 right-0 z-50 bg-netflix-black/95 border-b border-white/10">
-        <div className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 max-w-7xl mx-auto">
           <Link href="/admin/entrar" className="text-2xl font-bold text-netflix-red">
             Fly Games Admin
           </Link>
@@ -67,17 +69,18 @@ export function Header() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-futvar-darker/95 backdrop-blur-md border-b border-futvar-green/10">
-      <div className="flex items-center justify-between px-6 lg:px-12 py-4 max-w-[1920px] mx-auto">
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="text-2xl group-hover:scale-110 transition-transform">⚽</span>
-          <span className="text-2xl lg:text-3xl font-bold text-futvar-green tracking-tight">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-futvar-darker/95 backdrop-blur-md border-b border-futvar-green/10 animate-slide-down">
+      <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 py-3 sm:py-4 max-w-[1920px] mx-auto">
+        <Link href="/" className="flex items-center gap-2 group min-w-0 shrink-0">
+          <span className="text-xl sm:text-2xl group-hover:scale-110 transition-transform">⚽</span>
+          <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-futvar-green tracking-tight truncate">
             FLY GAMES
           </span>
         </Link>
 
         {!isAuthPage && (
-          <nav className="flex items-center gap-6">
+          <>
+            <nav className="hidden md:flex items-center gap-4 lg:gap-6">
             <Link
               href="/"
               className={`text-sm font-semibold ${pathname === '/' ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
@@ -87,19 +90,19 @@ export function Header() {
             {user ? (
               <div className="relative">
                 <button
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  className="flex items-center gap-2 text-sm text-futvar-light hover:text-white"
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 text-sm text-futvar-light hover:text-white max-w-[180px] sm:max-w-none"
                 >
-                  <span className="w-8 h-8 rounded bg-netflix-gray flex items-center justify-center text-white font-semibold">
+                  <span className="w-8 h-8 rounded bg-netflix-gray flex items-center justify-center text-white font-semibold shrink-0">
                     {(user.name || user.email).charAt(0).toUpperCase()}
                   </span>
-                  {user.name || user.email}
+                  <span className="hidden sm:inline truncate">{user.name || user.email}</span>
                 </button>
-                {menuOpen && (
+                {userMenuOpen && (
                   <>
                     <div
                       className="fixed inset-0 z-10"
-                      onClick={() => setMenuOpen(false)}
+                      onClick={() => setUserMenuOpen(false)}
                       aria-hidden
                     />
                     <div className="absolute right-0 top-full mt-2 w-56 py-2 bg-futvar-dark border border-futvar-green/20 rounded-xl shadow-xl z-20">
@@ -115,14 +118,14 @@ export function Header() {
                       <Link
                         href="/conta"
                         className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
-                        onClick={() => setMenuOpen(false)}
+                        onClick={() => setUserMenuOpen(false)}
                       >
                         Minha conta
                       </Link>
                       <Link
                         href="/planos"
                         className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
-                        onClick={() => setMenuOpen(false)}
+                        onClick={() => setUserMenuOpen(false)}
                       >
                         Planos
                       </Link>
@@ -146,13 +149,68 @@ export function Header() {
                 </Link>
                 <Link
                   href="/cadastro"
-                  className="px-5 py-2.5 rounded-lg bg-futvar-green text-futvar-darker text-sm font-bold hover:bg-futvar-green-light transition-colors"
+                  className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg bg-futvar-green text-futvar-darker text-sm font-bold hover:bg-futvar-green-light transition-colors whitespace-nowrap"
                 >
                   Cadastrar
                 </Link>
               </>
             )}
-          </nav>
+            </nav>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg text-futvar-light hover:bg-white/10 hover:text-white transition-colors"
+              aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+              aria-expanded={mobileMenuOpen}
+            >
+              <span className="text-2xl">{mobileMenuOpen ? '✕' : '☰'}</span>
+            </button>
+          </>
+        )}
+
+        {!isAuthPage && mobileMenuOpen && (
+          <div className="absolute inset-x-0 top-full md:hidden bg-futvar-darker border-b border-futvar-green/20 shadow-xl">
+            <nav className="flex flex-col p-4 gap-1 max-h-[70vh] overflow-y-auto">
+              <Link
+                href="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname === '/' ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
+              >
+                Início
+              </Link>
+              {user ? (
+                <>
+                  <div className="px-4 py-2 text-sm text-futvar-light border-b border-white/10">
+                    <p className="font-medium text-white truncate">{user.name || user.email}</p>
+                    {subscription && (
+                      <p className={`text-xs mt-0.5 ${subscription.active ? 'text-green-400' : 'text-amber-400'}`}>
+                        {subscription.active ? 'Assinatura ativa' : 'Assinatura inativa'}
+                      </p>
+                    )}
+                  </div>
+                  <Link href="/conta" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
+                    Minha conta
+                  </Link>
+                  <Link href="/planos" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
+                    Planos
+                  </Link>
+                  <button onClick={handleLogout} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-red-900/20 hover:text-red-300 text-left">
+                    Sair
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link href="/entrar" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
+                    Entrar
+                  </Link>
+                  <Link href="/cadastro" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm font-bold text-futvar-green hover:bg-futvar-green/10">
+                    Cadastrar
+                  </Link>
+                </>
+              )}
+            </nav>
+          </div>
         )}
       </div>
     </header>
