@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String    @map("password_hash")
+  role          String    @default("user") // "user" | "admin"
+  emailVerified Boolean   @default(false) @map("email_verified")
+  resetToken    String?   @map("reset_token")
+  resetExpires  DateTime? @map("reset_expires")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  subscription  Subscription?
+  sessions      Session[]
+  purchases     Purchase[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                    String    @id @default(cuid())
+  userId                String    @unique @map("user_id")
+  planId                String?   @map("plan_id")
+  active                Boolean   @default(false)
+  startDate             DateTime  @map("start_date")
+  endDate               DateTime  @map("end_date")
+  paymentGateway        String?   @map("payment_gateway") // stripe | woovi | manual
+  externalSubscriptionId String?  @map("external_subscription_id")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+}
+
+model Game {
+  id           String    @id @default(cuid())
+  title        String
+  slug         String    @unique
+  championship String    @map("championship")
+  gameDate     DateTime  @map("game_date")
+  description  String?
+  videoUrl     String    @map("video_url")
+  thumbnailUrl String?   @map("thumbnail_url")
+  featured     Boolean   @default(false)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  purchases Purchase[]
+}
+
+model Plan {
+  id             String   @id @default(cuid())
+  name           String   @map("name")
+  type           String   @map("type") // unitario | recorrente
+  periodicity    String   @map("periodicity") // mensal | anual | personalizado
+  price          Float    @map("price")
+  description    String?  @map("description")
+  active         Boolean  @default(true) @map("active")
+  acessoTotal    Boolean  @default(true) @map("acesso_total")
+  duracaoDias    Int?     @map("duracao_dias") // null = ilimitado para unitário
+  renovacaoAuto  Boolean  @default(false) @map("renovacao_auto")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  purchases     Purchase[]
+  subscriptions Subscription[]
+}
+
+model Purchase {
+  id               String    @id @default(cuid())
+  userId           String    @map("user_id")
+  planId           String    @map("plan_id")
+  gameId           String?   @map("game_id") // preenchido para plano unitário (jogo específico)
+  purchasedAt      DateTime  @default(now()) @map("purchased_at")
+  expiresAt       DateTime? @map("expires_at") // null = não expira
+  paymentStatus   String    @default("pending") @map("payment_status") // pending | paid | failed | refunded
+  paymentGateway  String?   @map("payment_gateway") // woovi | stripe | manual
+  externalId      String?   @map("external_id") // id da cobrança no gateway
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Restrict)
+  game Game? @relation(fields: [gameId], references: [id], onDelete: SetNull)
+}
