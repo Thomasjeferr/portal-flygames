@@ -32,6 +32,7 @@ Plataforma web de streaming de vídeos (jogos) estilo Netflix, com usuários, as
    DATABASE_URL="postgresql://usuario:senha@localhost:5432/portal_futvar?schema=public"
    NEXTAUTH_SECRET="um-secret-aleatorio-seguro"
    NEXT_PUBLIC_APP_URL="http://localhost:3000"
+   RESEND_API_KEY="re_xxx"  # Para e-mails transacionais (cadastro, recuperar senha)
    ```
 
 4. Crie o banco no PostgreSQL e rode as migrations:
@@ -43,6 +44,7 @@ Plataforma web de streaming de vídeos (jogos) estilo Netflix, com usuários, as
 5. Crie o usuário admin (opcional: defina `ADMIN_EMAIL` e `ADMIN_PASSWORD` no `.env`):
    ```bash
    npm run db:seed
+   npm run db:seed-emails   # Templates e configurações de e-mail
    ```
    Padrão: `admin@portal.com` / `admin123`
 

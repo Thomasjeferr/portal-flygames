@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Bebas_Neue } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 
 const bebas = Bebas_Neue({
   weight: '400',
@@ -24,6 +25,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <Header />
         <main className="min-h-screen">{children}</main>
+        <Footer />
       </body>
     </html>
   );

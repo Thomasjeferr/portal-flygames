@@ -8,10 +8,13 @@ const menuItems = [
   { href: '/admin/jogos', label: 'Jogos', icon: '▶' },
   { href: '/admin/pre-estreia', label: 'Pré-estreia', icon: '🎬' },
   { href: '/admin/categorias', label: 'Categorias', icon: '📁' },
-  { href: '/admin/banner', label: 'Banner da home', icon: '🖼' },
+  { href: '/admin/banner', label: 'Hero Banners', icon: '🖼' },
+  { href: '/admin/sponsors', label: 'Patrocinadores', icon: '🏆' },
   { href: '/admin/usuarios', label: 'Usuários', icon: '👥' },
   { href: '/admin/planos', label: 'Planos', icon: '📋' },
   { href: '/admin/pagamentos', label: 'APIs de Pagamento', icon: '💳' },
+  { href: '/admin/emails/settings', label: 'E-mails', icon: '✉' },
+  { href: '/admin/settings', label: 'Configurações', icon: '⚙' },
 ];
 
 export function AdminSidebar() {

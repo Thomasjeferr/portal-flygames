@@ -1,240 +1,223 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { extractYouTubeVideoId, getYouTubeThumbnailUrl } from '@/lib/youtube';
+import { BannerPreviewPlaceholder } from '@/components/admin/BannerPreviewPlaceholder';
 
-type HeroType = 'none' | 'image' | 'youtube' | 'pandavideo';
+type Banner = {
+  id: string;
+  type: string;
+  headline: string | null;
+  badgeText: string | null;
+  isActive: boolean;
+  priority: number;
+  mediaType: string;
+  mediaUrl: string | null;
+  game?: { title: string; thumbnailUrl?: string | null } | null;
+  preSale?: { title: string; thumbnailUrl?: string } | null;
+};
 
-interface HeroForm {
-  heroType: HeroType;
-  heroMediaUrl: string;
-  overlayColor: string;
-  overlayOpacity: number;
-  videoStartSeconds: string;
-  videoEndSeconds: string;
-  videoLoop: boolean;
+function resolveThumbnail(raw: string | null | undefined): string | null {
+  const s = raw && typeof raw === 'string' ? raw.trim() : null;
+  if (!s) return null;
+  const videoId = extractYouTubeVideoId(s);
+  if (videoId) return getYouTubeThumbnailUrl(videoId, 'hqdefault');
+  if (s.startsWith('/') || s.startsWith('http://') || s.startsWith('https://')) return s;
+  return null;
+}
+
+function getBannerThumbnailUrl(b: Banner): string | null {
+  const url = (s: string | null | undefined) => (s && s.trim() ? s.trim() : null);
+
+  if (b.type === 'FEATURED_GAME') {
+    const mediaUrl = resolveThumbnail(b.mediaUrl);
+    if (mediaUrl) return mediaUrl;
+    return url(b.game?.thumbnailUrl) ?? null;
+  }
+  if (b.type === 'FEATURED_PRE_SALE') {
+    const mediaUrl = resolveThumbnail(b.mediaUrl);
+    if (mediaUrl) return mediaUrl;
+    return url(b.preSale?.thumbnailUrl) ?? null;
+  }
+  if (b.type === 'MANUAL') {
+    const mediaUrl = url(b.mediaUrl);
+    if (b.mediaType === 'IMAGE' && mediaUrl) return mediaUrl;
+    if ((b.mediaType === 'YOUTUBE_VIDEO' || b.mediaType === 'MP4_VIDEO') && mediaUrl) {
+      return resolveThumbnail(mediaUrl);
+    }
+  }
+  return null;
 }
 
 export default function AdminBannerPage() {
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [form, setForm] = useState<HeroForm>({
-    heroType: 'none',
-    heroMediaUrl: '',
-    overlayColor: '#000000',
-    overlayOpacity: 0.5,
-    videoStartSeconds: '',
-    videoEndSeconds: '',
-    videoLoop: true,
-  });
+  const [reordering, setReordering] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch('/api/admin/hero-config')
+  const load = () => {
+    fetch('/api/admin/home-banners')
       .then((r) => r.json())
-      .then((data) => {
-        setForm({
-          heroType: (data.heroType || 'none') as HeroType,
-          heroMediaUrl: data.heroMediaUrl || '',
-          overlayColor: data.overlayColor || '#000000',
-          overlayOpacity: typeof data.overlayOpacity === 'number' ? data.overlayOpacity : 0.5,
-          videoStartSeconds: data.videoStartSeconds != null ? String(data.videoStartSeconds) : '',
-          videoEndSeconds: data.videoEndSeconds != null ? String(data.videoEndSeconds) : '',
-          videoLoop: data.videoLoop !== false,
-        });
-      })
-      .catch(() => setError('Erro ao carregar'))
+      .then((d) => setBanners(Array.isArray(d) ? d : []))
+      .catch(() => setBanners([]))
       .finally(() => setLoading(false));
-  }, []);
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setSaving(true);
+  useEffect(() => load(), []);
+
+  const handleToggle = async (id: string) => {
+    const res = await fetch(`/api/admin/home-banners/${id}/toggle`, { method: 'POST' });
+    if (res.ok) load();
+  };
+
+  const handleDuplicate = async (id: string) => {
+    const res = await fetch(`/api/admin/home-banners/${id}/duplicate`, { method: 'POST' });
+    if (res.ok) load();
+  };
+
+  const handleDelete = async (id: string, headline: string) => {
+    if (!confirm(`Excluir banner "${headline || id}"?`)) return;
+    const res = await fetch(`/api/admin/home-banners/${id}`, { method: 'DELETE' });
+    if (res.ok) load();
+  };
+
+  const move = async (idx: number, dir: 'up' | 'down') => {
+    const newIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= banners.length) return;
+    const arr = [...banners];
+    [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+    const bannerIds = arr.map((b) => b.id);
+    setReordering(banners[idx].id);
     try {
-      const start = form.videoStartSeconds.trim() ? parseInt(form.videoStartSeconds, 10) : null;
-      const end = form.videoEndSeconds.trim() ? parseInt(form.videoEndSeconds, 10) : null;
-      const body = {
-        heroType: form.heroType,
-        heroMediaUrl: form.heroType !== 'none' && form.heroMediaUrl.trim() ? form.heroMediaUrl.trim() : null,
-        overlayColor: form.overlayColor,
-        overlayOpacity: form.overlayOpacity,
-        videoStartSeconds: start != null && !isNaN(start) ? start : null,
-        videoEndSeconds: end != null && !isNaN(end) ? end : null,
-        videoLoop: form.videoLoop,
-      };
-      const res = await fetch('/api/admin/hero-config', {
-        method: 'PATCH',
+      const res = await fetch('/api/admin/home-banners/reorder', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ bannerIds }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Erro ao salvar');
-        return;
-      }
-      setSuccess('Banner salvo. A home foi atualizada.');
-      setForm((f) => ({
-        ...f,
-        heroMediaUrl: data.heroMediaUrl || '',
-        overlayColor: data.overlayColor ?? f.overlayColor,
-        overlayOpacity: data.overlayOpacity ?? f.overlayOpacity,
-        videoStartSeconds: data.videoStartSeconds != null ? String(data.videoStartSeconds) : '',
-        videoEndSeconds: data.videoEndSeconds != null ? String(data.videoEndSeconds) : '',
-        videoLoop: data.videoLoop !== false,
-      }));
-    } catch {
-      setError('Erro de conexão');
+      if (res.ok) setBanners(arr);
     } finally {
-      setSaving(false);
+      setReordering(null);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto px-6 py-10">
-        <p className="text-netflix-light">Carregando...</p>
-      </div>
-    );
-  }
+  const typeLabel: Record<string, string> = {
+    MANUAL: 'Manual',
+    FEATURED_GAME: 'Jogo em destaque',
+    FEATURED_PRE_SALE: 'Pre-estreia',
+  };
+
+  if (loading) return <div className="max-w-4xl mx-auto px-6 py-10 text-netflix-light">Carregando...</div>;
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-10">
-      <h1 className="text-3xl font-bold text-white mb-2">Banner da home</h1>
-      <p className="text-netflix-light mb-8">
-        Imagem ou vídeo de fundo do topo da página. Ajuste a cor e a intensidade da sobreposição para o texto ficar legível.
-      </p>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <p className="text-amber-400 text-sm bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
-            {error}
-          </p>
-        )}
-        {success && (
-          <p className="text-green-400 text-sm bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">
-            {success}
-          </p>
-        )}
-
+    <div className="max-w-4xl mx-auto px-6 py-10">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <label className="block text-sm font-medium text-white mb-2">Tipo de fundo</label>
-          <select
-            value={form.heroType}
-            onChange={(e) => setForm((f) => ({ ...f, heroType: e.target.value as HeroType }))}
-            className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
-          >
-            <option value="none">Nenhum (padrão do tema)</option>
-            <option value="image">Imagem</option>
-            <option value="youtube">Vídeo YouTube</option>
-            <option value="pandavideo">Vídeo PandaVideo</option>
-          </select>
+          <h1 className="text-3xl font-bold text-white">Hero Banners</h1>
+          <p className="text-netflix-light text-sm mt-1">Carrossel configurável da home. Crie múltiplos e defina prioridade.</p>
         </div>
-
-        {(form.heroType === 'youtube' || form.heroType === 'pandavideo') && (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">Início do vídeo (segundos)</label>
-              <input
-                type="number"
-                min={0}
-                value={form.videoStartSeconds}
-                onChange={(e) => setForm((f) => ({ ...f, videoStartSeconds: e.target.value }))}
-                placeholder="Ex: 60 = 1 min"
-                className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white placeholder-netflix-light/60 focus:outline-none focus:ring-2 focus:ring-netflix-red"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">Fim do vídeo (segundos)</label>
-              <input
-                type="number"
-                min={0}
-                value={form.videoEndSeconds}
-                onChange={(e) => setForm((f) => ({ ...f, videoEndSeconds: e.target.value }))}
-                placeholder="Ex: 180 = 3 min"
-                className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white placeholder-netflix-light/60 focus:outline-none focus:ring-2 focus:ring-netflix-red"
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="videoLoop"
-                checked={form.videoLoop}
-                onChange={(e) => setForm((f) => ({ ...f, videoLoop: e.target.checked }))}
-                className="w-4 h-4 rounded accent-netflix-red"
-              />
-              <label htmlFor="videoLoop" className="text-sm font-medium text-white">
-                Loop (repetir vídeo)
-              </label>
-            </div>
-          </>
-        )}
-        {(form.heroType === 'image' || form.heroType === 'youtube' || form.heroType === 'pandavideo') && (
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">
-              {form.heroType === 'image' ? 'URL da imagem' : 'URL do vídeo (embed ou link)'}
-            </label>
-            <input
-              type="url"
-              value={form.heroMediaUrl}
-              onChange={(e) => setForm((f) => ({ ...f, heroMediaUrl: e.target.value }))}
-              placeholder={
-                form.heroType === 'image'
-                  ? 'https://exemplo.com/imagem.jpg'
-                  : form.heroType === 'youtube'
-                    ? 'https://www.youtube.com/watch?v=... ou https://youtube.com/embed/...'
-                    : 'https://player.pandavideo.com.br/embed/...'
-              }
-              className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white placeholder-netflix-light/60 focus:outline-none focus:ring-2 focus:ring-netflix-red"
-            />
-          </div>
-        )}
-
-        <div>
-          <label className="block text-sm font-medium text-white mb-2">Cor da sobreposição</label>
-          <div className="flex items-center gap-3">
-            <input
-              type="color"
-              value={form.overlayColor}
-              onChange={(e) => setForm((f) => ({ ...f, overlayColor: e.target.value }))}
-              className="w-12 h-10 rounded border border-white/20 cursor-pointer bg-transparent"
-            />
-            <input
-              type="text"
-              value={form.overlayColor}
-              onChange={(e) => setForm((f) => ({ ...f, overlayColor: e.target.value }))}
-              placeholder="#000000"
-              className="flex-1 px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
-            />
-          </div>
-          <p className="text-xs text-netflix-light mt-1">Cor em hex (ex: #000000). A sobreposição escurece o fundo para o texto ficar legível.</p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-white mb-2">
-            Intensidade da sobreposição: {Math.round(form.overlayOpacity * 100)}%
-          </label>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.05}
-            value={form.overlayOpacity}
-            onChange={(e) => setForm((f) => ({ ...f, overlayOpacity: parseFloat(e.target.value) }))}
-            className="w-full h-2 rounded-lg appearance-none bg-netflix-gray accent-netflix-red"
-          />
-          <p className="text-xs text-netflix-light mt-1">0% = transparente, 100% = opaco. Quanto maior, mais escuro sobre o fundo.</p>
-        </div>
-
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-6 py-3 rounded bg-netflix-red text-white font-semibold hover:bg-red-600 disabled:opacity-50"
+        <Link
+          href="/admin/banner/novo"
+          className="px-4 py-2 rounded bg-netflix-red text-white font-semibold hover:bg-red-600"
         >
-          {saving ? 'Salvando...' : 'Salvar banner'}
-        </button>
-      </form>
+          Novo banner
+        </Link>
+      </div>
+
+      {banners.length === 0 ? (
+        <div className="bg-netflix-dark border border-white/10 rounded-lg p-12 text-center">
+          <p className="text-netflix-light mb-4">Nenhum banner cadastrado.</p>
+          <Link href="/admin/banner/novo" className="text-netflix-red hover:underline">Criar primeiro banner</Link>
+          <p className="text-netflix-light text-sm mt-4">Enquanto não houver banners, a home exibe o fallback padrão.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {banners.map((b, i) => (
+            <div
+              key={b.id}
+              className="flex flex-wrap items-center gap-4 bg-netflix-dark border border-white/10 rounded-lg p-4"
+            >
+              <div className="flex flex-col gap-1">
+                <button
+                  type="button"
+                  onClick={() => move(i, 'up')}
+                  disabled={i === 0 || reordering === b.id}
+                  className="px-2 py-1 rounded bg-netflix-gray text-white text-xs disabled:opacity-50"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={() => move(i, 'down')}
+                  disabled={i === banners.length - 1 || reordering === b.id}
+                  className="px-2 py-1 rounded bg-netflix-gray text-white text-xs disabled:opacity-50"
+                >
+                  ↓
+                </button>
+              </div>
+              <div className="relative w-24 h-14 rounded overflow-hidden bg-netflix-dark flex-shrink-0">
+                <BannerPreviewPlaceholder
+                  mediaType={b.mediaType}
+                  className="absolute inset-0 w-full h-full"
+                />
+                {(() => {
+                  const thumbUrl = getBannerThumbnailUrl(b);
+                  if (thumbUrl) {
+                    return (
+                      <img
+                        src={thumbUrl}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover z-[1]"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-white truncate">{b.headline || '(sem título)'}</p>
+                <p className="text-sm text-netflix-light">
+                  {typeLabel[b.type] ?? b.type} • Prioridade {b.priority} • {b.isActive ? 'Ativo' : 'Inativo'}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleToggle(b.id)}
+                  className={`px-3 py-1 rounded text-sm ${b.isActive ? 'bg-green-900/30 text-green-400' : 'bg-netflix-gray text-netflix-light'}`}
+                >
+                  {b.isActive ? 'Ativo' : 'Inativo'}
+                </button>
+                <Link href={`/admin/banner/${b.id}/editar`} className="px-3 py-1 rounded bg-netflix-gray text-white text-sm hover:bg-white/20">
+                  Editar
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => handleDuplicate(b.id)}
+                  className="px-3 py-1 rounded bg-netflix-gray text-white text-sm hover:bg-white/20"
+                >
+                  Duplicar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(b.id, b.headline || '')}
+                  className="px-3 py-1 rounded bg-red-900/30 text-red-400 text-sm hover:bg-red-900/50"
+                >
+                  Excluir
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-8 p-4 bg-netflix-dark/50 border border-white/10 rounded-lg">
+        <p className="text-netflix-light text-sm">
+          <strong>Preview:</strong> Acesse a <Link href="/" target="_blank" className="text-futvar-green hover:underline">home</Link> para ver como os banners aparecem.
+        </p>
+      </div>
     </div>
   );
 }

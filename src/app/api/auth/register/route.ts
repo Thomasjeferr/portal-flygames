@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { hashPassword, createSession } from '@/lib/auth';
+import { sendTransactionalEmail } from '@/lib/email/emailService';
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -38,6 +39,20 @@ export async function POST(request: NextRequest) {
         role: 'user',
       },
     });
+
+    const settings = await prisma.emailSettings.findFirst();
+    const baseUrl = settings?.appBaseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const loginUrl = `${baseUrl}/entrar`;
+
+    sendTransactionalEmail({
+      to: user.email,
+      templateKey: 'WELCOME',
+      vars: {
+        name: user.name || user.email.split('@')[0],
+        login_url: loginUrl,
+      },
+      userId: user.id,
+    }).catch((e) => console.error('[Email] WELCOME:', e));
 
     const token = await createSession(user.id);
 

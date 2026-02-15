@@ -22,6 +22,7 @@ model User {
   subscription  Subscription?
   sessions      Session[]
   purchases     Purchase[]
+  emailTokens   EmailToken[]
 }
 
 model Session {
@@ -79,6 +80,7 @@ model Game {
 
   category   Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   purchases  Purchase[]
+  homeBanners HomeBanner[]
 }
 
 model Plan {
@@ -110,18 +112,64 @@ model PaymentConfig {
   updatedAt              DateTime @updatedAt @map("updated_at")
 }
 
-// Banner frontal da home: imagem ou vídeo (YouTube/PandaVideo) + overlay
+// Banner frontal da home: imagem ou vídeo (YouTube/PandaVideo) + overlay (legado)
 model HeroConfig {
   id                String   @id @default(cuid())
   heroType          String   @default("none") @map("hero_type") // none | image | youtube | pandavideo
   heroMediaUrl      String?  @map("hero_media_url")
   overlayColor      String   @default("#000000") @map("overlay_color") // hex
   overlayOpacity    Float    @default(0.5) @map("overlay_opacity") // 0-1
-  videoStartSeconds Int?    @map("video_start_seconds") // ex: 60 = inicia em 1min
-  videoEndSeconds   Int?    @map("video_end_seconds")   // ex: 180 = finaliza em 3min
+  videoStartSeconds Int?    @map("video_start_seconds")
+  videoEndSeconds   Int?    @map("video_end_seconds")
   videoLoop         Boolean  @default(true) @map("video_loop")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
+}
+
+// Hero Banner Inteligente - carrossel configurável via Admin
+model HomeBanner {
+  id                  String    @id @default(cuid())
+  isActive            Boolean   @default(true) @map("is_active")
+  priority            Int       @default(0) @map("priority")
+  type                String    @map("type") // MANUAL | FEATURED_GAME | FEATURED_PRE_SALE
+
+  badgeText           String?   @map("badge_text")
+  headline            String?   @map("headline")
+  subheadline         String?   @map("subheadline")
+
+  useDefaultCta       Boolean   @default(true) @map("use_default_cta")
+  primaryCtaText      String?   @map("primary_cta_text")
+  primaryCtaUrl       String?   @map("primary_cta_url")
+  secondaryCtaText    String?   @map("secondary_cta_text")
+  secondaryCtaUrl     String?   @map("secondary_cta_url")
+
+  mediaType           String    @default("NONE") @map("media_type") // IMAGE | YOUTUBE_VIDEO | MP4_VIDEO | NONE
+  mediaUrl            String?   @map("media_url")
+  videoStartSeconds   Int       @default(0) @map("video_start_seconds")
+  videoEndSeconds     Int?      @map("video_end_seconds")
+  loop                Boolean   @default(true) @map("loop")
+  mute                Boolean   @default(true) @map("mute")
+
+  overlayColorHex     String    @default("#000000") @map("overlay_color_hex")
+  overlayOpacity      Int       @default(75) @map("overlay_opacity") // 0-100
+
+  heightPreset        String    @default("md") @map("height_preset") // sm | md | lg | xl | full
+
+  secondaryMediaType  String    @default("NONE") @map("secondary_media_type") // NONE | IMAGE | YOUTUBE_VIDEO | MP4_VIDEO
+  secondaryMediaUrl   String?   @map("secondary_media_url")
+
+  gameId              String?   @map("game_id")
+  preSaleId           String?   @map("pre_sale_id")
+
+  showOnlyWhenReady   Boolean   @default(true) @map("show_only_when_ready")
+  startAt             DateTime? @map("start_at")
+  endAt               DateTime? @map("end_at")
+
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  game    Game?       @relation(fields: [gameId], references: [id], onDelete: SetNull)
+  preSale PreSaleGame? @relation(fields: [preSaleId], references: [id], onDelete: SetNull)
 }
 
 // ========== PRÉ-ESTREIA CLUBES ==========
@@ -159,6 +207,7 @@ model PreSaleGame {
   normalCategories  PreSaleGameCategory[]
   clubSlots         PreSaleClubSlot[]
   streamSessions    ClubStreamSession[]
+  homeBanners       HomeBanner[]
 }
 
 model PreSaleGameCategory {
@@ -208,6 +257,96 @@ model ClubStreamSession {
 }
 
 // ========== FIM PRÉ-ESTREIA ==========
+
+// Patrocinadores
+model Sponsor {
+  id         String    @id @default(cuid())
+  name       String    @map("name")
+  websiteUrl String?   @map("website_url")
+  logoUrl    String    @map("logo_url")
+  tier       String    @default("APOIO") @map("tier") // MASTER | OFICIAL | APOIO
+  priority   Int       @default(0) @map("priority")
+  isActive   Boolean   @default(true) @map("is_active")
+  startAt    DateTime? @map("start_at")
+  endAt      DateTime? @map("end_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+}
+
+// Configurações gerais do site (contato, redes, CNPJ)
+model SiteSettings {
+  id             String   @id @default(cuid())
+  supportEmail   String?  @map("support_email")
+  whatsappNumber String?  @map("whatsapp_number")
+  instagramUrl   String?  @map("instagram_url")
+  tiktokUrl      String?  @map("tiktok_url")
+  youtubeUrl     String?  @map("youtube_url")
+  companyName    String?  @map("company_name")
+  companyCnpj    String?  @map("company_cnpj")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+}
+
+// ========== E-MAILS TRANSiCIONAIS (Resend) ==========
+model EmailSettings {
+  id           String   @id @default(cuid())
+  fromName     String   @default("Fly Games") @map("from_name")
+  fromEmail    String   @default("no-reply@flygames.com.br") @map("from_email")
+  replyTo      String?  @map("reply_to")
+  brandColor   String   @default("#22c55e") @map("brand_color")
+  logoUrl      String?  @map("logo_url")
+  supportEmail String?  @map("support_email")
+  whatsappUrl  String?  @map("whatsapp_url")
+  footerText   String?  @map("footer_text")
+  appBaseUrl   String?  @map("app_base_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  key       String   @unique @map("key") // WELCOME | VERIFY_EMAIL | RESET_PASSWORD | PASSWORD_CHANGED
+  subject   String   @map("subject")
+  htmlBody  String   @map("html_body")
+  isActive  Boolean  @default(true) @map("is_active")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model EmailToken {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  type       String    @map("type") // VERIFY_EMAIL | RESET_PASSWORD
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  usedAt     DateTime? @map("used_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  ip         String?   @map("ip")
+  userAgent  String?   @map("user_agent")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmailLog {
+  id               String   @id @default(cuid())
+  userId           String?  @map("user_id")
+  toEmail          String   @map("to_email")
+  templateKey      String   @map("template_key")
+  provider         String   @default("RESEND") @map("provider")
+  status           String   @map("status") // SENT | FAILED
+  providerMessageId String? @map("provider_message_id")
+  errorMessage     String?  @map("error_message")
+  createdAt        DateTime @default(now()) @map("created_at")
+}
+
+model RateLimit {
+  id          String   @id @default(cuid())
+  key         String   @unique @map("key")
+  count       Int      @default(0) @map("count")
+  windowStart DateTime @map("window_start")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+}
+
+// ========== FIM E-MAILS ==========
 
 model Purchase {
   id               String    @id @default(cuid())
