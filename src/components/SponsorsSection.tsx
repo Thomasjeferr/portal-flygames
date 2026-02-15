@@ -8,10 +8,10 @@ const TIER_LABEL: Record<string, string> = {
   APOIO: 'Apoio',
 };
 
-function getLogoUrl(url: string) {
-  if (url.startsWith('http')) return url;
-  if (url.startsWith('/')) return url;
-  return url;
+function isValidLogoUrl(url: string | null | undefined): url is string {
+  if (!url || typeof url !== 'string') return false;
+  const s = url.trim();
+  return s.length > 0 && (s.startsWith('http') || s.startsWith('/') || s.startsWith('data:'));
 }
 
 export async function SponsorsSection() {
@@ -44,7 +44,8 @@ export async function SponsorsSection() {
                 </h3>
                 <div className="flex flex-wrap items-center gap-6 sm:gap-8">
                   {list.map((s) => {
-                    const logoUrl = getLogoUrl(s.logoUrl);
+                    if (!isValidLogoUrl(s.logoUrl)) return null;
+                    const logoUrl = s.logoUrl.trim();
                     const Wrapper = s.websiteUrl ? 'a' : 'div';
                     return (
                       <Wrapper

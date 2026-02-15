@@ -16,13 +16,19 @@ interface PreSaleGame {
   maxSimultaneousPerClub: number;
 }
 
+type AuthMode = 'login' | 'code';
+
 export default function PreEstreiaWatchPage() {
   const params = useParams();
   const slug = params?.slug as string;
   const [game, setGame] = useState<PreSaleGame | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [clubCode, setClubCode] = useState('');
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [storedClubCode, setStoredClubCode] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
@@ -39,26 +45,91 @@ export default function PreEstreiaWatchPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  useEffect(() => {
+    if (!game || game.status !== 'PUBLISHED' || sessionToken) return;
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((user) => {
+        if (user?.role === 'club_viewer') {
+          return fetch('/api/pre-sale/start-session', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug, useSession: true }),
+          });
+        }
+      })
+      .then((res) => {
+        if (res?.ok) return res.json();
+      })
+      .then((data) => {
+        if (data?.sessionToken) {
+          setSessionToken(data.sessionToken);
+          if (data.clubCode) setStoredClubCode(data.clubCode);
+        }
+      })
+      .catch(() => {});
+  }, [game, slug, sessionToken]);
+
+  const heartbeatClubCode = sessionToken ? (storedClubCode || clubCode) : '';
   const sendHeartbeat = useCallback(() => {
-    if (!sessionToken || !clubCode) return;
+    if (!sessionToken || !heartbeatClubCode) return;
     fetch('/api/pre-sale/heartbeat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionToken, clubCode }),
+      body: JSON.stringify({ sessionToken, clubCode: heartbeatClubCode }),
     }).catch(() => setSessionToken(null));
-  }, [sessionToken, clubCode]);
+  }, [sessionToken, heartbeatClubCode]);
 
   useEffect(() => {
-    if (!sessionToken || !clubCode) return;
+    if (!sessionToken || !heartbeatClubCode) return;
     sendHeartbeat();
     const interval = setInterval(sendHeartbeat, 45000);
     heartbeatRef.current = interval;
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     };
-  }, [sessionToken, clubCode, sendHeartbeat]);
+  }, [sessionToken, heartbeatClubCode, sendHeartbeat]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+    try {
+      const loginRes = await fetch('/api/pre-sale/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: loginUsername.trim(), password: loginPassword, slug }),
+      });
+      if (!loginRes.ok) {
+        const d = await loginRes.json();
+        setError(d.error || 'Usuário ou senha incorretos');
+        setSubmitting(false);
+        return;
+      }
+      const startRes = await fetch('/api/pre-sale/start-session', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, useSession: true }),
+      });
+      const data = await startRes.json();
+      if (!startRes.ok) {
+        setError(data.error || 'Erro ao iniciar sessão');
+        setSubmitting(false);
+        return;
+      }
+      setSessionToken(data.sessionToken);
+      if (data.clubCode) setStoredClubCode(data.clubCode);
+    } catch {
+      setError('Erro de conexão');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
@@ -70,12 +141,13 @@ export default function PreEstreiaWatchPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Erro ao iniciar sessao');
+        setError(data.error || 'Erro ao iniciar sessão');
         return;
       }
       setSessionToken(data.sessionToken);
+      if (data.clubCode) setStoredClubCode(data.clubCode);
     } catch {
-      setError('Erro de conexao');
+      setError('Erro de conexão');
     } finally {
       setSubmitting(false);
     }
@@ -125,41 +197,91 @@ export default function PreEstreiaWatchPage() {
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
           <Link href="/" className="text-futvar-green hover:text-futvar-green-light text-sm font-semibold inline-flex items-center gap-2">
-            Voltar ao inicio
+            Voltar ao início
           </Link>
         </div>
         <div className="bg-futvar-dark border border-futvar-green/20 rounded-2xl p-8">
           <h1 className="text-2xl font-bold text-white mb-2">{game.title}</h1>
-          <p className="text-futvar-light text-sm mb-6">Digite o codigo do clube para assistir</p>
+          <p className="text-futvar-light text-sm mb-4">Acesse com o usuário e senha enviados ao responsável do clube, ou com o código do clube.</p>
+          <div className="flex gap-2 mb-6">
+            <button
+              type="button"
+              onClick={() => { setAuthMode('login'); setError(''); }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${authMode === 'login' ? 'bg-futvar-green text-futvar-darker' : 'bg-white/10 text-white hover:bg-white/20'}`}
+            >
+              Usuário e senha
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAuthMode('code'); setError(''); }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${authMode === 'code' ? 'bg-futvar-green text-futvar-darker' : 'bg-white/10 text-white hover:bg-white/20'}`}
+            >
+              Código do clube
+            </button>
+          </div>
           {game.thumbnailUrl && (
             <div className="relative aspect-video rounded-lg overflow-hidden mb-6">
               <Image src={game.thumbnailUrl} alt="" fill className="object-cover" />
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <span className="text-white text-lg">Informe o codigo do clube</span>
+                <span className="text-white text-lg">{authMode === 'login' ? 'Usuário e senha do clube' : 'Código do clube'}</span>
               </div>
             </div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && <p className="text-red-400 text-sm">{error}</p>}
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">Codigo do clube</label>
-              <input
-                type="text"
-                value={clubCode}
-                onChange={(e) => setClubCode(e.target.value)}
-                required
-                placeholder="Ex: ABC123"
-                className="w-full px-4 py-3 rounded bg-futvar-darker border border-white/20 text-white placeholder:text-futvar-light/50"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full px-6 py-4 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light disabled:opacity-50"
-            >
-              {submitting ? 'Iniciando...' : 'Assistir'}
-            </button>
-          </form>
+          {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
+          {authMode === 'login' ? (
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">Usuário</label>
+                <input
+                  type="text"
+                  value={loginUsername}
+                  onChange={(e) => setLoginUsername(e.target.value)}
+                  required
+                  placeholder="Ex: clube-abc123-1"
+                  className="w-full px-4 py-3 rounded bg-futvar-darker border border-white/20 text-white placeholder:text-futvar-light/50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">Senha</label>
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  required
+                  placeholder="Senha enviada por e-mail"
+                  className="w-full px-4 py-3 rounded bg-futvar-darker border border-white/20 text-white placeholder:text-futvar-light/50"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full px-6 py-4 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light disabled:opacity-50"
+              >
+                {submitting ? 'Entrando...' : 'Entrar e assistir'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleCodeSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">Código do clube</label>
+                <input
+                  type="text"
+                  value={clubCode}
+                  onChange={(e) => setClubCode(e.target.value)}
+                  required
+                  placeholder="Ex: ABC123"
+                  className="w-full px-4 py-3 rounded bg-futvar-darker border border-white/20 text-white placeholder:text-futvar-light/50"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full px-6 py-4 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light disabled:opacity-50"
+              >
+                {submitting ? 'Iniciando...' : 'Assistir'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>

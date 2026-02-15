@@ -6,7 +6,6 @@ import { updateHomeBannerSchema } from '@/lib/validators/bannerSchema';
 
 export const dynamic = 'force-dynamic';
 
-const DEBUG_LOGS = process.env.BANNER_DEBUG === '1';
 
 function sanitize(body: Record<string, unknown>): Record<string, unknown> {
   const b = { ...body };
@@ -52,23 +51,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const rawBody = await request.json();
     const sanitized = sanitize(rawBody);
 
-    if (DEBUG_LOGS) {
-      console.log('[BANNER PATCH] current DB:', {
-        id: current.id,
-        type: current.type,
-        isActive: current.isActive,
-        priority: current.priority,
-        mediaType: current.mediaType,
-        mediaUrl: current.mediaUrl ? '(presente)' : current.mediaUrl,
-        startAt: current.startAt,
-        endAt: current.endAt,
-      });
-      console.log('[BANNER PATCH] payload recebido:', JSON.stringify(sanitized, null, 2));
-    }
-
     const parsed = updateHomeBannerSchema.safeParse(sanitized);
     if (!parsed.success) {
-      if (DEBUG_LOGS) console.log('[BANNER PATCH] validacao falhou:', parsed.error.errors);
       return NextResponse.json({ error: parsed.error.errors[0]?.message ?? 'Invalido' }, { status: 400 });
     }
 
@@ -132,19 +116,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       data: updateData as object,
       include: { game: true, preSale: true },
     });
-
-    if (DEBUG_LOGS) {
-      console.log('[BANNER PATCH] apos update:', {
-        id: banner.id,
-        type: banner.type,
-        isActive: banner.isActive,
-        priority: banner.priority,
-        mediaType: banner.mediaType,
-        mediaUrl: banner.mediaUrl ? '(presente)' : banner.mediaUrl,
-        startAt: banner.startAt,
-        endAt: banner.endAt,
-      });
-    }
 
     revalidatePath('/');
     return NextResponse.json(banner);

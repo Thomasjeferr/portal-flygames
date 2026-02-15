@@ -33,6 +33,7 @@ function CheckoutContent() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [isClubViewer, setIsClubViewer] = useState(false);
   const [pixQr, setPixQr] = useState<{ qrCode?: string; qrCodeImage?: string } | null>(null);
   const [stripeSecret, setStripeSecret] = useState<string | null>(null);
 
@@ -43,10 +44,12 @@ function CheckoutContent() {
       return;
     }
     Promise.all([
+      fetch('/api/auth/me', { credentials: 'include' }).then((r) => r.json()).then((data) => data?.user?.role === 'club_viewer'),
       fetch('/api/plans').then((r) => r.json()),
       fetch('/api/games').then((r) => r.json()),
     ])
-      .then(([plansData, gamesData]) => {
+      .then(([clubViewer, plansData, gamesData]) => {
+        setIsClubViewer(!!clubViewer);
         const p = Array.isArray(plansData) ? plansData.find((x: { id: string }) => x.id === planId) : null;
         setPlan(p ?? null);
         setGames(Array.isArray(gamesData) ? gamesData : []);
@@ -100,6 +103,17 @@ function CheckoutContent() {
     return (
       <div className="pt-24 pb-16 px-4 min-h-screen bg-futvar-darker flex items-center justify-center">
         <p className="text-futvar-light">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (isClubViewer) {
+    return (
+      <div className="pt-24 pb-16 px-4 min-h-screen bg-futvar-darker">
+        <div className="max-w-lg mx-auto text-center">
+          <p className="text-futvar-light mb-4">Esta conta é apenas para acesso à pré-estreia. Para comprar planos ou jogos, crie uma conta no site.</p>
+          <Link href="/cadastro" className="text-futvar-green hover:underline font-semibold">Criar conta</Link>
+        </div>
       </div>
     );
   }

@@ -30,8 +30,6 @@ export type ResolvedBanner = {
   isPublishedMode?: boolean;
 };
 
-const DEBUG_LOGS = process.env.BANNER_DEBUG === '1';
-
 export async function getVisibleBanners(userId?: string | null): Promise<ResolvedBanner[]> {
   const now = new Date();
 
@@ -50,56 +48,21 @@ export async function getVisibleBanners(userId?: string | null): Promise<Resolve
     },
   });
 
-  if (DEBUG_LOGS) {
-    console.log('[BANNER VISIBILITY] raw do DB:', raw.length);
-    raw.forEach((b) =>
-      console.log('[BANNER VISIBILITY] raw:', {
-        id: b.id,
-        type: b.type,
-        isActive: b.isActive,
-        priority: b.priority,
-        startAt: b.startAt,
-        endAt: b.endAt,
-      })
-    );
-  }
-
   const visible: typeof raw = [];
 
   for (const b of raw) {
-    let reason = '';
     if (b.type === 'MANUAL') {
       visible.push(b);
-      reason = 'MANUAL sempre passa';
     } else if (b.type === 'FEATURED_GAME') {
-      if (!b.game) {
-        reason = 'FEATURED_GAME sem game_id';
-        if (DEBUG_LOGS) console.log('[BANNER VISIBILITY] excluido:', b.id, reason);
-        continue;
-      }
+      if (!b.game) continue;
       const game = b.game;
       const isPublished = !!game.videoUrl;
-      if (b.showOnlyWhenReady && !isPublished) {
-        reason = 'FEATURED_GAME showOnlyWhenReady e jogo nao publicado';
-        if (DEBUG_LOGS) console.log('[BANNER VISIBILITY] excluido:', b.id, reason);
-        continue;
-      }
+      if (b.showOnlyWhenReady && !isPublished) continue;
       visible.push(b);
-      reason = 'FEATURED_GAME ok';
     } else if (b.type === 'FEATURED_PRE_SALE') {
-      if (!b.preSale) {
-        reason = 'FEATURED_PRE_SALE sem pre_sale_id';
-        if (DEBUG_LOGS) console.log('[BANNER VISIBILITY] excluido:', b.id, reason);
-        continue;
-      }
+      if (!b.preSale) continue;
       visible.push(b);
-      reason = 'FEATURED_PRE_SALE ok (permite pre-venda sem video_url)';
-    } else {
-      reason = `tipo desconhecido: ${b.type}`;
-      if (DEBUG_LOGS) console.log('[BANNER VISIBILITY] excluido:', b.id, reason);
-      continue;
     }
-    if (DEBUG_LOGS) console.log('[BANNER VISIBILITY] incluido:', b.id, reason);
   }
 
   const resolved = await Promise.all(
@@ -136,10 +99,6 @@ export async function getVisibleBanners(userId?: string | null): Promise<Resolve
       return base;
     })
   );
-
-  if (DEBUG_LOGS) {
-    console.log('[BANNER VISIBILITY] visible final:', resolved.length);
-  }
 
   return resolved;
 }

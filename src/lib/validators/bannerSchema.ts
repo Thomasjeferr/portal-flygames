@@ -76,4 +76,14 @@ export const createHomeBannerSchema = z
     { message: 'start_at deve ser anterior a end_at', path: ['startAt'] }
   );
 
-export const updateHomeBannerSchema = z.object(baseSchema).partial();
+export const updateHomeBannerSchema = z
+  .object(baseSchema)
+  .partial()
+  .superRefine((d, ctx) => {
+    if (d.type !== undefined && d.type === 'FEATURED_GAME' && (d.gameId ?? '').toString().trim().length === 0) {
+      ctx.addIssue({ code: 'custom', message: 'game_id obrigatorio para FEATURED_GAME', path: ['gameId'] });
+    }
+    if (d.type !== undefined && d.type === 'FEATURED_PRE_SALE' && (d.preSaleId ?? '').toString().trim().length === 0) {
+      ctx.addIssue({ code: 'custom', message: 'pre_sale_id obrigatorio para FEATURED_PRE_SALE', path: ['preSaleId'] });
+    }
+  });

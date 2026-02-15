@@ -11,6 +11,7 @@ export async function GET() {
     if (!row)
       return NextResponse.json({
         supportEmail: '',
+        adminCredentialsEmail: '',
         whatsappNumber: '',
         instagramUrl: '',
         tiktokUrl: '',
@@ -20,6 +21,7 @@ export async function GET() {
       });
     return NextResponse.json({
       supportEmail: row.supportEmail ?? '',
+      adminCredentialsEmail: row.adminCredentialsEmail ?? '',
       whatsappNumber: row.whatsappNumber ?? '',
       instagramUrl: row.instagramUrl ?? '',
       tiktokUrl: row.tiktokUrl ?? '',
@@ -41,6 +43,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = {
       supportEmail: typeof body.supportEmail === 'string' ? body.supportEmail.trim() || null : null,
+      adminCredentialsEmail: typeof body.adminCredentialsEmail === 'string' ? body.adminCredentialsEmail.trim() || null : null,
       whatsappNumber: typeof body.whatsappNumber === 'string' ? body.whatsappNumber.trim() || null : null,
       instagramUrl: typeof body.instagramUrl === 'string' ? body.instagramUrl.trim() || null : null,
       tiktokUrl: typeof body.tiktokUrl === 'string' ? body.tiktokUrl.trim() || null : null,

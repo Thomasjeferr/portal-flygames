@@ -17,7 +17,10 @@ export async function GET(
     include: {
       specialCategory: true,
       normalCategories: { include: { category: true } },
-      clubSlots: { orderBy: { slotIndex: 'asc' } },
+      clubSlots: {
+        orderBy: { slotIndex: 'asc' },
+        include: { clubViewerAccount: true },
+      },
     },
   });
   if (!game) return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
@@ -86,7 +89,10 @@ export async function PATCH(
       include: {
         specialCategory: true,
         normalCategories: { include: { category: true } },
-        clubSlots: { orderBy: { slotIndex: 'asc' } },
+        clubSlots: {
+          orderBy: { slotIndex: 'asc' },
+          include: { clubViewerAccount: true },
+        },
       },
     });
     return NextResponse.json(game);

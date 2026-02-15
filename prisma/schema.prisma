@@ -12,17 +12,18 @@ model User {
   email         String    @unique
   name          String?
   passwordHash  String    @map("password_hash")
-  role          String    @default("user") // "user" | "admin"
+  role          String    @default("user") // "user" | "admin" | "club_viewer"
   emailVerified Boolean   @default(false) @map("email_verified")
   resetToken    String?   @map("reset_token")
   resetExpires  DateTime? @map("reset_expires")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  subscription  Subscription?
-  sessions      Session[]
-  purchases     Purchase[]
-  emailTokens   EmailToken[]
+  subscription      Subscription?
+  sessions          Session[]
+  purchases         Purchase[]
+  emailTokens       EmailToken[]
+  clubViewerAccount ClubViewerAccount?
 }
 
 model Session {
@@ -81,6 +82,7 @@ model Game {
   category   Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   purchases  Purchase[]
   homeBanners HomeBanner[]
+  playEvents PlayEvent[]
 }
 
 model Plan {
@@ -223,23 +225,37 @@ model PreSaleGameCategory {
 }
 
 model PreSaleClubSlot {
-  id                 String    @id @default(cuid())
-  preSaleGameId      String    @map("pre_sale_game_id")
-  slotIndex          Int       @map("slot_index") // 1 or 2
-  clubCode           String    @unique @map("club_code")
-  responsibleName    String    @map("responsible_name")
-  clubName           String    @map("club_name")
-  teamMemberCount    Int       @map("team_member_count")
-  contractVersion    String    @map("contract_version")
-  termsAcceptedAt    DateTime  @map("terms_accepted_at")
-  paymentStatus      String    @default("PENDING") @map("payment_status") // PENDING | PAID | FAILED
-  paymentProvider    String?   @map("payment_provider") // WOOVI | STRIPE
-  paymentReference   String?   @map("payment_reference")
-  paidAt             DateTime? @map("paid_at")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
+  id                  String     @id @default(cuid())
+  preSaleGameId       String     @map("pre_sale_game_id")
+  slotIndex           Int        @map("slot_index") // 1 or 2
+  clubCode            String     @unique @map("club_code")
+  responsibleName     String     @map("responsible_name")
+  responsibleEmail    String?    @map("responsible_email")
+  clubName            String     @map("club_name")
+  teamMemberCount     Int        @map("team_member_count")
+  contractVersion     String     @map("contract_version")
+  termsAcceptedAt     DateTime   @map("terms_accepted_at")
+  paymentStatus       String     @default("PENDING") @map("payment_status") // PENDING | PAID | FAILED
+  paymentProvider     String?    @map("payment_provider") // WOOVI | STRIPE
+  paymentReference    String?    @map("payment_reference")
+  paidAt              DateTime?  @map("paid_at")
+  credentialsSentAt   DateTime?  @map("credentials_sent_at")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
 
-  preSaleGame PreSaleGame @relation(fields: [preSaleGameId], references: [id], onDelete: Cascade)
+  preSaleGame      PreSaleGame       @relation(fields: [preSaleGameId], references: [id], onDelete: Cascade)
+  clubViewerAccount ClubViewerAccount?
+}
+
+model ClubViewerAccount {
+  id                 String   @id @default(cuid())
+  userId             String   @unique @map("user_id")
+  preSaleClubSlotId  String   @unique @map("pre_sale_club_slot_id")
+  loginUsername      String   @unique @map("login_username") // usuário exibido ao clube e no admin
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preSaleClubSlot PreSaleClubSlot @relation(fields: [preSaleClubSlotId], references: [id], onDelete: Cascade)
 }
 
 model ClubStreamSession {
@@ -275,16 +291,17 @@ model Sponsor {
 
 // Configurações gerais do site (contato, redes, CNPJ)
 model SiteSettings {
-  id             String   @id @default(cuid())
-  supportEmail   String?  @map("support_email")
-  whatsappNumber String?  @map("whatsapp_number")
-  instagramUrl   String?  @map("instagram_url")
-  tiktokUrl      String?  @map("tiktok_url")
-  youtubeUrl     String?  @map("youtube_url")
-  companyName    String?  @map("company_name")
-  companyCnpj    String?  @map("company_cnpj")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id                     String   @id @default(cuid())
+  supportEmail           String?  @map("support_email")
+  adminCredentialsEmail  String?  @map("admin_credentials_email") // e-mail que recebe credenciais pré-estreia
+  whatsappNumber         String?  @map("whatsapp_number")
+  instagramUrl           String?  @map("instagram_url")
+  tiktokUrl              String?  @map("tiktok_url")
+  youtubeUrl             String?  @map("youtube_url")
+  companyName            String?  @map("company_name")
+  companyCnpj            String?  @map("company_cnpj")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
 }
 
 // ========== E-MAILS TRANSiCIONAIS (Resend) ==========
@@ -346,6 +363,40 @@ model RateLimit {
   updatedAt   DateTime @updatedAt @map("updated_at")
 }
 
+// ========== ANALYTICS / GEOLOCALIZAÇÃO ==========
+model VisitLog {
+  id        String   @id @default(cuid())
+  ipHash    String   @map("ip_hash") // hash do IP para privacidade
+  country   String?  @map("country")
+  countryCode String? @map("country_code")
+  region    String?  @map("region")
+  regionName String? @map("region_name")
+  city      String?  @map("city")
+  lat       Float?   @map("lat")
+  lng       Float?   @map("lng")
+  timezone  String?  @map("timezone")
+  isp       String?  @map("isp")
+  userAgent String?  @map("user_agent")
+  pagePath  String   @map("page_path")
+  referrer  String?  @map("referrer")
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model IpGeoCache {
+  id         String   @id @default(cuid())
+  ipHash     String   @unique @map("ip_hash")
+  country    String?  @map("country")
+  countryCode String? @map("country_code")
+  region     String?  @map("region")
+  regionName String?  @map("region_name")
+  city       String?  @map("city")
+  lat        Float?   @map("lat")
+  lng        Float?   @map("lng")
+  timezone   String?  @map("timezone")
+  isp        String?  @map("isp")
+  cachedAt   DateTime @default(now()) @map("cached_at")
+}
+
 // ========== FIM E-MAILS ==========
 
 model Purchase {
@@ -364,4 +415,33 @@ model Purchase {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan Plan @relation(fields: [planId], references: [id], onDelete: Restrict)
   game Game? @relation(fields: [gameId], references: [id], onDelete: SetNull)
+}
+
+// ========== DASHBOARD / ANALYTICS ==========
+model PlayEvent {
+  id        String    @id @default(cuid())
+  userId    String?   @map("user_id")
+  gameId    String    @map("game_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  provider  String   @map("provider") // STRIPE | WOOVI
+  type      String   @map("type") // SUBSCRIPTION | ONE_TIME
+  amount    Float    @map("amount")
+  status    String   @map("status") // PAID | PENDING | FAILED
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model WebhookEvent {
+  id        String   @id @default(cuid())
+  provider  String   @map("provider") // STRIPE | WOOVI
+  eventId   String   @unique @map("event_id")
+  status    String   @map("status") // SUCCESS | FAILED
+  createdAt DateTime @default(now()) @map("created_at")
 }

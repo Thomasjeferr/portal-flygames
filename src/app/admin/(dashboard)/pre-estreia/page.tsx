@@ -16,11 +16,24 @@ interface PreSaleGame {
 export default function AdminPreEstreiaPage() {
   const [games, setGames] = useState<PreSaleGame[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/pre-sale-games')
-      .then((r) => r.json())
-      .then((data) => setGames(Array.isArray(data) ? data : []))
+    setLoadError(null);
+    fetch('/api/admin/pre-sale-games', { credentials: 'include' })
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) {
+          setLoadError(data?.error || `Falha ao carregar (${r.status})`);
+          setGames([]);
+          return;
+        }
+        setGames(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        setLoadError('Falha de conexão ao carregar a lista.');
+        setGames([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -33,7 +46,13 @@ export default function AdminPreEstreiaPage() {
           <Link href="/admin/pre-estreia/novo" className="px-4 py-2 rounded bg-netflix-red text-white font-semibold hover:bg-red-600">Novo jogo</Link>
         </div>
       </div>
-      {loading ? <p className="text-netflix-light">Carregando...</p> : games.length === 0 ? (
+      {loading ? <p className="text-netflix-light">Carregando...</p> : loadError ? (
+        <div className="bg-netflix-dark border border-white/10 rounded-lg p-8 text-center text-netflix-light">
+          <p className="mb-4 text-amber-400">{loadError}</p>
+          <p className="text-sm mb-2">Se você não está logado como admin, faça login novamente.</p>
+          <button type="button" onClick={() => window.location.reload()} className="text-futvar-green hover:underline">Recarregar</button>
+        </div>
+      ) : games.length === 0 ? (
         <div className="bg-netflix-dark border border-white/10 rounded-lg p-8 text-center text-netflix-light">
           <p className="mb-4">Nenhum jogo cadastrado.</p>
           <Link href="/admin/pre-estreia/novo" className="text-netflix-red hover:underline">Criar primeiro jogo</Link>

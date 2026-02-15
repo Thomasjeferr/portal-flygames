@@ -10,6 +10,7 @@ export default function AdminSettingsPage() {
   const [success, setSuccess] = useState(false);
   const [form, setForm] = useState({
     supportEmail: '',
+    adminCredentialsEmail: '',
     whatsappNumber: '',
     instagramUrl: '',
     tiktokUrl: '',
@@ -28,6 +29,7 @@ export default function AdminSettingsPage() {
         }
         setForm({
           supportEmail: data.supportEmail ?? '',
+          adminCredentialsEmail: data.adminCredentialsEmail ?? '',
           whatsappNumber: data.whatsappNumber ?? '',
           instagramUrl: data.instagramUrl ?? '',
           tiktokUrl: data.tiktokUrl ?? '',
@@ -94,6 +96,17 @@ export default function AdminSettingsPage() {
             placeholder="contato@flygames.com.br"
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">E-mail para receber credenciais pré-estreia (admin)</label>
+          <input
+            type="email"
+            value={form.adminCredentialsEmail}
+            onChange={(e) => setForm((f) => ({ ...f, adminCredentialsEmail: e.target.value }))}
+            placeholder="admin@flygames.com.br"
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          />
+          <p className="text-xs text-netflix-light mt-1">Usuário e senha dos clubes são enviados a este e-mail quando o pagamento é confirmado.</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">WhatsApp (com DDI)</label>

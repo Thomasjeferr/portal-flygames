@@ -2,7 +2,11 @@ import { Resend } from 'resend';
 import { prisma } from '@/lib/db';
 import { renderTemplate, extractTextFromHtml } from './templateRenderer';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend(): Resend | null {
+  const key = process.env.RESEND_API_KEY;
+  if (!key || typeof key !== 'string' || key.trim().length === 0) return null;
+  return new Resend(key);
+}
 
 export type EmailTemplateKey = 'WELCOME' | 'VERIFY_EMAIL' | 'RESET_PASSWORD' | 'PASSWORD_CHANGED';
 
@@ -62,8 +66,14 @@ export async function sendTransactionalEmail(params: {
   const html = renderTemplate(template.htmlBody, allVars);
   const text = extractTextFromHtml(html);
 
+  const client = getResend();
+  if (!client) {
+    await logEmail(userId, to, templateKey, 'FAILED', null, 'RESEND_API_KEY não configurada');
+    return { success: false, error: 'E-mail não configurado' };
+  }
+
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await client.emails.send({
       from: `${settings.fromName} <${settings.fromEmail}>`,
       to: [to],
       replyTo: settings.replyTo ?? undefined,
@@ -112,7 +122,8 @@ async function logEmail(
 }
 
 export async function sendTestEmail(to: string, subject: string, html: string): Promise<{ success: boolean; error?: string }> {
-  if (!process.env.RESEND_API_KEY) {
+  const client = getResend();
+  if (!client) {
     return { success: false, error: 'RESEND_API_KEY não configurada' };
   }
 
@@ -121,9 +132,38 @@ export async function sendTestEmail(to: string, subject: string, html: string): 
   const fromEmail = row?.fromEmail ?? 'no-reply@flygames.com.br';
 
   try {
-    const { error } = await resend.emails.send({
+    const { error } = await client.emails.send({
       from: `${fromName} <${fromEmail}>`,
       to: [to],
+      subject,
+      html,
+    });
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Erro desconhecido' };
+  }
+}
+
+/** Envia e-mail para múltiplos destinatários (ex.: credenciais pré-estreia). */
+export async function sendEmailToMany(
+  to: string[],
+  subject: string,
+  html: string
+): Promise<{ success: boolean; error?: string }> {
+  const client = getResend();
+  if (!client) {
+    return { success: false, error: 'RESEND_API_KEY não configurada' };
+  }
+  const row = await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } });
+  const fromName = row?.fromName ?? 'Fly Games';
+  const fromEmail = row?.fromEmail ?? 'no-reply@flygames.com.br';
+  const validTo = to.filter((e) => e && String(e).trim().length > 0);
+  if (validTo.length === 0) return { success: false, error: 'Nenhum destinatário válido' };
+  try {
+    const { error } = await client.emails.send({
+      from: `${fromName} <${fromEmail}>`,
+      to: validTo,
       subject,
       html,
     });

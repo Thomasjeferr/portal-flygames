@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
@@ -25,6 +26,7 @@ export async function POST(request: NextRequest) {
         })
       )
     );
+    revalidatePath('/');
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error(e);

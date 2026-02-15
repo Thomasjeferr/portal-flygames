@@ -2,7 +2,13 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+
+function isValidLogoUrl(url: string | null | undefined): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const s = url.trim();
+  return s.length > 0 && (s.startsWith('http') || s.startsWith('/') || s.startsWith('data:'));
+}
 
 type Sponsor = {
   id: string;
@@ -30,6 +36,11 @@ function fmtDate(s: string | null) {
 export default function AdminSponsorsPage() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [logoErrors, setLogoErrors] = useState<Set<string>>(new Set());
+
+  const onLogoError = useCallback((id: string) => {
+    setLogoErrors((prev) => new Set(prev).add(id));
+  }, []);
 
   const load = () => {
     fetch('/api/admin/sponsors')
@@ -96,15 +107,20 @@ export default function AdminSponsorsPage() {
               {sponsors.map((s) => (
                 <tr key={s.id} className="hover:bg-white/5">
                   <td className="px-4 py-3">
-                    <div className="relative w-12 h-12 rounded overflow-hidden bg-white/5">
-                      <Image
-                        src={s.logoUrl.startsWith('/') ? s.logoUrl : s.logoUrl}
-                        alt={s.name}
-                        fill
-                        className="object-contain"
-                        sizes="48px"
-                        unoptimized={s.logoUrl.startsWith('http')}
-                      />
+                    <div className="relative w-12 h-12 rounded overflow-hidden bg-white/5 flex items-center justify-center">
+                      {isValidLogoUrl(s.logoUrl) && !logoErrors.has(s.id) ? (
+                        <Image
+                          src={s.logoUrl.startsWith('/') ? s.logoUrl : s.logoUrl}
+                          alt={s.name}
+                          fill
+                          className="object-contain"
+                          sizes="48px"
+                          unoptimized={s.logoUrl.startsWith('http')}
+                          onError={() => onLogoError(s.id)}
+                        />
+                      ) : (
+                        <span className="text-netflix-light text-xs">Logo</span>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-white font-medium">{s.name}</td>

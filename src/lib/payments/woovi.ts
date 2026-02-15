@@ -64,9 +64,22 @@ export async function createWooviCharge(input: WooviChargeInput): Promise<WooviC
   }
 }
 
-export function verifyWooviWebhookSignature(payload: string, signature: string): boolean {
-  const secret = process.env.WOOVI_WEBHOOK_SECRET;
-  if (!secret) return false;
-  // Implementar verificação conforme docs Woovi (ex: HMAC)
-  return true;
+import { createHmac, timingSafeEqual } from 'crypto';
+
+/**
+ * Verifica assinatura do webhook Woovi/OpenPix.
+ * Usa HMAC-SHA256 com o secret. Header esperado: x-hub-signature-256 (formato: sha256=hexdigest)
+ * Se WOOVI_WEBHOOK_SECRET não estiver configurado, rejeita (fail closed).
+ */
+export function verifyWooviWebhookSignature(payload: string, signatureHeader: string, secret?: string): boolean {
+  const s = secret ?? process.env.WOOVI_WEBHOOK_SECRET;
+  if (!s || !signatureHeader?.trim()) return false;
+  try {
+    const expected = createHmac('sha256', s).update(payload).digest('hex');
+    const received = signatureHeader.replace(/^sha256=/, '').trim().toLowerCase();
+    if (expected.length !== received.length) return false;
+    return timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(received, 'hex'));
+  } catch {
+    return false;
+  }
 }

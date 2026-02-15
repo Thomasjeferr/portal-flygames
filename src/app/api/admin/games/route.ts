@@ -22,6 +22,7 @@ export async function GET() {
   }
   const games = await prisma.game.findMany({
     orderBy: [{ order: 'asc' }, { gameDate: 'desc' }],
+    include: { category: { select: { id: true, name: true } } },
   });
   return NextResponse.json(games);
 }

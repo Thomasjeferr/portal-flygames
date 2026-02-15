@@ -19,6 +19,12 @@ export async function POST(request: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: 'Faça login para continuar' }, { status: 401 });
   }
+  if (session.role === 'club_viewer') {
+    return NextResponse.json(
+      { error: 'Esta conta é apenas para acesso à pré-estreia. Para comprar planos ou jogos, crie uma conta no site.' },
+      { status: 403 }
+    );
+  }
 
   try {
     const body = await request.json();

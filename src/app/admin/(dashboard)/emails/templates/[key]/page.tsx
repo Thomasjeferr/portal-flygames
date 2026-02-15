@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import DOMPurify from 'isomorphic-dompurify';
 
 const TEMPLATE_LABELS: Record<string, string> = {
   WELCOME: 'Boas-vindas',
@@ -135,7 +136,10 @@ export default function AdminEmailTemplateEditPage() {
       {previewHtml && (
         <div className="mt-8 p-6 bg-white rounded-lg">
           <h3 className="font-semibold text-black mb-3">Preview</h3>
-          <div dangerouslySetInnerHTML={{ __html: previewHtml }} className="text-black" />
+          <div
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml, { ALLOWED_TAGS: ['p', 'br', 'a', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'span', 'div'], ALLOWED_ATTR: ['href', 'target', 'rel', 'style'] }) }}
+            className="text-black"
+          />
         </div>
       )}
       <div className="mt-8 p-6 bg-netflix-dark border border-white/10 rounded-lg">

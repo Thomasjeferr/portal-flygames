@@ -4,17 +4,11 @@ import { getVisibleBanners } from '@/services/bannerVisibilityService';
 
 export const dynamic = 'force-dynamic';
 
-const DEBUG_LOGS = process.env.BANNER_DEBUG === '1';
-
 export async function GET() {
   try {
     const session = await getSession();
     const userId = session?.userId ?? null;
     const banners = await getVisibleBanners(userId);
-
-    if (DEBUG_LOGS) {
-      console.log('[BANNER PUBLIC] banners retornados:', banners.length, banners.map((b) => ({ id: b.id, type: b.type })));
-    }
 
     if (banners.length === 0) {
       return NextResponse.json({

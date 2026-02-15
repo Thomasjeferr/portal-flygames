@@ -16,10 +16,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/admin/entrar', request.url));
   }
 
-  if (pathname === '/admin' || pathname === '/admin/') {
-    return NextResponse.redirect(new URL('/admin/jogos', request.url));
-  }
-
   return NextResponse.next();
 }
 

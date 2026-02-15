@@ -3,18 +3,34 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { hashPassword, createSession } from '@/lib/auth';
 import { sendTransactionalEmail } from '@/lib/email/emailService';
+import { checkRegisterRateLimit, incrementRegisterRateLimit } from '@/lib/email/rateLimit';
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  password: z
+    .string()
+    .min(8, 'Senha deve ter no mínimo 8 caracteres')
+    .regex(/[A-Z]/, 'Senha deve ter ao menos uma letra maiúscula')
+    .regex(/[a-z]/, 'Senha deve ter ao menos uma letra minúscula')
+    .regex(/[0-9]/, 'Senha deve ter ao menos um número'),
   name: z.string().optional(),
 });
 
 const SESSION_COOKIE = 'portal_session';
 const SESSION_DAYS = 30;
 
+function getClientIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '0.0.0.0';
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const allowed = await checkRegisterRateLimit(ip);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Muitas tentativas. Tente novamente em 1 hora.' }, { status: 429 });
+    }
+
     const body = await request.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
@@ -27,9 +43,11 @@ export async function POST(request: NextRequest) {
     const { email, password, name } = parsed.data;
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
+      await incrementRegisterRateLimit(ip);
       return NextResponse.json({ error: 'E-mail já cadastrado' }, { status: 400 });
     }
 
+    await incrementRegisterRateLimit(ip);
     const passwordHash = await hashPassword(password);
     const user = await prisma.user.create({
       data: {

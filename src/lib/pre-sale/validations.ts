@@ -19,6 +19,7 @@ export const updatePreSaleGameSchema = createPreSaleGameSchema.partial().extend(
 
 export const clubCheckoutSchema = z.object({
   responsibleName: z.string().min(2, 'Nome do responsável obrigatório').max(200),
+  responsibleEmail: z.string().email('E-mail do responsável inválido'),
   clubName: z.string().min(2, 'Nome do clube obrigatório').max(200),
   clubCode: z.string().min(1, 'Código do clube obrigatório'),
   teamMemberCount: z.number().int().min(1, 'Mínimo 1 membro'),

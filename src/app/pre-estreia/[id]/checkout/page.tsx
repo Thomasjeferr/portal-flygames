@@ -26,6 +26,7 @@ export default function PreEstreiaCheckoutPage() {
   const [clubCode, setClubCode] = useState('');
   const [form, setForm] = useState({
     responsibleName: '',
+    responsibleEmail: '',
     clubName: '',
     teamMemberCount: '1',
     termsAccepted: false,
@@ -57,6 +58,7 @@ export default function PreEstreiaCheckoutPage() {
           ...form,
           clubCode: clubCode.trim(),
           teamMemberCount: parseInt(form.teamMemberCount, 10) || 1,
+          responsibleEmail: form.responsibleEmail.trim(),
         }),
       });
       const data = await res.json();
@@ -140,6 +142,18 @@ export default function PreEstreiaCheckoutPage() {
                   required
                   className="w-full px-4 py-3 rounded bg-futvar-dark border border-futvar-green/20 text-white"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">E-mail do responsavel *</label>
+                <input
+                  type="email"
+                  value={form.responsibleEmail}
+                  onChange={(e) => setForm((f) => ({ ...f, responsibleEmail: e.target.value }))}
+                  required
+                  placeholder="email@exemplo.com"
+                  className="w-full px-4 py-3 rounded bg-futvar-dark border border-futvar-green/20 text-white"
+                />
+                <p className="text-xs text-futvar-light mt-1">O usuário e senha de acesso à pré-estreia serão enviados para este e-mail após a confirmação do pagamento.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-white mb-2">Nome do clube *</label>

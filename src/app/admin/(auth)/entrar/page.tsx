@@ -36,7 +36,7 @@ export default function AdminLoginPage() {
         setError('Acesso restrito a administradores.');
         return;
       }
-      router.push('/admin/jogos');
+      router.push('/admin');
       router.refresh();
     } catch {
       setError('Erro de conexão. Verifique se o servidor está rodando (npm run dev).');

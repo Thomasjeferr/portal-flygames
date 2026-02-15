@@ -5,6 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 const menuItems = [
+  { href: '/admin', label: 'Dashboard', icon: '📊' },
+  { href: '/admin/analytics', label: 'Analytics', icon: '📍' },
   { href: '/admin/jogos', label: 'Jogos', icon: '▶' },
   { href: '/admin/pre-estreia', label: 'Pré-estreia', icon: '🎬' },
   { href: '/admin/categorias', label: 'Categorias', icon: '📁' },
@@ -44,7 +46,7 @@ export function AdminSidebar() {
         }`}
       >
       <div className="p-6 border-b border-white/10">
-        <Link href="/admin/jogos" className="flex items-center gap-2">
+        <Link href="/admin" className="flex items-center gap-2">
           <span className="text-2xl">⚽</span>
           <span className="text-xl font-bold text-netflix-red tracking-tight">Fly Games</span>
         </Link>
@@ -53,17 +55,33 @@ export function AdminSidebar() {
 
       <nav className="flex-1 p-4 space-y-1">
         {menuItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const isActive = item.href === '/admin'
+            ? pathname === '/admin'
+            : pathname.startsWith(item.href);
+          const className = `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+            isActive
+              ? 'bg-netflix-red/20 text-netflix-red border border-netflix-red/30'
+              : 'text-netflix-light hover:bg-white/5 hover:text-white'
+          }`;
+          if (item.href === '/admin') {
+            return (
+              <a
+                key={item.href}
+                href="/admin"
+                onClick={() => setOpen(false)}
+                className={className}
+              >
+                <span className="text-lg">{item.icon}</span>
+                {item.label}
+              </a>
+            );
+          }
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-netflix-red/20 text-netflix-red border border-netflix-red/30'
-                  : 'text-netflix-light hover:bg-white/5 hover:text-white'
-              }`}
+              className={className}
             >
               <span className="text-lg">{item.icon}</span>
               {item.label}

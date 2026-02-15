@@ -2,7 +2,9 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { VideoPlayer } from '@/components/VideoPlayer';
+import { GamePlayTracker } from '@/components/GamePlayTracker';
 import { BuyGameButton } from '@/components/BuyGameButton';
+import { GameCard } from '@/components/GameCard';
 import { getSession } from '@/lib/auth';
 import { canAccessGameBySlug } from '@/lib/access';
 import { prisma } from '@/lib/db';
@@ -11,12 +13,31 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+async function getSuggestedGames(currentGameId: string, championship: string) {
+  const sameChamp = await prisma.game.findMany({
+    where: { id: { not: currentGameId }, championship },
+    orderBy: { gameDate: 'desc' },
+    take: 6,
+  });
+  if (sameChamp.length >= 6) return sameChamp;
+  const excludeIds = [currentGameId, ...sameChamp.map((g) => g.id)];
+  const others = await prisma.game.findMany({
+    where: { id: { notIn: excludeIds } },
+    orderBy: [{ featured: 'desc' }, { gameDate: 'desc' }],
+    take: 6 - sameChamp.length,
+  });
+  return [...sameChamp, ...others];
+}
+
 export default async function GamePage({ params }: Props) {
   const { slug } = await params;
   const game = await prisma.game.findUnique({ where: { slug } });
   if (!game) notFound();
 
-  const session = await getSession();
+  const [session, suggested] = await Promise.all([
+    getSession(),
+    getSuggestedGames(game.id, game.championship),
+  ]);
   const canWatch = session ? await canAccessGameBySlug(session.userId, slug) : false;
 
   const gameDateFormatted = new Date(game.gameDate).toLocaleDateString('pt-BR', {
@@ -77,6 +98,7 @@ export default async function GamePage({ params }: Props) {
           </div>
         ) : (
           <>
+            <GamePlayTracker gameId={game.id} />
             <div className="rounded-2xl overflow-hidden bg-black mb-8 border border-futvar-green/20 shadow-xl">
               <VideoPlayer videoUrl={game.videoUrl} title={game.title} />
             </div>
@@ -92,6 +114,25 @@ export default async function GamePage({ params }: Props) {
               )}
             </div>
           </>
+        )}
+
+        {suggested.length > 0 && (
+          <section className="mt-12 pt-10 border-t border-white/10">
+            <h2 className="text-xl font-bold text-white mb-6">Você também pode gostar</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {suggested.map((g) => (
+                <GameCard
+                  key={g.id}
+                  slug={g.slug}
+                  title={g.title}
+                  championship={g.championship}
+                  thumbnailUrl={g.thumbnailUrl}
+                  gameDate={g.gameDate.toISOString()}
+                  featured={g.featured}
+                />
+              ))}
+            </div>
+          </section>
         )}
       </div>
     </div>

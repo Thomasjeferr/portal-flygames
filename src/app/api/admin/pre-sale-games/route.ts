@@ -9,15 +9,21 @@ export async function GET() {
   if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
   }
-  const games = await prisma.preSaleGame.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      specialCategory: true,
-      normalCategories: { include: { category: true } },
-      clubSlots: { orderBy: { slotIndex: 'asc' } },
-    },
-  });
-  return NextResponse.json(games);
+  try {
+    const games = await prisma.preSaleGame.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        specialCategory: true,
+        normalCategories: { include: { category: true } },
+        clubSlots: { orderBy: { slotIndex: 'asc' } },
+      },
+    });
+    return NextResponse.json(games);
+  } catch (e) {
+    console.error('GET /api/admin/pre-sale-games', e);
+    const message = e instanceof Error ? e.message : 'Erro ao listar jogos';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -63,7 +69,8 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(game);
   } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: 'Erro ao criar jogo' }, { status: 500 });
+    console.error('POST /api/admin/pre-sale-games', e);
+    const message = e instanceof Error ? e.message : 'Erro ao criar jogo';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

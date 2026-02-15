@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { verifyPassword, createSession } from '@/lib/auth';
+import { checkLoginRateLimit, incrementLoginRateLimit } from '@/lib/email/rateLimit';
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -11,8 +12,18 @@ const schema = z.object({
 const SESSION_COOKIE = 'portal_session';
 const SESSION_DAYS = 30;
 
+function getClientIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '0.0.0.0';
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const allowed = await checkLoginRateLimit(ip);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Muitas tentativas. Tente novamente em 15 minutos.' }, { status: 429 });
+    }
+
     const body = await request.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
@@ -30,6 +41,7 @@ export async function POST(request: NextRequest) {
 
     const valid = await verifyPassword(password, user.passwordHash);
     if (!valid) {
+      await incrementLoginRateLimit(ip);
       return NextResponse.json({ error: 'E-mail ou senha incorretos' }, { status: 401 });
     }
 
@@ -55,9 +67,9 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (e) {
     console.error('Erro no login:', e);
-    return NextResponse.json(
-      { error: 'Erro ao entrar. Verifique se o banco está configurado e rode: npm run db:push && npm run db:seed' },
-      { status: 500 }
-    );
+    const msg = process.env.NODE_ENV === 'production'
+      ? 'Erro ao entrar. Tente novamente mais tarde.'
+      : 'Erro ao entrar. Verifique se o banco está configurado (npm run db:push && npm run db:seed)';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

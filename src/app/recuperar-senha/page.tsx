@@ -87,7 +87,7 @@ function ForgotPasswordForm() {
           )}
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-netflix-light mb-2">
-              Nova senha (mín. 6 caracteres)
+              Nova senha (mín. 8 caracteres, com maiúscula, minúscula e número)
             </label>
             <input
               id="password"
@@ -95,7 +95,7 @@ function ForgotPasswordForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={8}
               className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
             />
           </div>

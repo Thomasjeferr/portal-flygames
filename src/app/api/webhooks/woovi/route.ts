@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { markSlotAsPaid } from '@/services/pre-sale-slot.service';
+import { createClubViewerAccountForSlot } from '@/services/club-viewer.service';
 import { Provider } from '@/lib/pre-sale/enums';
+import { verifyWooviWebhookSignature } from '@/lib/payments/woovi';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const rawBody = await request.text();
+    const secret = process.env.WOOVI_WEBHOOK_SECRET;
+    if (!secret) {
+      return NextResponse.json({ error: 'Webhook Woovi nao configurado' }, { status: 503 });
+    }
+    const signature = request.headers.get('x-hub-signature-256') ?? request.headers.get('x-webhook-signature') ?? '';
+    if (!verifyWooviWebhookSignature(rawBody, signature)) {
+      return NextResponse.json({ error: 'Assinatura invalida' }, { status: 401 });
+    }
+    const body = JSON.parse(rawBody);
     const event = body.event ?? body.status;
     const externalId = (body.externalId ?? body.customId ?? body.id) as string | undefined;
 
@@ -18,6 +29,9 @@ export async function POST(request: NextRequest) {
     if (typeof externalId === 'string' && externalId.startsWith('presale-')) {
       const slotId = externalId.replace('presale-', '');
       await markSlotAsPaid(slotId, Provider.WOOVI, body.id ?? externalId);
+      createClubViewerAccountForSlot(slotId).catch((e) =>
+        console.error('[Woovi] Erro ao criar conta clube:', e)
+      );
       return NextResponse.json({ received: true });
     }
 
@@ -56,6 +70,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (e) {
     console.error('Woovi webhook error:', e);
+    try {
+      await prisma.webhookEvent.create({
+        data: {
+          provider: 'WOOVI',
+          eventId: `fail-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          status: 'FAILED',
+        },
+      });
+    } catch (_) {}
     return NextResponse.json({ error: 'Webhook failed' }, { status: 500 });
   }
 }

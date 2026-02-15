@@ -89,7 +89,7 @@ function RegisterForm() {
             </div>
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-futvar-light mb-2">
-                Senha (mín. 6 caracteres)
+                Senha (mín. 8 caracteres, com maiúscula, minúscula e número)
               </label>
               <input
                 id="password"
@@ -97,7 +97,7 @@ function RegisterForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 className="w-full px-4 py-3 rounded bg-futvar-gray border border-futvar-green/20 text-white placeholder-futvar-light/60 focus:outline-none focus:ring-2 focus:ring-futvar-green focus:border-transparent"
                 placeholder="••••••••"
               />

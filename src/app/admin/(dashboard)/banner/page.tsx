@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { extractYouTubeVideoId, getYouTubeThumbnailUrl } from '@/lib/youtube';
+import { getBannerThumbnailUrl } from '@/lib/bannerThumbnail';
 import { BannerPreviewPlaceholder } from '@/components/admin/BannerPreviewPlaceholder';
 
 type Banner = {
@@ -17,38 +17,6 @@ type Banner = {
   game?: { title: string; thumbnailUrl?: string | null } | null;
   preSale?: { title: string; thumbnailUrl?: string } | null;
 };
-
-function resolveThumbnail(raw: string | null | undefined): string | null {
-  const s = raw && typeof raw === 'string' ? raw.trim() : null;
-  if (!s) return null;
-  const videoId = extractYouTubeVideoId(s);
-  if (videoId) return getYouTubeThumbnailUrl(videoId, 'hqdefault');
-  if (s.startsWith('/') || s.startsWith('http://') || s.startsWith('https://')) return s;
-  return null;
-}
-
-function getBannerThumbnailUrl(b: Banner): string | null {
-  const url = (s: string | null | undefined) => (s && s.trim() ? s.trim() : null);
-
-  if (b.type === 'FEATURED_GAME') {
-    const mediaUrl = resolveThumbnail(b.mediaUrl);
-    if (mediaUrl) return mediaUrl;
-    return url(b.game?.thumbnailUrl) ?? null;
-  }
-  if (b.type === 'FEATURED_PRE_SALE') {
-    const mediaUrl = resolveThumbnail(b.mediaUrl);
-    if (mediaUrl) return mediaUrl;
-    return url(b.preSale?.thumbnailUrl) ?? null;
-  }
-  if (b.type === 'MANUAL') {
-    const mediaUrl = url(b.mediaUrl);
-    if (b.mediaType === 'IMAGE' && mediaUrl) return mediaUrl;
-    if ((b.mediaType === 'YOUTUBE_VIDEO' || b.mediaType === 'MP4_VIDEO') && mediaUrl) {
-      return resolveThumbnail(mediaUrl);
-    }
-  }
-  return null;
-}
 
 export default function AdminBannerPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -156,12 +124,15 @@ export default function AdminBannerPage() {
               </div>
               <div className="relative w-24 h-14 rounded overflow-hidden bg-netflix-dark flex-shrink-0">
                 <BannerPreviewPlaceholder
-                  mediaType={b.mediaType}
+                  mediaType={b.mediaType ?? 'NONE'}
+                  hasVideoNoThumb={
+                    (b.mediaType === 'YOUTUBE_VIDEO' || b.mediaType === 'MP4_VIDEO') && !getBannerThumbnailUrl(b)
+                  }
                   className="absolute inset-0 w-full h-full"
                 />
                 {(() => {
                   const thumbUrl = getBannerThumbnailUrl(b);
-                  if (thumbUrl) {
+                  if (thumbUrl && thumbUrl.trim()) {
                     return (
                       <img
                         src={thumbUrl}

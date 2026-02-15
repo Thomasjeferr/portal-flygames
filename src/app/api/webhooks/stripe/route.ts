@@ -57,6 +57,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (e) {
     console.error('Stripe webhook error:', e);
+    try {
+      await prisma.webhookEvent.create({
+        data: {
+          provider: 'STRIPE',
+          eventId: `fail-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          status: 'FAILED',
+        },
+      });
+    } catch (_) {}
     return NextResponse.json({ error: 'Webhook failed' }, { status: 500 });
   }
 }

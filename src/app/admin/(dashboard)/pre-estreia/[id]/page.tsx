@@ -12,8 +12,10 @@ interface Slot {
   paymentProvider: string | null;
   paymentReference: string | null;
   paidAt: string | null;
+  credentialsSentAt: string | null;
   responsibleName: string;
   clubName: string;
+  clubViewerAccount: { loginUsername: string } | null;
 }
 
 interface Game {
@@ -36,6 +38,8 @@ export default function AdminPreEstreiaDetailPage() {
   const [loading, setLoading] = useState(true);
   const [recalculating, setRecalculating] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [regeneratingSlotId, setRegeneratingSlotId] = useState<string | null>(null);
+  const [modalPassword, setModalPassword] = useState<{ slotIndex: number; password: string } | null>(null);
 
   const fetchGame = () => {
     fetch(`/api/admin/pre-sale-games/${id}`)
@@ -66,6 +70,25 @@ export default function AdminPreEstreiaDetailPage() {
       if (res.ok) fetchGame();
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleRegeneratePassword = async (slot: Slot) => {
+    setRegeneratingSlotId(slot.id);
+    try {
+      const res = await fetch(`/api/admin/pre-sale-slots/${slot.id}/regenerate-password`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.password) {
+        setModalPassword({ slotIndex: slot.slotIndex, password: data.password });
+      }
+    } finally {
+      setRegeneratingSlotId(null);
+    }
+  };
+
+  const copyPassword = () => {
+    if (modalPassword) {
+      navigator.clipboard.writeText(modalPassword.password);
     }
   };
 
@@ -133,12 +156,59 @@ export default function AdminPreEstreiaDetailPage() {
             {slot.paymentReference && <p className="text-sm text-netflix-light truncate">Ref: {slot.paymentReference}</p>}
             {slot.responsibleName && <p className="text-sm text-netflix-light">Responsavel: {slot.responsibleName}</p>}
             {slot.clubName && <p className="text-sm text-netflix-light">Clube: {slot.clubName}</p>}
+            {slot.paymentStatus === 'PAID' && slot.clubViewerAccount && (
+              <>
+                <p className="text-sm text-netflix-light mt-2">
+                  Usuario: <span className="text-white font-mono">{slot.clubViewerAccount.loginUsername}</span>
+                </p>
+                <p className="text-sm text-netflix-light">
+                  Credenciais enviadas em:{' '}
+                  {slot.credentialsSentAt
+                    ? new Date(slot.credentialsSentAt).toLocaleString('pt-BR')
+                    : '—'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleRegeneratePassword(slot)}
+                  disabled={!!regeneratingSlotId}
+                  className="mt-2 px-3 py-1.5 rounded bg-amber-500/20 text-amber-400 text-sm hover:bg-amber-500/30 disabled:opacity-50"
+                >
+                  {regeneratingSlotId === slot.id ? 'Gerando...' : 'Gerar nova senha'}
+                </button>
+              </>
+            )}
             <Link href={`/pre-estreia/${id}/checkout`} className="mt-2 inline-block text-futvar-green text-sm hover:underline">
               Checkout publico
             </Link>
           </div>
         ))}
       </div>
+
+      {modalPassword && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true">
+          <div className="bg-netflix-dark border border-white/20 rounded-lg p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-semibold text-white mb-2">Nova senha (Slot {modalPassword.slotIndex})</h3>
+            <p className="text-netflix-light text-sm mb-3">Exiba e copie a senha agora. Ela nao sera mostrada novamente.</p>
+            <p className="font-mono text-white bg-white/10 rounded px-3 py-2 mb-4 break-all">{modalPassword.password}</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={copyPassword}
+                className="flex-1 px-4 py-2 rounded bg-futvar-green text-white font-medium hover:bg-futvar-green/90"
+              >
+                Copiar
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalPassword(null)}
+                className="flex-1 px-4 py-2 rounded bg-white/20 text-white hover:bg-white/30"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

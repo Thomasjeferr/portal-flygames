@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
@@ -17,6 +18,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       data: { isActive: !banner.isActive },
       include: { game: true, preSale: true },
     });
+    revalidatePath('/');
     return NextResponse.json(updated);
   } catch (e) {
     console.error(e);

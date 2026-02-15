@@ -7,7 +7,12 @@ import { sendTransactionalEmail } from '@/lib/email/emailService';
 
 const schema = z.object({
   token: z.string().min(1, 'Token obrigatório'),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  password: z
+    .string()
+    .min(8, 'Senha deve ter no mínimo 8 caracteres')
+    .regex(/[A-Z]/, 'Senha deve ter ao menos uma letra maiúscula')
+    .regex(/[a-z]/, 'Senha deve ter ao menos uma letra minúscula')
+    .regex(/[0-9]/, 'Senha deve ter ao menos um número'),
 });
 
 export async function POST(request: NextRequest) {

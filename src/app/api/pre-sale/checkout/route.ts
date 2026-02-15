@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { responsibleName, clubName, clubCode, teamMemberCount } = parsed.data;
+    const { responsibleName, responsibleEmail, clubName, clubCode, teamMemberCount } = parsed.data;
 
     const slot = await prisma.preSaleClubSlot.findUnique({
       where: { clubCode },
@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
         where: { id: slot.id },
         data: {
           responsibleName,
+          responsibleEmail: responsibleEmail.trim(),
           clubName,
           teamMemberCount,
           contractVersion: CONTRACT_VERSION,
