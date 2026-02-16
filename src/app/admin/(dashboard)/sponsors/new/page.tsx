@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 const TIERS = [
   { value: 'MASTER', label: 'Master' },
@@ -15,6 +15,8 @@ export default function NewSponsorPage() {
   const fileInput = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [plans, setPlans] = useState<Array<{ id: string; name: string }>>([]);
+  const [teams, setTeams] = useState<Array<{ id: string; name: string; city?: string | null; state?: string | null }>>([]);
   const [form, setForm] = useState({
     name: '',
     website_url: '',
@@ -24,7 +26,22 @@ export default function NewSponsorPage() {
     is_active: true,
     start_at: '',
     end_at: '',
+    plan_id: '' as string,
+    team_id: '' as string,
   });
+
+  useEffect(() => {
+    fetch('/api/admin/sponsor-plans')
+      .then((r) => r.json())
+      .then((d) => setPlans(Array.isArray(d) ? d.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })) : []))
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    fetch('/api/admin/teams')
+      .then((r) => r.json())
+      .then((d) => setTeams(Array.isArray(d) ? d : []))
+      .catch(() => {});
+  }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -68,6 +85,8 @@ export default function NewSponsorPage() {
           is_active: form.is_active,
           start_at: form.start_at || null,
           end_at: form.end_at || null,
+          plan_id: form.plan_id || null,
+          team_id: form.team_id || null,
         }),
       });
       const data = await res.json();
@@ -173,6 +192,36 @@ export default function NewSponsorPage() {
             />
             <p className="mt-1 text-xs text-netflix-light">Menor valor aparece primeiro</p>
           </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">Plano de patrocínio</label>
+          <select
+            value={form.plan_id}
+            onChange={(e) => setForm((f) => ({ ...f, plan_id: e.target.value }))}
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          >
+            <option value="">Nenhum (comportamento atual)</option>
+            {plans.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-netflix-light">Opcional. Vincula o patrocinador a um plano vendível.</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">Time (opcional)</label>
+          <select
+            value={form.team_id}
+            onChange={(e) => setForm((f) => ({ ...f, team_id: e.target.value }))}
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          >
+            <option value="">Nenhum (patrocínio global)</option>
+            {teams.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}{t.city || t.state ? ` — ${[t.city, t.state].filter(Boolean).join('/')}` : ''}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-netflix-light">Patrocínio específico de um time. Em branco = patrocínio global.</p>
         </div>
         <div>
           <label className="flex items-center gap-2 cursor-pointer">

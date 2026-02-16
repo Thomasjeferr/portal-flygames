@@ -32,12 +32,12 @@ async function main() {
     },
     {
       key: 'VERIFY_EMAIL',
-      subject: 'Verifique seu e-mail - Fly Games',
+      subject: 'Seu código de verificação - Fly Games',
       htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
 <div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
 <p>Olá {{name}}!</p>
-<p>Clique no botão abaixo para verificar seu e-mail. O link expira em {{expires_in}} minutos.</p>
-<p style="margin-top:24px"><a href="{{verify_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Verificar e-mail</a></p>
+<p>Use o código abaixo para verificar seu e-mail. O código expira em {{expires_in}} minutos.</p>
+<p style="margin-top:24px;font-size:28px;font-weight:bold;letter-spacing:8px;color:#0C1222;background:#f0f0f0;padding:16px;border-radius:8px;text-align:center">{{code}}</p>
 <p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
 </div></body></html>`,
     },
@@ -49,6 +49,45 @@ async function main() {
 <p>Olá {{name}}!</p>
 <p>Recebemos uma solicitação para redefinir sua senha. Clique no botão abaixo. O link expira em {{expires_in}} minutos.</p>
 <p style="margin-top:24px"><a href="{{reset_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Redefinir senha</a></p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
+    {
+      key: 'PURCHASE_CONFIRMATION',
+      subject: 'Compra confirmada - Fly Games',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<p>Olá {{name}}!</p>
+<p>Sua compra foi confirmada com sucesso.</p>
+<p><strong>Plano:</strong> {{plan_name}}</p>
+<p><strong>Valor:</strong> R$ {{amount}}</p>
+<p>Obrigado por escolher o Fly Games!</p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
+    {
+      key: 'SPONSOR_CONFIRMATION',
+      subject: 'Patrocínio confirmado - Fly Games',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<p>Olá!</p>
+<p>O pedido de patrocínio da empresa <strong>{{company_name}}</strong> foi confirmado.</p>
+<p><strong>Plano:</strong> {{plan_name}}</p>
+<p><strong>Valor:</strong> R$ {{amount}}</p>
+<p>Obrigado por escolher o Fly Games!</p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
+    {
+      key: 'LIVE_PURCHASE_CONFIRMATION',
+      subject: 'Compra da live confirmada - Fly Games',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<p>Olá {{name}}!</p>
+<p>Sua compra da live foi confirmada.</p>
+<p><strong>Live:</strong> {{live_title}}</p>
+<p><strong>Valor:</strong> R$ {{amount}}</p>
+<p>Acesse sua conta para assistir quando a transmissão começar.</p>
 <p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
 </div></body></html>`,
     },
@@ -68,7 +107,7 @@ async function main() {
     await prisma.emailTemplate.upsert({
       where: { key: t.key },
       create: { key: t.key, subject: t.subject, htmlBody: t.htmlBody },
-      update: {},
+      update: { subject: t.subject, htmlBody: t.htmlBody },
     });
   }
   console.log('Templates de e-mail prontos.');

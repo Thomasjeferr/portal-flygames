@@ -21,6 +21,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         isActive: false,
         startAt: original.startAt,
         endAt: original.endAt,
+        planId: original.planId,
       },
     });
     revalidatePath('/');

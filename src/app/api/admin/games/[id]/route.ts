@@ -9,7 +9,13 @@ const updateSchema = z.object({
   championship: z.string().min(1).optional(),
   gameDate: z.string().optional(),
   description: z.string().optional(),
-  videoUrl: z.string().url().optional(),
+  videoUrl: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || val === '' || (val.startsWith('stream:') && val.length > 7) || z.string().url().safeParse(val).success,
+      'URL inválida. Use YouTube, Vimeo, PandaVideo ou stream:VIDEO_ID'
+    ),
   thumbnailUrl: z.string().optional(),
   featured: z.boolean().optional(),
   categoryId: z.string().optional().nullable(),
@@ -57,7 +63,7 @@ export async function PATCH(
     if (data.championship !== undefined) update.championship = data.championship;
     if (data.gameDate !== undefined) update.gameDate = new Date(data.gameDate);
     if (data.description !== undefined) update.description = data.description;
-    if (data.videoUrl !== undefined) update.videoUrl = data.videoUrl;
+    if (data.videoUrl !== undefined) update.videoUrl = data.videoUrl?.trim() || null;
     if (data.thumbnailUrl !== undefined) update.thumbnailUrl = data.thumbnailUrl === '' ? null : data.thumbnailUrl;
     if (data.featured !== undefined) update.featured = data.featured;
     if (data.categoryId !== undefined) update.categoryId = data.categoryId || null;

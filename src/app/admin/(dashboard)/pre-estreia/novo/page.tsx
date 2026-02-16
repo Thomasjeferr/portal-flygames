@@ -3,12 +3,20 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
+import { StreamVideoField } from '@/components/admin/StreamVideoField';
 
 interface PreSaleCategory {
   id: string;
   name: string;
   slug: string;
   type: string;
+}
+
+interface GradeCategory {
+  id: string;
+  name: string;
+  slug: string;
+  order: number;
 }
 
 export default function AdminPreEstreiaNovoPage() {
@@ -19,6 +27,7 @@ export default function AdminPreEstreiaNovoPage() {
   const [categoriesError, setCategoriesError] = useState('');
   const [specialCategories, setSpecialCategories] = useState<PreSaleCategory[]>([]);
   const [normalCategories, setNormalCategories] = useState<PreSaleCategory[]>([]);
+  const [gradeCategories, setGradeCategories] = useState<GradeCategory[]>([]);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -26,6 +35,7 @@ export default function AdminPreEstreiaNovoPage() {
     videoUrl: '',
     specialCategoryId: '',
     normalCategoryIds: [] as string[],
+    gradeCategoryId: '',
     clubAPrice: '',
     clubBPrice: '',
     maxSimultaneousPerClub: '10',
@@ -37,9 +47,11 @@ export default function AdminPreEstreiaNovoPage() {
     Promise.all([
       fetch('/api/admin/pre-sale-categories?type=SPECIAL'),
       fetch('/api/admin/pre-sale-categories?type=NORMAL'),
-    ]).then(async ([resSpecial, resNormal]) => {
+      fetch('/api/admin/categories?active=true'),
+    ]).then(async ([resSpecial, resNormal, resGrade]) => {
       const specialData = await resSpecial.json();
       const normalData = await resNormal.json();
+      const gradeData = await resGrade.json();
       if (!resSpecial.ok) {
         setCategoriesError(specialData?.error || 'Erro ao carregar categorias especiais');
         setSpecialCategories([]);
@@ -52,10 +64,12 @@ export default function AdminPreEstreiaNovoPage() {
       } else {
         setNormalCategories(Array.isArray(normalData) ? normalData : []);
       }
+      setGradeCategories(resGrade.ok && Array.isArray(gradeData) ? gradeData : []);
     }).catch(() => {
       setCategoriesError('Erro de conexao ao carregar categorias');
       setSpecialCategories([]);
       setNormalCategories([]);
+      setGradeCategories([]);
     });
   };
 
@@ -97,6 +111,7 @@ export default function AdminPreEstreiaNovoPage() {
           videoUrl: form.videoUrl.trim() || null,
           specialCategoryId: form.specialCategoryId || undefined,
           normalCategoryIds: form.normalCategoryIds,
+          gradeCategoryId: form.gradeCategoryId.trim() || undefined,
           clubAPrice: parseFloat(form.clubAPrice) || 0,
           clubBPrice: parseFloat(form.clubBPrice) || 0,
           maxSimultaneousPerClub: parseInt(form.maxSimultaneousPerClub, 10) || 10,
@@ -212,6 +227,20 @@ export default function AdminPreEstreiaNovoPage() {
             </p>
           )}
         </div>
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Categoria na grade (quando publicado)</label>
+          <select
+            value={form.gradeCategoryId}
+            onChange={(e) => setForm((f) => ({ ...f, gradeCategoryId: e.target.value }))}
+            className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
+          >
+            <option value="">Nenhuma / Outros</option>
+            {gradeCategories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <p className="text-netflix-light text-xs mt-1">Ao publicar na grade, o jogo aparecerá nesta categoria para usuários comprarem.</p>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-white mb-2">Preço Clube A (R$) *</label>
@@ -249,15 +278,12 @@ export default function AdminPreEstreiaNovoPage() {
             className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-white mb-2">Video URL (opcional)</label>
-          <input
-            type="url"
-            value={form.videoUrl}
-            onChange={(e) => setForm((f) => ({ ...f, videoUrl: e.target.value }))}
-            className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
-          />
-        </div>
+        <StreamVideoField
+          value={form.videoUrl}
+          onChange={(url) => setForm((f) => ({ ...f, videoUrl: url }))}
+          label="Vídeo (opcional)"
+          required={false}
+        />
         <button
           type="submit"
           disabled={loading}

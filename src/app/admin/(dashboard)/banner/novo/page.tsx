@@ -9,12 +9,14 @@ export default function AdminBannerNovoPage() {
   const router = useRouter();
   const [games, setGames] = useState<{ id: string; title: string }[]>([]);
   const [preSales, setPreSales] = useState<{ id: string; title: string }[]>([]);
+  const [lives, setLives] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       fetch('/api/admin/games').then((r) => r.json()).then((d) => setGames(Array.isArray(d) ? d : [])),
       fetch('/api/admin/pre-sale-games').then((r) => r.json()).then((d) => setPreSales(Array.isArray(d) ? d : [])),
+      fetch('/api/admin/lives').then((r) => r.json()).then((d) => setLives(Array.isArray(d) ? d : [])),
     ]).finally(() => setLoading(false));
   }, []);
 
@@ -34,7 +36,7 @@ export default function AdminBannerNovoPage() {
       <Link href="/admin/banner" className="text-netflix-light hover:text-white text-sm mb-6 inline-block">Voltar</Link>
       <h1 className="text-2xl font-bold text-white mb-8">Novo banner</h1>
       {loading ? <p className="text-netflix-light">Carregando...</p> : (
-        <BannerForm games={games} preSales={preSales} onSubmit={handleSubmit} />
+        <BannerForm games={games} preSales={preSales} lives={lives} onSubmit={handleSubmit} />
       )}
     </div>
   );

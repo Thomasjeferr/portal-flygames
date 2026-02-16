@@ -15,6 +15,7 @@ interface ConfigState {
 export default function AdminPagamentosPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showPasswords, setShowPasswords] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [form, setForm] = useState<ConfigState>({
@@ -113,25 +114,45 @@ export default function AdminPagamentosPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-netflix-light mb-2">API Key *</label>
-              <input
-                type="password"
-                value={form.wooviApiKey}
-                onChange={(e) => setForm((f) => ({ ...f, wooviApiKey: e.target.value }))}
-                placeholder={form.wooviConfigured ? '•••••••• (deixe em branco para manter)' : 'Chave da API Woovi'}
-                autoComplete="off"
-                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords ? 'text' : 'password'}
+                  value={form.wooviApiKey}
+                  onChange={(e) => setForm((f) => ({ ...f, wooviApiKey: e.target.value }))}
+                  placeholder={form.wooviConfigured ? '•••••••• (deixe em branco para manter)' : 'Chave da API Woovi'}
+                  autoComplete="off"
+                  className="w-full px-4 py-3 pr-20 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords((s) => !s)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-netflix-light hover:text-white"
+                  aria-label={showPasswords ? 'Ocultar senhas' : 'Mostrar senhas'}
+                >
+                  {showPasswords ? 'Ocultar' : 'Ver'}
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-netflix-light mb-2">Webhook Secret (opcional)</label>
-              <input
-                type="password"
-                value={form.wooviWebhookSecret}
-                onChange={(e) => setForm((f) => ({ ...f, wooviWebhookSecret: e.target.value }))}
-                placeholder={form.wooviConfigured ? '•••••••• (deixe em branco para manter)' : 'Segredo do webhook'}
-                autoComplete="off"
-                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords ? 'text' : 'password'}
+                  value={form.wooviWebhookSecret}
+                  onChange={(e) => setForm((f) => ({ ...f, wooviWebhookSecret: e.target.value }))}
+                  placeholder={form.wooviConfigured ? '•••••••• (deixe em branco para manter)' : 'Segredo do webhook'}
+                  autoComplete="off"
+                  className="w-full px-4 py-3 pr-20 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords((s) => !s)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-netflix-light hover:text-white"
+                  aria-label={showPasswords ? 'Ocultar senhas' : 'Mostrar senhas'}
+                >
+                  {showPasswords ? 'Ocultar' : 'Ver'}
+                </button>
+              </div>
               <p className="text-xs text-netflix-light mt-1">URL do webhook: {typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/woovi</p>
             </div>
           </div>
@@ -143,37 +164,67 @@ export default function AdminPagamentosPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-netflix-light mb-2">Secret Key *</label>
-              <input
-                type="password"
-                value={form.stripeSecretKey}
-                onChange={(e) => setForm((f) => ({ ...f, stripeSecretKey: e.target.value }))}
-                placeholder={form.stripeConfigured ? '•••••••• (deixe em branco para manter)' : 'sk_live_... ou sk_test_...'}
-                autoComplete="off"
-                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords ? 'text' : 'password'}
+                  value={form.stripeSecretKey}
+                  onChange={(e) => setForm((f) => ({ ...f, stripeSecretKey: e.target.value }))}
+                  placeholder={form.stripeConfigured ? '•••••••• (deixe em branco para manter)' : 'sk_live_... ou sk_test_...'}
+                  autoComplete="off"
+                  className="w-full px-4 py-3 pr-20 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords((s) => !s)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-netflix-light hover:text-white"
+                  aria-label={showPasswords ? 'Ocultar senhas' : 'Mostrar senhas'}
+                >
+                  {showPasswords ? 'Ocultar' : 'Ver'}
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-netflix-light mb-2">Webhook Secret *</label>
-              <input
-                type="password"
-                value={form.stripeWebhookSecret}
-                onChange={(e) => setForm((f) => ({ ...f, stripeWebhookSecret: e.target.value }))}
-                placeholder={form.stripeConfigured ? '•••••••• (deixe em branco para manter)' : 'whsec_...'}
-                autoComplete="off"
-                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords ? 'text' : 'password'}
+                  value={form.stripeWebhookSecret}
+                  onChange={(e) => setForm((f) => ({ ...f, stripeWebhookSecret: e.target.value }))}
+                  placeholder={form.stripeConfigured ? '•••••••• (deixe em branco para manter)' : 'whsec_...'}
+                  autoComplete="off"
+                  className="w-full px-4 py-3 pr-20 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords((s) => !s)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-netflix-light hover:text-white"
+                  aria-label={showPasswords ? 'Ocultar senhas' : 'Mostrar senhas'}
+                >
+                  {showPasswords ? 'Ocultar' : 'Ver'}
+                </button>
+              </div>
               <p className="text-xs text-netflix-light mt-1">Use &quot;stripe listen --forward-to localhost:3000/api/webhooks/stripe&quot; em dev.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-netflix-light mb-2">Publishable Key (opcional)</label>
-              <input
-                type="password"
-                value={form.stripePublishableKey}
-                onChange={(e) => setForm((f) => ({ ...f, stripePublishableKey: e.target.value }))}
-                placeholder={form.stripeConfigured ? '•••••••• (deixe em branco para manter)' : 'pk_live_... ou pk_test_...'}
-                autoComplete="off"
-                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords ? 'text' : 'password'}
+                  value={form.stripePublishableKey}
+                  onChange={(e) => setForm((f) => ({ ...f, stripePublishableKey: e.target.value }))}
+                  placeholder={form.stripeConfigured ? '•••••••• (deixe em branco para manter)' : 'pk_live_... ou pk_test_...'}
+                  autoComplete="off"
+                  className="w-full px-4 py-3 pr-20 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords((s) => !s)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-netflix-light hover:text-white"
+                  aria-label={showPasswords ? 'Ocultar senhas' : 'Mostrar senhas'}
+                >
+                  {showPasswords ? 'Ocultar' : 'Ver'}
+                </button>
+              </div>
               <p className="text-xs text-netflix-light mt-1">Necessária para Stripe Elements (pagamento com cartão no front).</p>
             </div>
           </div>

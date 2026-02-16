@@ -8,13 +8,19 @@ const TEMPLATE_LABELS: Record<string, string> = {
   VERIFY_EMAIL: 'Verificar e-mail',
   RESET_PASSWORD: 'Recuperar senha',
   PASSWORD_CHANGED: 'Senha alterada',
+  PURCHASE_CONFIRMATION: 'Confirmação de compra',
+  SPONSOR_CONFIRMATION: 'Confirmação de patrocínio',
+  LIVE_PURCHASE_CONFIRMATION: 'Confirmação de compra de live',
 };
 
 const TEMPLATE_VARS: Record<string, string[]> = {
   WELCOME: ['name', 'login_url'],
-  VERIFY_EMAIL: ['name', 'verify_url', 'expires_in'],
+  VERIFY_EMAIL: ['name', 'code', 'expires_in'],
   RESET_PASSWORD: ['name', 'reset_url', 'expires_in'],
   PASSWORD_CHANGED: ['name', 'support_url'],
+  PURCHASE_CONFIRMATION: ['name', 'plan_name', 'amount'],
+  SPONSOR_CONFIRMATION: ['company_name', 'plan_name', 'amount'],
+  LIVE_PURCHASE_CONFIRMATION: ['name', 'live_title', 'amount'],
 };
 
 type Template = { id: string; key: string; subject: string; htmlBody: string; isActive: boolean };

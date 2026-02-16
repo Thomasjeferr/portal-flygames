@@ -115,6 +115,9 @@ export async function Footer() {
               <Link href="/planos" className="hover:text-futvar-green transition-colors">
                 Planos
               </Link>
+              <Link href="/patrocinar" className="hover:text-futvar-green transition-colors">
+                Seja Patrocinador
+              </Link>
               <Link href="/entrar" className="hover:text-futvar-green transition-colors">
                 Entrar
               </Link>
@@ -161,9 +164,14 @@ export async function Footer() {
         </div>
 
         {/* Linha compacta de patrocinadores */}
-        {sponsors.length > 0 && (
-          <div className="mt-10 pt-8 border-t border-white/5">
-            <p className="text-xs text-futvar-light/70 uppercase tracking-wider mb-4">Patrocinadores</p>
+        <div className="mt-10 pt-8 border-t border-white/5">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <p className="text-xs text-futvar-light/70 uppercase tracking-wider">Patrocinadores</p>
+            <Link href="/patrocinar" className="text-sm text-futvar-green hover:text-futvar-green-light font-medium">
+              Seja um Patrocinador →
+            </Link>
+          </div>
+          {sponsors.length > 0 && (
             <div className="flex flex-wrap items-center justify-center gap-6">
               {sponsors.map((s) => {
                 const logoUrl = s.logoUrl.startsWith('http') ? s.logoUrl : s.logoUrl;
@@ -199,12 +207,22 @@ export async function Footer() {
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Base */}
         <div className="mt-10 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-futvar-light/70">
-          <p>© {currentYear} {companyName}. Todos os direitos reservados.</p>
+          <div className="flex flex-col gap-1">
+            <a
+              href="https://wa.me/5551995817296"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-futvar-green transition-colors"
+            >
+              Desenvolvedor Thomas J Ferreira
+            </a>
+            <p>© {currentYear} {companyName}. Todos os direitos reservados.</p>
+          </div>
           {companyCnpj && <p>CNPJ: {companyCnpj}</p>}
         </div>
       </div>

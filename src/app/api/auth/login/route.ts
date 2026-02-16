@@ -45,6 +45,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'E-mail ou senha incorretos' }, { status: 401 });
     }
 
+    if (!user.emailVerified) {
+      return NextResponse.json(
+        {
+          error: 'Verifique seu e-mail para entrar. Enviamos um código de 6 dígitos.',
+          needsVerification: true,
+          email: user.email,
+        },
+        { status: 403 }
+      );
+    }
+
     const token = await createSession(user.id);
 
     const response = NextResponse.json({

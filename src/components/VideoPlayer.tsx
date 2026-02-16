@@ -1,16 +1,75 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { extractYouTubeVideoId, isYouTubeUrl } from '@/lib/youtube';
+import { isStreamVideo, extractStreamVideoId } from '@/lib/cloudflare-stream';
+import { StreamCustomPlayer } from './StreamCustomPlayer';
 
 interface VideoPlayerProps {
   videoUrl: string;
   title: string;
+  /** URL assinada iframe para Stream (fallback) */
+  streamPlaybackUrl?: string;
+  /** URL HLS assinada para player customizado (Video.js) */
+  streamHlsUrl?: string;
+  /** Contexto para buscar URL assinada no cliente (gameSlug, preSaleSlug, sessionToken para pré-estreia) */
+  streamContext?: { gameSlug?: string; preSaleSlug?: string; sessionToken?: string };
 }
 
-export function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
+export function VideoPlayer({ videoUrl, title, streamPlaybackUrl, streamHlsUrl, streamContext }: VideoPlayerProps) {
+  const [streamUrl, setStreamUrl] = useState<string | null>(streamPlaybackUrl ?? null);
+  const [hlsUrl, setHlsUrl] = useState<string | null>(streamHlsUrl ?? null);
+  const isStream = isStreamVideo(videoUrl);
+  const videoId = extractStreamVideoId(videoUrl);
+
+  useEffect(() => {
+    if (!isStream || !videoId || (streamPlaybackUrl && streamHlsUrl)) return;
+    if (streamContext?.gameSlug || streamContext?.preSaleSlug) {
+      const params = new URLSearchParams({ videoId });
+      if (streamContext.gameSlug) params.set('gameSlug', streamContext.gameSlug);
+      if (streamContext.preSaleSlug) params.set('preSaleSlug', streamContext.preSaleSlug);
+      if (streamContext.sessionToken) params.set('sessionToken', streamContext.sessionToken);
+      fetch(`/api/video/stream-playback?${params}`, { credentials: 'include' })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.playbackUrl) setStreamUrl(d.playbackUrl);
+          if (d.hlsUrl) setHlsUrl(d.hlsUrl);
+        })
+        .catch(() => {});
+    }
+  }, [isStream, videoId, streamPlaybackUrl, streamHlsUrl, streamContext?.gameSlug, streamContext?.preSaleSlug, streamContext?.sessionToken]);
+
   const isYoutube = isYouTubeUrl(videoUrl);
   const isVimeo = /vimeo\.com/.test(videoUrl);
   const isPandaVideo = /pandavideo\.com\.br|pandavideo\.com/.test(videoUrl);
+
+  if (isStream && (hlsUrl || streamHlsUrl)) {
+    const hls = hlsUrl || streamHlsUrl || '';
+    return <StreamCustomPlayer hlsUrl={hls} title={title} />;
+  }
+
+  if (isStream && (streamUrl || streamPlaybackUrl)) {
+    const embedSrc = streamUrl || streamPlaybackUrl || '';
+    return (
+      <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
+        <iframe
+          src={embedSrc}
+          title={title}
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+          className="absolute inset-0 w-full h-full"
+        />
+      </div>
+    );
+  }
+
+  if (isStream && !streamUrl) {
+    return (
+      <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
+        <p className="text-futvar-light">Carregando vídeo...</p>
+      </div>
+    );
+  }
 
   if (isPandaVideo) {
     const embedUrl = videoUrl.includes('/embed/') ? videoUrl : videoUrl.replace(/\/$/, '');

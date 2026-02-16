@@ -8,6 +8,7 @@ import { GameCard } from '@/components/GameCard';
 import { getSession } from '@/lib/auth';
 import { canAccessGameBySlug } from '@/lib/access';
 import { prisma } from '@/lib/db';
+import { isStreamVideo, extractStreamVideoId, getSignedPlaybackUrls } from '@/lib/cloudflare-stream';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -34,11 +35,28 @@ export default async function GamePage({ params }: Props) {
   const game = await prisma.game.findUnique({ where: { slug } });
   if (!game) notFound();
 
-  const [session, suggested] = await Promise.all([
-    getSession(),
+  const session = await getSession();
+  const [suggested, teamManagerCount] = await Promise.all([
     getSuggestedGames(game.id, game.championship),
+    session ? prisma.teamManager.count({ where: { userId: session.userId } }) : 0,
   ]);
   const canWatch = session ? await canAccessGameBySlug(session.userId, slug) : false;
+  const isTeamManager = teamManagerCount > 0;
+  let streamPlaybackUrl: string | undefined;
+  let streamHlsUrl: string | undefined;
+  if (canWatch && game.videoUrl && isStreamVideo(game.videoUrl)) {
+    try {
+      const vid = extractStreamVideoId(game.videoUrl);
+      if (vid) {
+        const urls = await getSignedPlaybackUrls(vid, 3600);
+        streamPlaybackUrl = urls.iframeUrl;
+        streamHlsUrl = urls.hlsUrl;
+      }
+    } catch {
+      streamPlaybackUrl = undefined;
+      streamHlsUrl = undefined;
+    }
+  }
 
   const gameDateFormatted = new Date(game.gameDate).toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -70,24 +88,30 @@ export default async function GamePage({ params }: Props) {
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                     <div className="text-center">
                     <p className="text-lg text-white mb-4">Assinatura ou compra necessária para assistir</p>
-                    <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4">
-                      {session ? (
-                        <Link
-                          href="/planos"
-                          className="inline-block px-8 py-4 bg-futvar-green text-futvar-darker font-bold rounded-lg hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
-                        >
-                          Ver planos e assinar
-                        </Link>
-                      ) : (
-                        <Link
-                          href="/entrar?redirect=/planos"
-                          className="inline-block px-8 py-4 bg-futvar-green text-futvar-darker font-bold rounded-lg hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
-                        >
-                          Entrar ou cadastrar para assinar
-                        </Link>
-                      )}
-                      <BuyGameButton gameId={game.id} className="inline-block px-6 py-4 border-2 border-futvar-gold/50 text-futvar-gold font-bold rounded-lg hover:bg-futvar-gold/10 transition-colors" />
-                    </div>
+                    {session && isTeamManager ? (
+                      <p className="text-futvar-light max-w-md mx-auto">
+                        Esta conta é de responsável pelo time e não pode comprar acesso. Para assinar ou comprar jogos, saia e crie uma conta de cliente em <Link href="/cadastro" className="text-futvar-green hover:underline">Cadastro</Link>.
+                      </p>
+                    ) : (
+                      <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4">
+                        {session ? (
+                          <Link
+                            href="/planos"
+                            className="inline-block px-8 py-4 bg-futvar-green text-futvar-darker font-bold rounded-lg hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
+                          >
+                            Ver planos e assinar
+                          </Link>
+                        ) : (
+                          <Link
+                            href="/entrar?redirect=/planos"
+                            className="inline-block px-8 py-4 bg-futvar-green text-futvar-darker font-bold rounded-lg hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
+                          >
+                            Entrar ou cadastrar para assinar
+                          </Link>
+                        )}
+                        <BuyGameButton gameId={game.id} className="inline-block px-6 py-4 border-2 border-futvar-gold/50 text-futvar-gold font-bold rounded-lg hover:bg-futvar-gold/10 transition-colors" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -100,7 +124,23 @@ export default async function GamePage({ params }: Props) {
           <>
             <GamePlayTracker gameId={game.id} />
             <div className="rounded-2xl overflow-hidden bg-black mb-8 border border-futvar-green/20 shadow-xl">
-              <VideoPlayer videoUrl={game.videoUrl} title={game.title} />
+              {game.videoUrl ? (
+                <VideoPlayer
+                  videoUrl={game.videoUrl}
+                  title={game.title}
+                  streamPlaybackUrl={streamPlaybackUrl}
+                  streamHlsUrl={streamHlsUrl}
+                />
+              ) : (
+                <div className="relative aspect-video bg-black flex items-center justify-center">
+                  {game.thumbnailUrl ? (
+                    <Image src={game.thumbnailUrl} alt={game.title} fill className="object-cover opacity-50" />
+                  ) : null}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                    <p className="text-futvar-light">Vídeo em breve</p>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="space-y-4">
               <h1 className="text-3xl md:text-4xl font-bold text-white">{game.title}</h1>

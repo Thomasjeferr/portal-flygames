@@ -57,8 +57,9 @@ export function Header() {
     return (
       <header className="fixed top-0 left-0 right-0 z-50 bg-netflix-black/95 border-b border-white/10">
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 max-w-7xl mx-auto">
-          <Link href="/admin/entrar" className="text-2xl font-bold text-netflix-red">
-            Fly Games Admin
+          <Link href="/admin/entrar" className="flex items-center gap-2">
+            <img src="/uploads/logo-home-fly.png" alt="FLY GAMES" className="h-8 w-auto object-contain" width={140} height={42} />
+            <span className="text-lg text-netflix-light">Admin</span>
           </Link>
           <Link href="/" className="text-sm text-futvar-light hover:text-white">
             Voltar ao site
@@ -70,12 +71,15 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-futvar-darker/95 backdrop-blur-md border-b border-futvar-green/10 animate-slide-down">
-      <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 py-3 sm:py-4 max-w-[1920px] mx-auto">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 py-3 sm:py-4 max-w-[1920px] mx-auto">
         <Link href="/" className="flex items-center gap-2 group min-w-0 shrink-0">
-          <span className="text-xl sm:text-2xl group-hover:scale-110 transition-transform">⚽</span>
-          <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-futvar-green tracking-tight truncate">
-            FLY GAMES
-          </span>
+          <img
+            src="/uploads/logo-home-fly.png"
+            alt="FLY GAMES"
+            width={160}
+            height={48}
+            className="h-8 sm:h-9 lg:h-10 w-auto object-contain group-hover:opacity-90 transition-opacity"
+          />
         </Link>
 
         {!isAuthPage && (
@@ -86,6 +90,18 @@ export function Header() {
               className={`text-sm font-semibold ${pathname === '/' ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
             >
               Início
+            </Link>
+            <Link
+              href="/times/cadastrar"
+              className={`text-sm font-semibold ${pathname === '/times/cadastrar' ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
+            >
+              Cadastrar time
+            </Link>
+            <Link
+              href="/painel-time"
+              className={`text-sm font-semibold ${pathname.startsWith('/painel-time') ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
+            >
+              Área do time
             </Link>
             {user ? (
               <div className="relative">
@@ -115,6 +131,13 @@ export function Header() {
                           </p>
                         )}
                       </div>
+                      <Link
+                        href="/painel-time"
+                        className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        Área do time
+                      </Link>
                       <Link
                         href="/conta"
                         className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
@@ -179,6 +202,20 @@ export function Header() {
               >
                 Início
               </Link>
+              <Link
+                href="/times/cadastrar"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname === '/times/cadastrar' ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
+              >
+                Cadastrar time
+              </Link>
+              <Link
+                href="/painel-time"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname.startsWith('/painel-time') ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
+              >
+                Área do time
+              </Link>
               {user ? (
                 <>
                   <div className="px-4 py-2 text-sm text-futvar-light border-b border-white/10">
@@ -189,6 +226,9 @@ export function Header() {
                       </p>
                     )}
                   </div>
+                  <Link href="/painel-time" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
+                    Área do time
+                  </Link>
                   <Link href="/conta" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
                     Minha conta
                   </Link>

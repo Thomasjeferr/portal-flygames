@@ -29,7 +29,11 @@
     "recharts": "^3.7.0",
     "resend": "^6.9.2",
     "stripe": "^20.3.1",
+    "tus-js-client": "^4.3.1",
     "uuid": "^10.0.0",
+    "video.js": "^8.22.0",
+    "videojs-contrib-quality-levels": "^4.1.0",
+    "videojs-contrib-quality-menu": "^1.0.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {

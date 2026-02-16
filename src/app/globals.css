@@ -1,3 +1,5 @@
+@import 'video.js/dist/video-js.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -60,6 +62,15 @@ body {
 /* Hero overlay */
 .hero-overlay {
   background: linear-gradient(to top, rgba(12,18,34,0.98) 0%, rgba(12,18,34,0.6) 40%, transparent 70%);
+}
+
+/* Esconder scrollbar (carrossel de patrocinadores) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 /* Padrão de campo */

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 import Image from 'next/image';
 
@@ -22,18 +22,23 @@ interface Game {
 
 function CheckoutContent() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const planId = searchParams.get('planId');
   const gameIdParam = searchParams.get('gameId');
 
   const [plan, setPlan] = useState<Plan | null>(null);
   const [games, setGames] = useState<Game[]>([]);
+  const [teams, setTeams] = useState<{ id: string; name: string; city?: string | null; state?: string | null }[]>([]);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(gameIdParam);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [method, setMethod] = useState<'pix' | 'card'>('pix');
   const [loading, setLoading] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isClubViewer, setIsClubViewer] = useState(false);
+  const [isTeamManager, setIsTeamManager] = useState(false);
   const [pixQr, setPixQr] = useState<{ qrCode?: string; qrCodeImage?: string } | null>(null);
   const [stripeSecret, setStripeSecret] = useState<string | null>(null);
 
@@ -43,21 +48,41 @@ function CheckoutContent() {
       setLoading(false);
       return;
     }
+    const returnUrl = `${pathname}?${searchParams.toString()}`;
     Promise.all([
-      fetch('/api/auth/me', { credentials: 'include' }).then((r) => r.json()).then((data) => data?.user?.role === 'club_viewer'),
+      fetch('/api/auth/me', { credentials: 'include' }).then((r) => r.json()),
       fetch('/api/plans').then((r) => r.json()),
       fetch('/api/games').then((r) => r.json()),
+      fetch('/api/public/teams', { cache: 'no-store' }).then((r) => r.json()),
     ])
-      .then(([clubViewer, plansData, gamesData]) => {
-        setIsClubViewer(!!clubViewer);
+      .then(([authData, plansData, gamesData, teamsData]) => {
+        const user = authData?.user;
+        if (!user) {
+          setRedirecting(true);
+          router.replace(`/entrar?redirect=${encodeURIComponent(returnUrl)}`);
+          return;
+        }
+        if (user.role === 'club_viewer') setIsClubViewer(true);
+        if (authData?.isTeamManager) setIsTeamManager(true);
         const p = Array.isArray(plansData) ? plansData.find((x: { id: string }) => x.id === planId) : null;
         setPlan(p ?? null);
+        // Ajusta forma de pagamento padrão:
+        // - Jogos avulsos (unitario): Pix por padrão
+        // - Planos mensais/anuais: apenas cartão
+        if (p) {
+          if (p.type === 'unitario') {
+            setMethod('pix');
+          } else {
+            setMethod('card');
+          }
+        }
         setGames(Array.isArray(gamesData) ? gamesData : []);
+        setTeams(Array.isArray(teamsData) ? teamsData : []);
         if (gameIdParam) setSelectedGameId(gameIdParam);
       })
       .catch(() => setError('Erro ao carregar'))
       .finally(() => setLoading(false));
-  }, [planId, gameIdParam]);
+  }, [planId, gameIdParam, pathname, searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +100,7 @@ function CheckoutContent() {
         body: JSON.stringify({
           planId: plan.id,
           gameId: plan.type === 'unitario' ? selectedGameId : undefined,
+          teamId: selectedTeamId || null,
           method,
         }),
       });
@@ -99,7 +125,7 @@ function CheckoutContent() {
     }
   };
 
-  if (loading) {
+  if (loading || redirecting) {
     return (
       <div className="pt-24 pb-16 px-4 min-h-screen bg-futvar-darker flex items-center justify-center">
         <p className="text-futvar-light">Carregando...</p>
@@ -113,6 +139,22 @@ function CheckoutContent() {
         <div className="max-w-lg mx-auto text-center">
           <p className="text-futvar-light mb-4">Esta conta é apenas para acesso à pré-estreia. Para comprar planos ou jogos, crie uma conta no site.</p>
           <Link href="/cadastro" className="text-futvar-green hover:underline font-semibold">Criar conta</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (isTeamManager) {
+    return (
+      <div className="pt-24 pb-16 px-4 min-h-screen bg-futvar-darker">
+        <div className="max-w-lg mx-auto text-center">
+          <h1 className="text-xl font-bold text-white mb-2">Conta de responsável pelo time</h1>
+          <p className="text-futvar-light mb-4">
+            Esta conta é apenas para gestão do time (comissões e elenco). Para assinar planos ou comprar jogos, saia e crie uma conta de cliente no site.
+          </p>
+          <Link href="/cadastro" className="text-futvar-green hover:underline font-semibold">Criar conta de cliente</Link>
+          <span className="text-futvar-light mx-2">ou</span>
+          <Link href="/painel-time" className="text-futvar-green hover:underline font-semibold">Ir para Área do time</Link>
         </div>
       </div>
     );
@@ -180,17 +222,55 @@ function CheckoutContent() {
           )}
 
           <div>
+            <label className="block text-sm font-medium text-futvar-light mb-2">Time de coração (opcional)</label>
+            <select
+              value={selectedTeamId ?? ''}
+              onChange={(e) => setSelectedTeamId(e.target.value || null)}
+              className="w-full px-4 py-3 rounded-lg bg-futvar-darker border border-futvar-green/20 text-white focus:outline-none focus:ring-2 focus:ring-futvar-green"
+            >
+              <option value="">Nenhum</option>
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}{t.city || t.state ? ` — ${[t.city, t.state].filter(Boolean).join('/')}` : ''}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-futvar-light">Parte do valor pode ser repassada ao time que você apoia.</p>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-futvar-light mb-2">Forma de pagamento</label>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              {plan.type === 'unitario' && (
+                <label className="flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border cursor-pointer border-futvar-green/30 hover:bg-futvar-green/10">
+                  <input
+                    type="radio"
+                    name="method"
+                    value="pix"
+                    checked={method === 'pix'}
+                    onChange={() => setMethod('pix')}
+                    className="text-futvar-green"
+                  />
+                  <span className="text-white">Pix</span>
+                </label>
+              )}
               <label className="flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border cursor-pointer border-futvar-green/30 hover:bg-futvar-green/10">
-                <input type="radio" name="method" value="pix" checked={method === 'pix'} onChange={() => setMethod('pix')} className="text-futvar-green" />
-                <span className="text-white">Pix</span>
-              </label>
-              <label className="flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border cursor-pointer border-futvar-green/30 hover:bg-futvar-green/10">
-                <input type="radio" name="method" value="card" checked={method === 'card'} onChange={() => setMethod('card')} className="text-futvar-green" />
+                <input
+                  type="radio"
+                  name="method"
+                  value="card"
+                  checked={method === 'card'}
+                  onChange={() => setMethod('card')}
+                  className="text-futvar-green"
+                />
                 <span className="text-white">Cartão</span>
               </label>
             </div>
+            {plan.type !== 'unitario' && (
+              <p className="mt-2 text-xs text-futvar-light">
+                Para planos mensais ou anuais, o pagamento é feito apenas com cartão, processado com segurança pela Stripe.
+              </p>
+            )}
           </div>
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -205,7 +285,7 @@ function CheckoutContent() {
         </form>
 
         <p className="text-futvar-light text-sm mt-4 text-center">
-          Você será redirecionado após confirmar o pagamento. Faça login antes de comprar.
+          Você será redirecionado para sua conta após confirmar o pagamento.
         </p>
       </div>
     </div>

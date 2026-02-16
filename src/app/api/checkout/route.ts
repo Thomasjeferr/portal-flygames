@@ -8,6 +8,7 @@ import { z } from 'zod';
 const bodySchema = z.object({
   planId: z.string().min(1),
   gameId: z.string().optional(),
+  teamId: z.string().nullable().optional(),
   method: z.enum(['pix', 'card']),
 });
 
@@ -26,6 +27,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const isTeamManager = await prisma.teamManager.count({ where: { userId: session.userId } }).then((n) => n > 0);
+  if (isTeamManager) {
+    return NextResponse.json(
+      { error: 'Esta conta é de responsável pelo time e não pode realizar compras. Para assinar ou comprar jogos, saia e crie uma conta de cliente (cadastro).' },
+      { status: 403 }
+    );
+  }
+
   try {
     const body = await request.json();
     const parsed = bodySchema.safeParse(body);
@@ -33,7 +42,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 });
     }
 
-    const { planId, gameId, method } = parsed.data;
+    const { planId, gameId, teamId, method } = parsed.data;
 
     const plan = await prisma.plan.findUnique({ where: { id: planId } });
     if (!plan || !plan.active) {
@@ -44,7 +53,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Plano unitário exige gameId' }, { status: 400 });
     }
 
+    // Regras de forma de pagamento:
+    // - Jogos avulsos (type === 'unitario'): Pix e cartão permitidos
+    // - Planos mensais/anuais (outros tipos): apenas cartão
+    if (method === 'pix' && plan.type !== 'unitario') {
+      return NextResponse.json(
+        { error: 'Pix disponível apenas para compra de jogos avulsos.' },
+        { status: 400 }
+      );
+    }
+
     const amountCents = Math.round(plan.price * 100);
+    let amountToTeamCents = 0;
+
+    if (teamId && plan.teamPayoutPercent > 0) {
+      const team = await prisma.team.findUnique({ where: { id: teamId } });
+      if (team && team.isActive) {
+        amountToTeamCents = Math.round((amountCents * plan.teamPayoutPercent) / 100);
+      }
+    }
 
     let expiresAt: Date | null = null;
     if (plan.duracaoDias != null) {
@@ -57,6 +84,8 @@ export async function POST(request: NextRequest) {
         userId: session.userId,
         planId,
         gameId: plan.type === 'unitario' ? gameId : null,
+        teamId: amountToTeamCents > 0 ? teamId : null,
+        amountToTeamCents,
         paymentStatus: 'pending',
         expiresAt,
       },

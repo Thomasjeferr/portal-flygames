@@ -16,6 +16,7 @@ function LoginForm() {
   const redirectTo = safeRedirect(searchParams.get('redirect'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -31,6 +32,10 @@ function LoginForm() {
       });
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 403 && data.needsVerification && data.email) {
+          router.push(`/verificar-email?email=${encodeURIComponent(data.email)}`);
+          return;
+        }
         setError(data.error || 'Erro ao entrar');
         return;
       }
@@ -77,15 +82,25 @@ function LoginForm() {
               <label htmlFor="password" className="block text-sm font-medium text-futvar-light mb-2">
                 Senha
               </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded bg-futvar-gray border border-futvar-green/20 text-white placeholder-futvar-light/60 focus:outline-none focus:ring-2 focus:ring-futvar-green focus:border-transparent"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 pr-20 rounded bg-futvar-gray border border-futvar-green/20 text-white placeholder-futvar-light/60 focus:outline-none focus:ring-2 focus:ring-futvar-green focus:border-transparent"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-futvar-light hover:text-white"
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {showPassword ? 'Ocultar' : 'Ver'}
+                </button>
+              </div>
             </div>
             <div className="flex justify-end">
               <Link href="/recuperar-senha" className="text-sm text-futvar-light hover:text-white">

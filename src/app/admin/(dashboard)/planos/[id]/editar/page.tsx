@@ -21,6 +21,8 @@ export default function EditPlanPage() {
     acessoTotal: true,
     duracaoDias: '' as string,
     renovacaoAuto: false,
+    teamPayoutPercent: 0,
+    maxConcurrentStreams: '' as string,
   });
 
   useEffect(() => {
@@ -41,6 +43,8 @@ export default function EditPlanPage() {
           acessoTotal: data.acessoTotal,
           duracaoDias: data.duracaoDias != null ? String(data.duracaoDias) : '',
           renovacaoAuto: data.renovacaoAuto,
+          teamPayoutPercent: data.teamPayoutPercent ?? 0,
+          maxConcurrentStreams: data.maxConcurrentStreams != null ? String(data.maxConcurrentStreams) : '',
         });
       })
       .catch(() => setError('Erro ao carregar'))
@@ -65,6 +69,8 @@ export default function EditPlanPage() {
           acessoTotal: form.acessoTotal,
           duracaoDias: form.duracaoDias === '' ? null : Number(form.duracaoDias),
           renovacaoAuto: form.renovacaoAuto,
+          teamPayoutPercent: Number(form.teamPayoutPercent) ?? 0,
+          maxConcurrentStreams: form.maxConcurrentStreams === '' ? null : Number(form.maxConcurrentStreams),
         }),
       });
       const data = await res.json();
@@ -140,6 +146,31 @@ export default function EditPlanPage() {
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Duração (dias)</label>
           <input type="number" min="0" value={form.duracaoDias} onChange={(e) => setForm((f) => ({ ...f, duracaoDias: e.target.value }))} className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">% comissão para o time</label>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={form.teamPayoutPercent}
+            onChange={(e) => setForm((f) => ({ ...f, teamPayoutPercent: Number(e.target.value) || 0 }))}
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          />
+          <p className="text-xs text-netflix-light mt-1">Quando o usuário escolher um &quot;time de coração&quot; no checkout, este percentual vai para o time.</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">Telas simultâneas</label>
+          <input
+            type="number"
+            min="1"
+            value={form.maxConcurrentStreams}
+            onChange={(e) => setForm((f) => ({ ...f, maxConcurrentStreams: e.target.value }))}
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          />
+          <p className="text-xs text-netflix-light mt-1">
+            Número máximo de dispositivos assistindo ao mesmo tempo com este plano. Vazio = usar limite padrão do sistema.
+          </p>
         </div>
         <div className="flex flex-wrap gap-6">
           <label className="flex items-center gap-2 cursor-pointer">

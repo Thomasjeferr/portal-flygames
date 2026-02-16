@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const BannerType = z.enum(['MANUAL', 'FEATURED_GAME', 'FEATURED_PRE_SALE']);
+export const BannerType = z.enum(['MANUAL', 'FEATURED_GAME', 'FEATURED_PRE_SALE', 'FEATURED_LIVE']);
 export const MediaType = z.enum(['IMAGE', 'YOUTUBE_VIDEO', 'MP4_VIDEO', 'NONE']);
 
 const baseSchema = {
@@ -36,6 +36,7 @@ const baseSchema = {
   ]).nullable().optional(),
   gameId: z.string().cuid().nullable().optional(),
   preSaleId: z.string().cuid().nullable().optional(),
+  liveId: z.string().cuid().nullable().optional(),
   showOnlyWhenReady: z.boolean().optional().default(true),
   startAt: z.union([z.string().datetime(), z.literal('')]).nullable().optional(),
   endAt: z.union([z.string().datetime(), z.literal('')]).nullable().optional(),
@@ -68,6 +69,13 @@ export const createHomeBannerSchema = z
   )
   .refine(
     (d) => {
+      if (d.type === 'FEATURED_LIVE') return d.liveId && String(d.liveId).trim().length > 0;
+      return true;
+    },
+    { message: 'live_id obrigatorio para FEATURED_LIVE', path: ['liveId'] }
+  )
+  .refine(
+    (d) => {
       if (d.startAt && d.endAt && d.startAt !== '' && d.endAt !== '') {
         return new Date(d.startAt) < new Date(d.endAt);
       }
@@ -85,5 +93,8 @@ export const updateHomeBannerSchema = z
     }
     if (d.type !== undefined && d.type === 'FEATURED_PRE_SALE' && (d.preSaleId ?? '').toString().trim().length === 0) {
       ctx.addIssue({ code: 'custom', message: 'pre_sale_id obrigatorio para FEATURED_PRE_SALE', path: ['preSaleId'] });
+    }
+    if (d.type !== undefined && d.type === 'FEATURED_LIVE' && (d.liveId ?? '').toString().trim().length === 0) {
+      ctx.addIssue({ code: 'custom', message: 'live_id obrigatorio para FEATURED_LIVE', path: ['liveId'] });
     }
   });

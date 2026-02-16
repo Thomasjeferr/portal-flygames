@@ -4,6 +4,7 @@ import { markSlotAsPaid } from '@/services/pre-sale-slot.service';
 import { createClubViewerAccountForSlot } from '@/services/club-viewer.service';
 import { Provider } from '@/lib/pre-sale/enums';
 import { verifyWooviWebhookSignature } from '@/lib/payments/woovi';
+import { sendTransactionalEmail } from '@/lib/email/emailService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,6 +47,17 @@ export async function POST(request: NextRequest) {
       data: { paymentStatus: 'paid' },
     });
 
+    if (purchase.teamId && purchase.amountToTeamCents > 0) {
+      await prisma.teamPlanEarning.create({
+        data: {
+          teamId: purchase.teamId,
+          purchaseId: purchase.id,
+          amountCents: purchase.amountToTeamCents,
+          status: 'pending',
+        },
+      });
+    }
+
     if (purchase.plan.type === 'recorrente' && purchase.plan.acessoTotal) {
       const startDate = new Date();
       let endDate = new Date();
@@ -67,6 +79,22 @@ export async function POST(request: NextRequest) {
         update: { active: true, startDate, endDate, planId: purchase.planId },
       });
     }
+
+    const user = await prisma.user.findUnique({ where: { id: purchase.userId } });
+    if (user?.email) {
+      const planPrice = (purchase.plan.price ?? 0).toFixed(2).replace('.', ',');
+      sendTransactionalEmail({
+        to: user.email,
+        templateKey: 'PURCHASE_CONFIRMATION',
+        vars: {
+          name: user.name || user.email.split('@')[0],
+          plan_name: purchase.plan.name,
+          amount: planPrice,
+        },
+        userId: user.id,
+      }).catch((e) => console.error('[Woovi] Email compra:', e));
+    }
+
     return NextResponse.json({ received: true });
   } catch (e) {
     console.error('Woovi webhook error:', e);

@@ -13,6 +13,7 @@ function sanitize(body: Record<string, unknown>) {
   if (b.endAt === '') b.endAt = null;
   if (b.gameId === '') b.gameId = null;
   if (b.preSaleId === '') b.preSaleId = null;
+  if (b.liveId === '') b.liveId = null;
   return b;
 }
 
@@ -22,7 +23,11 @@ export async function GET() {
     return NextResponse.json({ error: 'Nao autorizado' }, { status: 403 });
   const banners = await prisma.homeBanner.findMany({
     orderBy: { priority: 'asc' },
-    include: { game: { select: { id: true, title: true, slug: true, thumbnailUrl: true } }, preSale: { select: { id: true, title: true, slug: true, thumbnailUrl: true } } },
+    include: {
+      game: { select: { id: true, title: true, slug: true, thumbnailUrl: true } },
+      preSale: { select: { id: true, title: true, slug: true, thumbnailUrl: true } },
+      live: { select: { id: true, title: true, thumbnailUrl: true, status: true } },
+    },
   });
   return NextResponse.json(banners);
 }
@@ -62,11 +67,12 @@ export async function POST(request: NextRequest) {
         secondaryMediaUrl: d.secondaryMediaUrl?.trim() || null,
         gameId: d.gameId?.trim() || null,
         preSaleId: d.preSaleId?.trim() || null,
+        liveId: d.liveId?.trim() || null,
         showOnlyWhenReady: d.showOnlyWhenReady ?? true,
         startAt: d.startAt && d.startAt !== '' ? new Date(d.startAt) : null,
         endAt: d.endAt && d.endAt !== '' ? new Date(d.endAt) : null,
       },
-      include: { game: true, preSale: true },
+      include: { game: true, preSale: true, live: true },
     });
     revalidatePath('/');
     return NextResponse.json(banner);

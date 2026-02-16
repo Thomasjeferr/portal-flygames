@@ -17,6 +17,27 @@ export default function AdminPreEstreiaPage() {
   const [games, setGames] = useState<PreSaleGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDelete = async (game: PreSaleGame) => {
+    if (!confirm(`Excluir o jogo "${game.title}"? Esta ação não pode ser desfeita.`)) return;
+    setDeleteError(null);
+    setDeletingId(game.id);
+    try {
+      const res = await fetch(`/api/admin/pre-sale-games/${game.id}`, { method: 'DELETE', credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok) {
+        setDeleteError(data?.error || 'Erro ao excluir');
+        return;
+      }
+      setGames((prev) => prev.filter((g) => g.id !== game.id));
+    } catch {
+      setDeleteError('Erro de conexão');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
     setLoadError(null);
@@ -59,6 +80,7 @@ export default function AdminPreEstreiaPage() {
         </div>
       ) : (
         <div className="space-y-4">
+          {deleteError && <p className="text-red-400 text-sm mb-2">{deleteError}</p>}
           {games.map((g) => (
             <div key={g.id} className="flex flex-wrap items-center gap-4 bg-netflix-dark border border-white/10 rounded-lg p-4">
               <div className="relative w-24 h-14 rounded overflow-hidden bg-netflix-gray flex-shrink-0">
@@ -70,6 +92,14 @@ export default function AdminPreEstreiaPage() {
               </div>
               <Link href={`/admin/pre-estreia/${g.id}`} className="px-3 py-1.5 rounded bg-netflix-gray text-white text-sm hover:bg-white/20">Ver</Link>
               <Link href={`/admin/pre-estreia/${g.id}/editar`} className="px-3 py-1.5 rounded bg-netflix-gray text-white text-sm hover:bg-white/20">Editar</Link>
+              <button
+                type="button"
+                onClick={() => handleDelete(g)}
+                disabled={!!deletingId}
+                className="px-3 py-1.5 rounded bg-red-900/50 text-red-300 text-sm hover:bg-red-900/70 disabled:opacity-50"
+              >
+                {deletingId === g.id ? 'Excluindo...' : 'Deletar'}
+              </button>
             </div>
           ))}
         </div>

@@ -7,6 +7,7 @@ export const createPreSaleGameSchema = z.object({
   videoUrl: z.string().url().optional().nullable().or(z.literal('')),
   specialCategoryId: z.string().min(1, 'Categoria especial obrigatória'),
   normalCategoryIds: z.array(z.string()).default([]),
+  gradeCategoryId: z.string().min(1).optional().nullable().or(z.literal('')),
   clubAPrice: z.number().positive('Preço A deve ser > 0'),
   clubBPrice: z.number().positive('Preço B deve ser > 0'),
   maxSimultaneousPerClub: z.number().int().positive('Simultâneos deve ser > 0'),

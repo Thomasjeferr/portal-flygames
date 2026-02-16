@@ -23,6 +23,7 @@ function sanitize(body: Record<string, unknown>): Record<string, unknown> {
   if (b.endAt === '') b.endAt = null;
   if (b.gameId === '') b.gameId = null;
   if (b.preSaleId === '') b.preSaleId = null;
+  if (b.liveId === '') b.liveId = null;
   return b;
 }
 
@@ -33,7 +34,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const id = (await params).id;
   const banner = await prisma.homeBanner.findUnique({
     where: { id },
-    include: { game: true, preSale: true },
+    include: { game: true, preSale: true, live: true },
   });
   if (!banner) return NextResponse.json({ error: 'Nao encontrado' }, { status: 404 });
   return NextResponse.json(banner);
@@ -79,6 +80,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (d.heightPreset !== undefined) updateData.heightPreset = d.heightPreset;
     if (d.gameId !== undefined) updateData.gameId = d.gameId?.trim() || null;
     if (d.preSaleId !== undefined) updateData.preSaleId = d.preSaleId?.trim() || null;
+    if (d.liveId !== undefined) updateData.liveId = d.liveId?.trim() || null;
     if (d.showOnlyWhenReady !== undefined) updateData.showOnlyWhenReady = d.showOnlyWhenReady;
     if (d.startAt !== undefined) updateData.startAt = d.startAt && d.startAt !== '' ? new Date(d.startAt) : null;
     if (d.endAt !== undefined) updateData.endAt = d.endAt && d.endAt !== '' ? new Date(d.endAt) : null;
@@ -114,7 +116,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const banner = await prisma.homeBanner.update({
       where: { id },
       data: updateData as object,
-      include: { game: true, preSale: true },
+      include: { game: true, preSale: true, live: true },
     });
 
     revalidatePath('/');

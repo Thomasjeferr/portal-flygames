@@ -14,6 +14,8 @@ function toBody(data: Record<string, unknown>) {
     is_active: data.is_active ?? true,
     start_at: data.start_at || null,
     end_at: data.end_at || null,
+    plan_id: data.plan_id ?? null,
+    team_id: data.team_id ?? null,
   };
 }
 
@@ -48,6 +50,8 @@ export async function POST(request: NextRequest) {
         isActive: d.is_active,
         startAt: d.start_at ? new Date(d.start_at) : null,
         endAt: d.end_at ? new Date(d.end_at) : null,
+        planId: d.plan_id || null,
+        teamId: d.team_id || null,
       },
     });
     revalidatePath('/');

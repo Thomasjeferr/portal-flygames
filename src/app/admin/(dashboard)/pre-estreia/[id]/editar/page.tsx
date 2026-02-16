@@ -3,11 +3,19 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
+import { StreamVideoField } from '@/components/admin/StreamVideoField';
 
 interface PreSaleCategory {
   id: string;
   name: string;
   type: string;
+}
+
+interface GradeCategory {
+  id: string;
+  name: string;
+  slug: string;
+  order: number;
 }
 
 interface Game {
@@ -17,6 +25,7 @@ interface Game {
   thumbnailUrl: string;
   videoUrl: string | null;
   specialCategoryId: string;
+  gradeCategoryId: string | null;
   clubAPrice: number;
   clubBPrice: number;
   maxSimultaneousPerClub: number;
@@ -33,6 +42,7 @@ export default function AdminPreEstreiaEditarPage() {
   const [game, setGame] = useState<Game | null>(null);
   const [specialCategories, setSpecialCategories] = useState<PreSaleCategory[]>([]);
   const [normalCategories, setNormalCategories] = useState<PreSaleCategory[]>([]);
+  const [gradeCategories, setGradeCategories] = useState<GradeCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -43,24 +53,12 @@ export default function AdminPreEstreiaEditarPage() {
     videoUrl: '',
     specialCategoryId: '',
     normalCategoryIds: [] as string[],
+    gradeCategoryId: '',
     clubAPrice: '',
     clubBPrice: '',
     maxSimultaneousPerClub: '10',
     featured: false,
   });
-
-  const loadCategories = () => {
-    fetch('/api/admin/pre-sale-categories?type=SPECIAL')
-      .then(async (r) => {
-        const data = await r.json();
-        setSpecialCategories(r.ok && Array.isArray(data) ? data : []);
-      });
-    fetch('/api/admin/pre-sale-categories?type=NORMAL')
-      .then(async (r) => {
-        const data = await r.json();
-        setNormalCategories(r.ok && Array.isArray(data) ? data : []);
-      });
-  };
 
   useEffect(() => {
     if (!id) return;
@@ -68,13 +66,16 @@ export default function AdminPreEstreiaEditarPage() {
       fetch(`/api/admin/pre-sale-games/${id}`),
       fetch('/api/admin/pre-sale-categories?type=SPECIAL'),
       fetch('/api/admin/pre-sale-categories?type=NORMAL'),
-    ]).then(async ([resGame, resSpecial, resNormal]) => {
+      fetch('/api/admin/categories?active=true'),
+    ]).then(async ([resGame, resSpecial, resNormal, resGrade]) => {
       const g = await resGame.json();
       const special = await resSpecial.json();
       const normal = await resNormal.json();
+      const grade = await resGrade.json();
       setGame(resGame.ok && g?.id ? g : null);
       setSpecialCategories(resSpecial.ok && Array.isArray(special) ? special : []);
       setNormalCategories(resNormal.ok && Array.isArray(normal) ? normal : []);
+      setGradeCategories(resGrade.ok && Array.isArray(grade) ? grade : []);
       if (g?.id) {
         setForm({
           title: g.title,
@@ -83,6 +84,7 @@ export default function AdminPreEstreiaEditarPage() {
           videoUrl: g.videoUrl || '',
           specialCategoryId: g.specialCategoryId,
           normalCategoryIds: (g.normalCategories || []).map((x: { categoryId: string }) => x.categoryId),
+          gradeCategoryId: g.gradeCategoryId || '',
           clubAPrice: String(g.clubAPrice),
           clubBPrice: String(g.clubBPrice),
           maxSimultaneousPerClub: String(g.maxSimultaneousPerClub),
@@ -128,6 +130,7 @@ export default function AdminPreEstreiaEditarPage() {
           videoUrl: form.videoUrl.trim() || null,
           specialCategoryId: form.specialCategoryId || undefined,
           normalCategoryIds: form.normalCategoryIds,
+          gradeCategoryId: form.gradeCategoryId.trim() || undefined,
           clubAPrice: hasAnyPaid ? undefined : parseFloat(form.clubAPrice),
           clubBPrice: hasAnyPaid ? undefined : parseFloat(form.clubBPrice),
           maxSimultaneousPerClub: parseInt(form.maxSimultaneousPerClub, 10),
@@ -189,10 +192,12 @@ export default function AdminPreEstreiaEditarPage() {
             />
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-white mb-2">Video URL (opcional)</label>
-          <input type="url" value={form.videoUrl} onChange={(e) => setForm((f) => ({ ...f, videoUrl: e.target.value }))} className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white" />
-        </div>
+        <StreamVideoField
+          value={form.videoUrl}
+          onChange={(url) => setForm((f) => ({ ...f, videoUrl: url }))}
+          label="Vídeo (opcional)"
+          required={false}
+        />
         <div>
           <label className="block text-sm font-medium text-white mb-2">Categoria especial *</label>
           <select value={form.specialCategoryId} onChange={(e) => setForm((f) => ({ ...f, specialCategoryId: e.target.value }))} required className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white">
@@ -209,6 +214,16 @@ export default function AdminPreEstreiaEditarPage() {
               </label>
             ))}
           </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Categoria na grade (quando publicado)</label>
+          <select value={form.gradeCategoryId} onChange={(e) => setForm((f) => ({ ...f, gradeCategoryId: e.target.value }))} className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white">
+            <option value="">Nenhuma / Outros</option>
+            {gradeCategories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <p className="text-netflix-light text-xs mt-1">Ao publicar na grade, o jogo aparecera nesta categoria.</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-white mb-2">Preco Clube A (R$) *</label>

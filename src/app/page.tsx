@@ -131,11 +131,11 @@ export default async function HomePage() {
               <div className="flex items-center gap-3 mb-6 animate-fade-in-up opacity-0 [animation-delay:0.1s]">
                 <span className="w-1 h-8 rounded-full bg-futvar-gold" />
                 <h2 className="text-2xl lg:text-3xl font-bold text-white">
-                  Pre-estreia — Apoie seu clube
+                  Pre-estreia
                 </h2>
               </div>
               <p className="text-futvar-light mb-6 max-w-2xl">
-                Dois clubes financiam previamente o jogo. Escolha seu clube, faça o pagamento e aguarde a publicação.
+                Dois clubes financiam previamente o jogo.
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
                 {preSaleForClubs.map((g, i) => (

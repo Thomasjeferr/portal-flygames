@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
     const slug = uniqueSlug(data.title, existingSlugs);
 
     const normalCatIds = Array.isArray(data.normalCategoryIds) ? data.normalCategoryIds.filter(Boolean) : [];
+    const gradeCategoryId = data.gradeCategoryId?.trim() || null;
     const game = await prisma.preSaleGame.create({
       data: {
         title: data.title,
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
         thumbnailUrl: data.thumbnailUrl,
         videoUrl: data.videoUrl?.trim() || null,
         specialCategoryId: data.specialCategoryId,
+        gradeCategoryId: gradeCategoryId || undefined,
         clubAPrice: data.clubAPrice,
         clubBPrice: data.clubBPrice,
         maxSimultaneousPerClub: data.maxSimultaneousPerClub,

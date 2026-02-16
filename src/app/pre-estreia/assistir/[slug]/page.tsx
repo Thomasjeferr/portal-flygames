@@ -27,6 +27,7 @@ export default function PreEstreiaWatchPage() {
   const [clubCode, setClubCode] = useState('');
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [storedClubCode, setStoredClubCode] = useState('');
   const [error, setError] = useState('');
@@ -180,7 +181,11 @@ export default function PreEstreiaWatchPage() {
             </Link>
           </div>
           <div className="rounded-2xl overflow-hidden bg-black mb-8 border border-futvar-green/20 shadow-xl">
-            <VideoPlayer videoUrl={game.videoUrl} title={game.title} />
+            <VideoPlayer
+              videoUrl={game.videoUrl}
+              title={game.title}
+              streamContext={{ preSaleSlug: slug, sessionToken: sessionToken ?? undefined }}
+            />
           </div>
           <div className="space-y-4">
             <h1 className="text-3xl md:text-4xl font-bold text-white">{game.title}</h1>
@@ -243,14 +248,24 @@ export default function PreEstreiaWatchPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-white mb-2">Senha</label>
-                <input
-                  type="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  required
-                  placeholder="Senha enviada por e-mail"
-                  className="w-full px-4 py-3 rounded bg-futvar-darker border border-white/20 text-white placeholder:text-futvar-light/50"
-                />
+                <div className="relative">
+                  <input
+                    type={showLoginPassword ? 'text' : 'password'}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    required
+                    placeholder="Senha enviada por e-mail"
+                    className="w-full px-4 py-3 pr-20 rounded bg-futvar-darker border border-white/20 text-white placeholder:text-futvar-light/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword((s) => !s)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-white/70 hover:text-white"
+                    aria-label={showLoginPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  >
+                    {showLoginPassword ? 'Ocultar' : 'Ver'}
+                  </button>
+                </div>
               </div>
               <button
                 type="submit"

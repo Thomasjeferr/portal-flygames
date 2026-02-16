@@ -11,6 +11,8 @@ const baseSponsorSchema = z.object({
   is_active: z.boolean().default(true),
   start_at: z.union([z.string(), z.null()]).optional().nullable(),
   end_at: z.union([z.string(), z.null()]).optional().nullable(),
+  plan_id: z.string().nullable().optional(),
+  team_id: z.string().nullable().optional(),
 });
 
 export const sponsorCreateSchema = baseSponsorSchema.refine(

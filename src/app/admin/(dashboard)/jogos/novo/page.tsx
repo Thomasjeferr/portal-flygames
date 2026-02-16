@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { extractYouTubeVideoId, getYouTubeThumbnailUrl } from '@/lib/youtube';
+import { StreamVideoField } from '@/components/admin/StreamVideoField';
 
 export default function NewGamePage() {
   const router = useRouter();
@@ -138,32 +139,22 @@ export default function NewGamePage() {
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red resize-none"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-netflix-light mb-2">Link do vídeo *</label>
-          <input
-            type="url"
-            value={form.videoUrl}
-            onChange={(e) => {
-              const url = e.target.value;
-              setForm((f) => {
-                const next = { ...f, videoUrl: url };
-                if (url) {
-                  const vid = extractYouTubeVideoId(url);
-                  if (vid && !f.thumbnailUrl) {
-                    next.thumbnailUrl = getYouTubeThumbnailUrl(vid);
-                  }
-                }
-                return next;
-              });
-            }}
-            required
-            placeholder="https://www.youtube.com/watch?v=..."
-            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
-          />
-          <p className="text-xs text-netflix-light mt-1">
-            Cole a URL do YouTube (ex: youtube.com/watch?v=... ou youtu.be/...), Vimeo ou PandaVideo. Se for YouTube, a thumbnail será preenchida automaticamente.
-          </p>
-        </div>
+        <StreamVideoField
+          value={form.videoUrl}
+          onChange={(url) => {
+            setForm((f) => {
+              const next = { ...f, videoUrl: url };
+              if (url) {
+                const vid = extractYouTubeVideoId(url);
+                if (vid && !f.thumbnailUrl) next.thumbnailUrl = getYouTubeThumbnailUrl(vid);
+              }
+              return next;
+            });
+          }}
+          required={false}
+          label="Link do vídeo (opcional)"
+          helpText="YouTube, Vimeo ou PandaVideo. Se for YouTube, a thumbnail será preenchida automaticamente."
+        />
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Thumbnail</label>
           <input type="file" ref={fileInput} accept="image/*" className="hidden" onChange={handleUpload} />

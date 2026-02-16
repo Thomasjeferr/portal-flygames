@@ -22,8 +22,10 @@ model User {
   subscription      Subscription?
   sessions          Session[]
   purchases         Purchase[]
+  livePurchases     LivePurchase[]
   emailTokens       EmailToken[]
   clubViewerAccount ClubViewerAccount?
+  teamManagers      TeamManager[]
 }
 
 model Session {
@@ -61,7 +63,76 @@ model Category {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  games Game[]
+  games              Game[]
+  preSaleGamesGrade  PreSaleGame[]  // pré-estreias que, quando publicadas, aparecem nesta categoria na grade
+}
+
+model Team {
+  id             String    @id @default(cuid())
+  name           String    @map("name")
+  shortName      String?   @map("short_name")
+  slug           String    @unique @map("slug")
+  city           String?   @map("city")
+  state          String?   @map("state")
+  foundedYear    Int?      @map("founded_year")
+  colors         String?   @map("colors") // JSON: { primary, secondary }
+  crestUrl       String?   @map("crest_url")
+  instagram      String?   @map("instagram")
+  whatsapp       String?   @map("whatsapp")
+  description      String?   @map("description")
+  responsibleName   String?   @map("responsible_name") // nome do responsável (formulário cadastro)
+  responsibleEmail  String?   @map("responsible_email") // e-mail para confirmação e aprovação
+  panelAccessToken  String?   @unique @map("panel_access_token") // link de acesso ao painel (enviado por e-mail)
+  panelTokenExpiresAt DateTime? @map("panel_token_expires_at")
+  isActive          Boolean   @default(true) @map("is_active")
+  approvalStatus   String    @default("approved") @map("approval_status") // approved | pending | rejected
+  payoutPixKey     String?   @map("payout_pix_key")
+  payoutName     String?   @map("payout_name")
+  payoutDocument String?   @map("payout_document")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  homeGames   Game[] @relation("HomeTeam")
+  awayGames   Game[] @relation("AwayTeam")
+  sponsors    Sponsor[]
+  sponsorOrders SponsorOrder[]
+  sponsorshipEarnings TeamSponsorshipEarning[]
+  planEarnings        TeamPlanEarning[]
+  purchases           Purchase[]
+  managers            TeamManager[]
+  members             TeamMember[]
+}
+
+// Responsáveis pelo time (usuários que gerenciam o time no painel do clube)
+model TeamManager {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  teamId    String   @map("team_id")
+  role      String   @default("OWNER") @map("role") // OWNER | ASSISTANT
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+  @@map("team_managers")
+}
+
+// Elenco / membros do time (jogadores, comissão técnica, staff)
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String   @map("team_id")
+  name      String   @map("name")
+  role      String   @map("role") // PLAYER | COACH | STAFF | GOALKEEPER | etc
+  number    Int?     @map("number")
+  position  String?  @map("position")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("team_members")
 }
 
 model Game {
@@ -71,33 +142,39 @@ model Game {
   championship String    @map("championship")
   gameDate     DateTime  @map("game_date")
   description  String?
-  videoUrl     String    @map("video_url")
+  videoUrl     String?   @map("video_url")
   thumbnailUrl String?   @map("thumbnail_url")
   featured     Boolean   @default(false)
   categoryId   String?   @map("category_id")
+  homeTeamId   String?   @map("home_team_id")
+  awayTeamId   String?   @map("away_team_id")
   order        Int       @default(0) @map("order")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  category   Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  purchases  Purchase[]
+  category    Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  homeTeam    Team?      @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: SetNull)
+  awayTeam    Team?      @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: SetNull)
+  purchases   Purchase[]
   homeBanners HomeBanner[]
-  playEvents PlayEvent[]
+  playEvents  PlayEvent[]
 }
 
 model Plan {
-  id             String   @id @default(cuid())
-  name           String   @map("name")
-  type           String   @map("type") // unitario | recorrente
-  periodicity    String   @map("periodicity") // mensal | anual | personalizado
-  price          Float    @map("price")
-  description    String?  @map("description")
-  active         Boolean  @default(true) @map("active")
-  acessoTotal    Boolean  @default(true) @map("acesso_total")
-  duracaoDias    Int?     @map("duracao_dias") // null = ilimitado para unitário
-  renovacaoAuto  Boolean  @default(false) @map("renovacao_auto")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(cuid())
+  name              String   @map("name")
+  type              String   @map("type") // unitario | recorrente
+  periodicity       String   @map("periodicity") // mensal | anual | personalizado
+  price             Float    @map("price")
+  description       String?  @map("description")
+  active            Boolean  @default(true) @map("active")
+  acessoTotal       Boolean  @default(true) @map("acesso_total")
+  duracaoDias       Int?     @map("duracao_dias") // null = ilimitado para unitário
+  renovacaoAuto     Boolean  @default(false) @map("renovacao_auto")
+  teamPayoutPercent Int      @default(0) @map("team_payout_percent") // 0-100: % que vai para o time (time de coração)
+  maxConcurrentStreams Int?  @map("max_concurrent_streams") // null = sem limite explícito
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   purchases     Purchase[]
   subscriptions Subscription[]
@@ -133,7 +210,7 @@ model HomeBanner {
   id                  String    @id @default(cuid())
   isActive            Boolean   @default(true) @map("is_active")
   priority            Int       @default(0) @map("priority")
-  type                String    @map("type") // MANUAL | FEATURED_GAME | FEATURED_PRE_SALE
+  type                String    @map("type") // MANUAL | FEATURED_GAME | FEATURED_PRE_SALE | FEATURED_LIVE
 
   badgeText           String?   @map("badge_text")
   headline            String?   @map("headline")
@@ -162,6 +239,7 @@ model HomeBanner {
 
   gameId              String?   @map("game_id")
   preSaleId           String?   @map("pre_sale_id")
+  liveId              String?   @map("live_id")
 
   showOnlyWhenReady   Boolean   @default(true) @map("show_only_when_ready")
   startAt             DateTime? @map("start_at")
@@ -172,6 +250,7 @@ model HomeBanner {
 
   game    Game?       @relation(fields: [gameId], references: [id], onDelete: SetNull)
   preSale PreSaleGame? @relation(fields: [preSaleId], references: [id], onDelete: SetNull)
+  live    Live?       @relation(fields: [liveId], references: [id], onDelete: SetNull)
 }
 
 // ========== PRÉ-ESTREIA CLUBES ==========
@@ -196,6 +275,7 @@ model PreSaleGame {
   videoUrl              String?   @map("video_url")
   status                String    @default("PRE_SALE") @map("status") // PRE_SALE | FUNDED | PUBLISHED
   specialCategoryId     String    @map("special_category_id")
+  gradeCategoryId       String?   @map("grade_category_id")  // categoria da grade convencional (quando publicado)
   featured              Boolean   @default(false) @map("featured")
   maxSimultaneousPerClub Int      @map("max_simultaneous_per_club")
   clubAPrice            Float     @map("club_a_price")
@@ -206,10 +286,11 @@ model PreSaleGame {
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
   specialCategory   PreSaleCategory       @relation("SpecialCategory", fields: [specialCategoryId], references: [id], onDelete: Restrict)
+  gradeCategory     Category?             @relation(fields: [gradeCategoryId], references: [id], onDelete: SetNull)
   normalCategories  PreSaleGameCategory[]
   clubSlots         PreSaleClubSlot[]
-  streamSessions    ClubStreamSession[]
-  homeBanners       HomeBanner[]
+  streamSessions   ClubStreamSession[]
+  homeBanners      HomeBanner[]
 }
 
 model PreSaleGameCategory {
@@ -274,19 +355,82 @@ model ClubStreamSession {
 
 // ========== FIM PRÉ-ESTREIA ==========
 
+// Planos de Patrocínio (pacotes vendíveis)
+model SponsorPlan {
+  id                String   @id @default(cuid())
+  name              String   @map("name")
+  price             Float    @map("price")
+  billingPeriod     String   @default("monthly") @map("billing_period") // monthly | quarterly | yearly
+  benefits          String   @default("[]") @map("benefits") // JSON array de strings
+  featuresFlags     String   @default("{}") @map("features_flags") // JSON ex: { show_in_footer, show_in_player, ... }
+  teamPayoutPercent Int      @default(0) @map("team_payout_percent") // 0-100: % do valor que vai para o time
+  sortOrder         Int      @default(0) @map("sort_order")
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  sponsors      Sponsor[]
+  sponsorOrders SponsorOrder[]
+}
+
+// Pedido de patrocínio (compra pelo site, antes de virar Sponsor)
+model SponsorOrder {
+  id               String    @id @default(cuid())
+  sponsorPlanId    String    @map("sponsor_plan_id")
+  teamId           String?   @map("team_id")
+  companyName      String    @map("company_name")
+  email            String    @map("email")
+  websiteUrl       String?   @map("website_url")
+  whatsapp         String?   @map("whatsapp")
+  logoUrl          String    @map("logo_url")
+  amountCents      Int       @map("amount_cents")
+  amountToTeamCents Int      @default(0) @map("amount_to_team_cents")
+  paymentStatus    String    @default("pending") @map("payment_status") // pending | paid | failed
+  paymentGateway   String?   @map("payment_gateway")
+  externalId       String?   @map("external_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  sponsorPlan SponsorPlan @relation(fields: [sponsorPlanId], references: [id], onDelete: Restrict)
+  team        Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  earnings    TeamSponsorshipEarning[]
+}
+
+// Ganho do time com patrocínio (comissão)
+model TeamSponsorshipEarning {
+  id               String    @id @default(cuid())
+  teamId           String    @map("team_id")
+  sponsorOrderId   String    @map("sponsor_order_id")
+  amountCents      Int       @map("amount_cents")
+  status           String    @default("pending") @map("status") // pending | paid
+  paidAt           DateTime? @map("paid_at")
+  paymentReference String?   @map("payment_reference")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  team         Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  sponsorOrder SponsorOrder @relation(fields: [sponsorOrderId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, sponsorOrderId])
+}
+
 // Patrocinadores
 model Sponsor {
-  id         String    @id @default(cuid())
-  name       String    @map("name")
-  websiteUrl String?   @map("website_url")
-  logoUrl    String    @map("logo_url")
-  tier       String    @default("APOIO") @map("tier") // MASTER | OFICIAL | APOIO
-  priority   Int       @default(0) @map("priority")
-  isActive   Boolean   @default(true) @map("is_active")
-  startAt    DateTime? @map("start_at")
-  endAt      DateTime? @map("end_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
+  id         String       @id @default(cuid())
+  name       String       @map("name")
+  websiteUrl String?      @map("website_url")
+  logoUrl    String       @map("logo_url")
+  tier       String       @default("APOIO") @map("tier") // MASTER | OFICIAL | APOIO
+  priority   Int          @default(0) @map("priority")
+  isActive   Boolean      @default(true) @map("is_active")
+  startAt    DateTime?    @map("start_at")
+  endAt      DateTime?    @map("end_at")
+  planId     String?      @map("plan_id")
+  teamId     String?      @map("team_id")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  plan SponsorPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  team Team?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
 }
 
 // Configurações gerais do site (contato, redes, CNPJ)
@@ -400,21 +544,42 @@ model IpGeoCache {
 // ========== FIM E-MAILS ==========
 
 model Purchase {
-  id               String    @id @default(cuid())
-  userId           String    @map("user_id")
-  planId           String    @map("plan_id")
-  gameId           String?   @map("game_id") // preenchido para plano unitário (jogo específico)
-  purchasedAt      DateTime  @default(now()) @map("purchased_at")
-  expiresAt       DateTime? @map("expires_at") // null = não expira
-  paymentStatus   String    @default("pending") @map("payment_status") // pending | paid | failed | refunded
-  paymentGateway  String?   @map("payment_gateway") // woovi | stripe | manual
-  externalId      String?   @map("external_id") // id da cobrança no gateway
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  id                 String    @id @default(cuid())
+  userId             String    @map("user_id")
+  planId             String    @map("plan_id")
+  gameId             String?   @map("game_id") // preenchido para plano unitário (jogo específico)
+  teamId             String?   @map("team_id") // time de coração (opcional)
+  amountToTeamCents  Int       @default(0) @map("amount_to_team_cents")
+  purchasedAt        DateTime  @default(now()) @map("purchased_at")
+  expiresAt          DateTime? @map("expires_at") // null = não expira
+  paymentStatus      String    @default("pending") @map("payment_status") // pending | paid | failed | refunded
+  paymentGateway     String?   @map("payment_gateway") // woovi | stripe | manual
+  externalId         String?   @map("external_id") // id da cobrança no gateway
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan Plan @relation(fields: [planId], references: [id], onDelete: Restrict)
-  game Game? @relation(fields: [gameId], references: [id], onDelete: SetNull)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Restrict)
+  game   Game?  @relation(fields: [gameId], references: [id], onDelete: SetNull)
+  team   Team?  @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  planEarnings TeamPlanEarning[]
+}
+
+// Ganho do time com compra de plano/jogo (comissão do time de coração)
+model TeamPlanEarning {
+  id               String    @id @default(cuid())
+  teamId           String    @map("team_id")
+  purchaseId       String    @map("purchase_id")
+  amountCents      Int       @map("amount_cents")
+  status           String    @default("pending") @map("status") // pending | paid
+  paidAt           DateTime? @map("paid_at")
+  paymentReference String?   @map("payment_reference")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, purchaseId])
 }
 
 // ========== DASHBOARD / ANALYTICS ==========
@@ -437,6 +602,43 @@ model Payment {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 }
+
+// ========== LIVES (Cloudflare Stream Live + OBS) ==========
+model Live {
+  id                      String    @id @default(cuid())
+  title                   String    @map("title")
+  description             String?   @map("description")
+  thumbnailUrl            String?   @map("thumbnail_url")
+  cloudflareLiveInputId   String?   @unique @map("cloudflare_live_input_id")
+  cloudflarePlaybackId    String?   @map("cloudflare_playback_id") // video uid quando gravado (replay)
+  status                  String    @default("SCHEDULED") @map("status") // SCHEDULED | LIVE | ENDED
+  startAt                 DateTime? @map("start_at")
+  endAt                   DateTime? @map("end_at")
+  requireSubscription     Boolean   @default(true) @map("require_subscription")
+  allowOneTimePurchase    Boolean   @default(false) @map("allow_one_time_purchase")
+  allowChat               Boolean   @default(false) @map("allow_chat")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+
+  purchases   LivePurchase[]
+  homeBanners HomeBanner[]
+}
+
+model LivePurchase {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  liveId      String   @map("live_id")
+  purchasedAt DateTime @default(now()) @map("purchased_at")
+  paymentStatus String @default("paid") @map("payment_status") // paid | pending | refunded
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  live Live @relation(fields: [liveId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, liveId])
+  @@map("live_purchases")
+}
+
+// ========== FIM LIVES ==========
 
 model WebhookEvent {
   id        String   @id @default(cuid())

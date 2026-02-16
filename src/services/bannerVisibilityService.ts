@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db';
 
-export type BannerType = 'MANUAL' | 'FEATURED_GAME' | 'FEATURED_PRE_SALE';
+export type BannerType = 'MANUAL' | 'FEATURED_GAME' | 'FEATURED_PRE_SALE' | 'FEATURED_LIVE';
 
 export type ResolvedBanner = {
   id: string;
@@ -45,6 +45,7 @@ export async function getVisibleBanners(userId?: string | null): Promise<Resolve
     include: {
       game: true,
       preSale: true,
+      live: true,
     },
   });
 
@@ -62,6 +63,10 @@ export async function getVisibleBanners(userId?: string | null): Promise<Resolve
     } else if (b.type === 'FEATURED_PRE_SALE') {
       if (!b.preSale) continue;
       visible.push(b);
+    } else if (b.type === 'FEATURED_LIVE') {
+      if (!b.live) continue;
+      if (b.showOnlyWhenReady && (b.live as { status?: string }).status !== 'LIVE') continue;
+      visible.push(b);
     }
   }
 
@@ -69,10 +74,14 @@ export async function getVisibleBanners(userId?: string | null): Promise<Resolve
     visible.map(async (b) => {
       const cta = await resolveCta(b, userId);
       const mediaResolved = resolveMedia(b);
+      const secMediaType = (b as { secondaryMediaType?: string }).secondaryMediaType ?? 'NONE';
+      const secMediaUrl = (b as { secondaryMediaUrl?: string | null }).secondaryMediaUrl ?? null;
+      const isLive = b.type === 'FEATURED_LIVE';
+      const liveThumb = isLive && b.live?.thumbnailUrl ? b.live.thumbnailUrl : null;
       const base = {
         id: b.id,
         type: b.type as BannerType,
-        badgeText: b.badgeText,
+        badgeText: isLive && !b.badgeText?.trim() ? 'AO VIVO' : b.badgeText,
         headline: cta.headline ?? b.headline,
         subheadline: cta.subheadline ?? b.subheadline,
         useDefaultCta: b.useDefaultCta,
@@ -89,8 +98,8 @@ export async function getVisibleBanners(userId?: string | null): Promise<Resolve
         overlayColorHex: b.overlayColorHex,
         overlayOpacity: b.overlayOpacity,
         heightPreset: (b as { heightPreset?: string }).heightPreset ?? 'md',
-        secondaryMediaType: (b as { secondaryMediaType?: string }).secondaryMediaType ?? 'NONE',
-        secondaryMediaUrl: (b as { secondaryMediaUrl?: string | null }).secondaryMediaUrl ?? null,
+        secondaryMediaType: isLive && secMediaType === 'NONE' && liveThumb ? 'IMAGE' : secMediaType,
+        secondaryMediaUrl: isLive && secMediaType === 'NONE' && liveThumb ? liveThumb : secMediaUrl,
         primaryCtaResolved: cta.primary,
         secondaryCtaResolved: cta.secondary,
         isPreSaleMode: cta.isPreSaleMode,
@@ -109,6 +118,7 @@ function resolveMedia(b: {
   mediaUrl: string | null;
   game?: { thumbnailUrl: string | null } | null;
   preSale?: { thumbnailUrl: string } | null;
+  live?: { thumbnailUrl: string | null } | null;
 }): { mediaType: string; mediaUrl: string | null } {
   if (b.mediaType !== 'NONE' && b.mediaUrl?.trim()) {
     return { mediaType: b.mediaType, mediaUrl: b.mediaUrl.trim() };
@@ -118,6 +128,9 @@ function resolveMedia(b: {
   }
   if (b.type === 'FEATURED_PRE_SALE' && b.preSale?.thumbnailUrl) {
     return { mediaType: 'IMAGE', mediaUrl: b.preSale.thumbnailUrl };
+  }
+  if (b.type === 'FEATURED_LIVE' && b.live?.thumbnailUrl) {
+    return { mediaType: 'IMAGE', mediaUrl: b.live.thumbnailUrl };
   }
   return { mediaType: 'NONE', mediaUrl: null };
 }
@@ -134,6 +147,7 @@ async function resolveCta(
     subheadline: string | null;
     game?: { slug: string; title: string; videoUrl: string | null } | null;
     preSale?: { id: string; slug: string; title: string; status: string; videoUrl: string | null } | null;
+    live?: { id: string; title: string; status: string; thumbnailUrl: string | null } | null;
   },
   userId?: string | null
 ) {
@@ -175,6 +189,14 @@ async function resolveCta(
         ? { text: 'Assistir agora', url: `/pre-estreia/assistir/${b.preSale.slug}` }
         : { text: 'Garantir pré-estreia', url: `/pre-estreia/${b.preSale.id}/checkout` };
       secondary = null;
+    }
+  }
+
+  if (b.type === 'FEATURED_LIVE' && b.live) {
+    headline = headline ?? b.live.title;
+    if (b.useDefaultCta) {
+      primary = { text: 'Assistir ao vivo', url: `/live/${b.live.id}` };
+      secondary = { text: 'Ver planos', url: '/planos' };
     }
   }
 

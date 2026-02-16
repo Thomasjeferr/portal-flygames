@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { hashPassword, createSession } from '@/lib/auth';
+import { hashPassword } from '@/lib/auth';
 import { sendTransactionalEmail } from '@/lib/email/emailService';
 import { checkRegisterRateLimit, incrementRegisterRateLimit } from '@/lib/email/rateLimit';
+import {
+  generateVerificationCode,
+  hashToken,
+  getVerificationCodeExpiryDate,
+} from '@/lib/email/tokenUtils';
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -15,9 +20,6 @@ const schema = z.object({
     .regex(/[0-9]/, 'Senha deve ter ao menos um número'),
   name: z.string().optional(),
 });
-
-const SESSION_COOKIE = 'portal_session';
-const SESSION_DAYS = 30;
 
 function getClientIp(req: NextRequest): string {
   return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '0.0.0.0';
@@ -72,26 +74,38 @@ export async function POST(request: NextRequest) {
       userId: user.id,
     }).catch((e) => console.error('[Email] WELCOME:', e));
 
-    const token = await createSession(user.id);
+    const code = generateVerificationCode();
+    const tokenHash = hashToken(code);
+    const expiresAt = getVerificationCodeExpiryDate();
+    await prisma.emailToken.create({
+      data: {
+        userId: user.id,
+        type: 'VERIFY_EMAIL',
+        tokenHash,
+        expiresAt,
+      },
+    });
+    sendTransactionalEmail({
+      to: user.email,
+      templateKey: 'VERIFY_EMAIL',
+      vars: {
+        name: user.name || user.email.split('@')[0],
+        code,
+        expires_in: '15',
+      },
+      userId: user.id,
+    }).catch((e) => console.error('[Email] VERIFY_EMAIL:', e));
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
         role: user.role,
       },
+      needsVerification: true,
+      message: 'Cadastro realizado! Verifique seu e-mail com o código de 6 dígitos.',
     });
-
-    response.cookies.set(SESSION_COOKIE, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: SESSION_DAYS * 24 * 60 * 60,
-      path: '/',
-    });
-
-    return response;
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: 'Erro ao cadastrar' }, { status: 500 });

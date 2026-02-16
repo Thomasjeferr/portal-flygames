@@ -1,5 +1,6 @@
-import Image from 'next/image';
+import Link from 'next/link';
 import { getPublicSponsors } from '@/services/sponsorsService';
+import { SponsorsCarousel } from '@/components/SponsorsCarousel';
 
 const TIER_ORDER = ['MASTER', 'OFICIAL', 'APOIO'] as const;
 const TIER_LABEL: Record<string, string> = {
@@ -7,12 +8,6 @@ const TIER_LABEL: Record<string, string> = {
   OFICIAL: 'Patrocinador Oficial',
   APOIO: 'Apoio',
 };
-
-function isValidLogoUrl(url: string | null | undefined): url is string {
-  if (!url || typeof url !== 'string') return false;
-  const s = url.trim();
-  return s.length > 0 && (s.startsWith('http') || s.startsWith('/') || s.startsWith('data:'));
-}
 
 export async function SponsorsSection() {
   const sponsors = await getPublicSponsors();
@@ -29,52 +24,34 @@ export async function SponsorsSection() {
   return (
     <section className="py-14 lg:py-18 px-4 lg:px-12 border-t border-white/5">
       <div className="max-w-[1920px] mx-auto">
-        <div className="flex items-center gap-3 mb-8 animate-fade-in-up opacity-0 [animation-delay:0.3s]">
-          <span className="w-1 h-8 rounded-full bg-futvar-gold" />
-          <h2 className="text-2xl lg:text-3xl font-bold text-white">Quem nos patrocina</h2>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8 animate-fade-in-up opacity-0 [animation-delay:0.3s]">
+          <div className="flex items-center gap-3">
+            <span className="w-1 h-8 rounded-full bg-futvar-gold" />
+            <h2 className="text-2xl lg:text-3xl font-bold text-white">Quem nos patrocina</h2>
+          </div>
+          <Link
+            href="/patrocinar"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light transition-colors text-sm"
+          >
+            Seja um Patrocinador
+          </Link>
         </div>
         <div className="space-y-10">
           {TIER_ORDER.map((tier) => {
             const list = byTier[tier] ?? [];
             if (list.length === 0) return null;
+            const sponsorsForCarousel = list.map((s) => ({
+              id: s.id,
+              name: s.name,
+              logoUrl: s.logoUrl,
+              websiteUrl: s.websiteUrl,
+            }));
             return (
               <div key={tier}>
                 <h3 className="text-sm font-medium text-futvar-light/80 uppercase tracking-wider mb-4">
                   {TIER_LABEL[tier] ?? tier}
                 </h3>
-                <div className="flex flex-wrap items-center gap-6 sm:gap-8">
-                  {list.map((s) => {
-                    if (!isValidLogoUrl(s.logoUrl)) return null;
-                    const logoUrl = s.logoUrl.trim();
-                    const Wrapper = s.websiteUrl ? 'a' : 'div';
-                    return (
-                      <Wrapper
-                        key={s.id}
-                        {...(s.websiteUrl
-                          ? {
-                              href: s.websiteUrl,
-                              target: '_blank',
-                              rel: 'noopener noreferrer',
-                              className:
-                                'flex items-center justify-center h-14 w-auto max-w-[140px] grayscale hover:grayscale-0 opacity-80 hover:opacity-100 transition-all duration-300',
-                            }
-                          : {
-                              className:
-                                'flex items-center justify-center h-14 w-auto max-w-[140px] grayscale opacity-80',
-                            })}
-                      >
-                        <Image
-                          src={logoUrl}
-                          alt={s.name}
-                          width={120}
-                          height={56}
-                          className="object-contain h-14 w-auto max-w-[140px]"
-                          unoptimized={logoUrl.startsWith('http')}
-                        />
-                      </Wrapper>
-                    );
-                  })}
-                </div>
+                <SponsorsCarousel sponsors={sponsorsForCarousel} />
               </div>
             );
           })}

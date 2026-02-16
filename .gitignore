@@ -27,8 +27,10 @@ yarn-error.log*
 *.swp
 *.swo
 
-# uploads (opcional: commitar se quiser)
+# uploads (exceto logo e favicon da marca)
 public/uploads/*
+!public/uploads/logo-home-fly.png
+!public/uploads/favicon-fly.png
 prisma/dev.db
 
 # OS

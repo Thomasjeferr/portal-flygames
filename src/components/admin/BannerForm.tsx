@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 
 type Game = { id: string; title: string };
 type PreSale = { id: string; title: string };
+type Live = { id: string; title: string };
 
 type FormData = {
   type: string;
@@ -30,6 +31,7 @@ type FormData = {
   secondaryMediaUrl: string;
   gameId: string;
   preSaleId: string;
+  liveId: string;
   showOnlyWhenReady: boolean;
   startAt: string;
   endAt: string;
@@ -60,6 +62,7 @@ const defaultForm: FormData = {
   secondaryMediaUrl: '',
   gameId: '',
   preSaleId: '',
+  liveId: '',
   showOnlyWhenReady: true,
   startAt: '',
   endAt: '',
@@ -68,11 +71,12 @@ const defaultForm: FormData = {
 interface BannerFormProps {
   games: Game[];
   preSales: PreSale[];
+  lives: Live[];
   initialData?: Partial<FormData>;
   onSubmit: (data: Record<string, unknown>) => Promise<void>;
 }
 
-export function BannerForm({ games, preSales, initialData, onSubmit }: BannerFormProps) {
+export function BannerForm({ games, preSales, lives, initialData, onSubmit }: BannerFormProps) {
   const [form, setForm] = useState<FormData>({ ...defaultForm, ...initialData });
   const [saving, setSaving] = useState(false);
   useEffect(() => {
@@ -163,6 +167,7 @@ export function BannerForm({ games, preSales, initialData, onSubmit }: BannerFor
         secondaryMediaUrl: secondaryMediaUrlVal || null,
         gameId: form.type === 'FEATURED_GAME' ? form.gameId || null : null,
         preSaleId: form.type === 'FEATURED_PRE_SALE' ? form.preSaleId || null : null,
+        liveId: form.type === 'FEATURED_LIVE' ? form.liveId || null : null,
         showOnlyWhenReady: form.showOnlyWhenReady,
         startAt: form.startAt ? new Date(form.startAt).toISOString() : null,
         endAt: form.endAt ? new Date(form.endAt).toISOString() : null,
@@ -189,6 +194,7 @@ export function BannerForm({ games, preSales, initialData, onSubmit }: BannerFor
           <option value="MANUAL">Manual</option>
           <option value="FEATURED_GAME">Jogo em destaque</option>
           <option value="FEATURED_PRE_SALE">Pre-estreia</option>
+          <option value="FEATURED_LIVE">Live ao vivo</option>
         </select>
       </div>
 
@@ -223,6 +229,24 @@ export function BannerForm({ games, preSales, initialData, onSubmit }: BannerFor
               <option key={p.id} value={p.id}>{p.title}</option>
             ))}
           </select>
+        </div>
+      )}
+
+      {form.type === 'FEATURED_LIVE' && (
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Live *</label>
+          <select
+            value={form.liveId}
+            onChange={(e) => setForm((f) => ({ ...f, liveId: e.target.value }))}
+            required
+            className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
+          >
+            <option value="">Selecione</option>
+            {lives.map((l) => (
+              <option key={l.id} value={l.id}>{l.title}</option>
+            ))}
+          </select>
+          <p className="text-xs text-netflix-light mt-1">O banner só aparece quando a live estiver com status &quot;LIVE&quot; (se &quot;Mostrar apenas quando pronto&quot; estiver ativo)</p>
         </div>
       )}
 

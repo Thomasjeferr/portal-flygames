@@ -7,7 +7,7 @@ export interface StripePaymentIntentInput {
   amount: number; // centavos
   currency?: string;
   customerEmail?: string;
-  metadata: { purchaseId: string; userId: string; planId: string; gameId?: string };
+  metadata: Record<string, string>; // purchaseId/userId/planId ou sponsorOrderId
 }
 
 export interface StripeSubscriptionInput {

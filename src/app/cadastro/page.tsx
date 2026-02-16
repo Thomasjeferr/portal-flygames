@@ -17,6 +17,7 @@ function RegisterForm() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -33,6 +34,10 @@ function RegisterForm() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || 'Erro ao cadastrar');
+        return;
+      }
+      if (data.needsVerification && data.user?.email) {
+        router.push(`/verificar-email?email=${encodeURIComponent(data.user.email)}`);
         return;
       }
       router.push(redirectTo);
@@ -91,16 +96,26 @@ function RegisterForm() {
               <label htmlFor="password" className="block text-sm font-medium text-futvar-light mb-2">
                 Senha (mín. 8 caracteres, com maiúscula, minúscula e número)
               </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                className="w-full px-4 py-3 rounded bg-futvar-gray border border-futvar-green/20 text-white placeholder-futvar-light/60 focus:outline-none focus:ring-2 focus:ring-futvar-green focus:border-transparent"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  className="w-full px-4 py-3 pr-20 rounded bg-futvar-gray border border-futvar-green/20 text-white placeholder-futvar-light/60 focus:outline-none focus:ring-2 focus:ring-futvar-green focus:border-transparent"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-futvar-light hover:text-white"
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {showPassword ? 'Ocultar' : 'Ver'}
+                </button>
+              </div>
             </div>
             <button
               type="submit"

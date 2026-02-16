@@ -18,6 +18,26 @@ export default function AdminPreEstreiaCategoriasPage() {
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<'SPECIAL' | 'NORMAL'>('SPECIAL');
   const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (cat: PreSaleCategory) => {
+    if (!confirm(`Excluir a categoria "${cat.name}"? Só é possível excluir se nenhum jogo estiver vinculado.`)) return;
+    setError('');
+    setDeletingId(cat.id);
+    try {
+      const res = await fetch(`/api/admin/pre-sale-categories/${cat.id}`, { method: 'DELETE', credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.error || 'Erro ao excluir');
+        return;
+      }
+      loadCategories();
+    } catch {
+      setError('Erro de conexão');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const loadCategories = () => {
     Promise.all([
@@ -118,8 +138,18 @@ export default function AdminPreEstreiaCategoriasPage() {
             ) : (
               <ul className="space-y-2">
                 {special.map((c) => (
-                  <li key={c.id} className="text-white text-sm flex items-center gap-2">
-                    <span className="text-futvar-green">●</span> {c.name}
+                  <li key={c.id} className="text-white text-sm flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2">
+                      <span className="text-futvar-green">●</span> {c.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(c)}
+                      disabled={!!deletingId}
+                      className="text-red-400 hover:text-red-300 text-xs disabled:opacity-50"
+                    >
+                      {deletingId === c.id ? 'Excluindo...' : 'Deletar'}
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -132,8 +162,18 @@ export default function AdminPreEstreiaCategoriasPage() {
             ) : (
               <ul className="space-y-2">
                 {normal.map((c) => (
-                  <li key={c.id} className="text-white text-sm flex items-center gap-2">
-                    <span className="text-futvar-gold">●</span> {c.name}
+                  <li key={c.id} className="text-white text-sm flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2">
+                      <span className="text-futvar-gold">●</span> {c.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(c)}
+                      disabled={!!deletingId}
+                      className="text-red-400 hover:text-red-300 text-xs disabled:opacity-50"
+                    >
+                      {deletingId === c.id ? 'Excluindo...' : 'Deletar'}
+                    </button>
                   </li>
                 ))}
               </ul>

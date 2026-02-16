@@ -14,6 +14,8 @@ function toBody(data: Record<string, unknown>) {
   if (data.is_active !== undefined) out.is_active = data.is_active;
   if (data.start_at !== undefined) out.start_at = data.start_at || null;
   if (data.end_at !== undefined) out.end_at = data.end_at || null;
+  if (data.plan_id !== undefined) out.plan_id = data.plan_id || null;
+  if (data.team_id !== undefined) out.team_id = data.team_id || null;
   return out;
 }
 
@@ -54,6 +56,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         ...(d.is_active !== undefined && { isActive: d.is_active }),
         ...(d.start_at !== undefined && { startAt: d.start_at ? new Date(d.start_at) : null }),
         ...(d.end_at !== undefined && { endAt: d.end_at ? new Date(d.end_at) : null }),
+        ...(d.plan_id !== undefined && { planId: d.plan_id || null }),
+        ...(d.team_id !== undefined && { teamId: d.team_id || null }),
       },
     });
     revalidatePath('/');

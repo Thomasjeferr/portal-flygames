@@ -116,7 +116,7 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
   const siteSettings = await prisma.siteSettings.findFirst();
   if (siteSettings?.adminCredentialsEmail?.trim())
     recipients.push(siteSettings.adminCredentialsEmail.trim());
-  const uniqueRecipients = [...new Set(recipients)];
+  const uniqueRecipients = Array.from(new Set(recipients));
 
   if (uniqueRecipients.length > 0) {
     const subject = `Acesso à pré-estreia: ${slot.preSaleGame.title}`;
@@ -165,7 +165,7 @@ export async function regenerateClubViewerPassword(slotId: string): Promise<{ pa
   const siteSettings = await prisma.siteSettings.findFirst();
   if (siteSettings?.adminCredentialsEmail?.trim())
     recipients.push(siteSettings.adminCredentialsEmail.trim());
-  const uniqueRecipients = [...new Set(recipients)];
+  const uniqueRecipients = Array.from(new Set(recipients));
   if (uniqueRecipients.length > 0) {
     await sendEmailToMany(
       uniqueRecipients,

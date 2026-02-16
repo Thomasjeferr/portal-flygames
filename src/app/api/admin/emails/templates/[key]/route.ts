@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { emailTemplateSchema } from '@/lib/validators/emailSchema';
-const KEYS = ['WELCOME', 'VERIFY_EMAIL', 'RESET_PASSWORD', 'PASSWORD_CHANGED'] as const;
+const KEYS = [
+  'WELCOME',
+  'VERIFY_EMAIL',
+  'RESET_PASSWORD',
+  'PASSWORD_CHANGED',
+  'PURCHASE_CONFIRMATION',
+  'SPONSOR_CONFIRMATION',
+  'LIVE_PURCHASE_CONFIRMATION',
+] as const;
 
 export async function GET(
   _req: NextRequest,

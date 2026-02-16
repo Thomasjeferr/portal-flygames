@@ -6,6 +6,7 @@ type BannerLike = {
   mediaUrl?: string | null;
   game?: { thumbnailUrl?: string | null } | null;
   preSale?: { thumbnailUrl?: string } | null;
+  live?: { thumbnailUrl?: string | null } | null;
 };
 
 /**
@@ -49,6 +50,14 @@ export function getBannerThumbnailUrl(b: BannerLike): string | null {
       if (u && (u.startsWith('http') || u.startsWith('/'))) return u;
     }
     return url(b.preSale?.thumbnailUrl) ?? null;
+  }
+
+  if (b.type === 'FEATURED_LIVE') {
+    if (b.mediaType === 'IMAGE' && b.mediaUrl) {
+      const u = url(b.mediaUrl);
+      if (u && (u.startsWith('http') || u.startsWith('/'))) return u;
+    }
+    return url(b.live?.thumbnailUrl) ?? null;
   }
 
   if (b.type === 'MANUAL') {

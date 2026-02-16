@@ -12,6 +12,7 @@ export default function AdminBannerEditarPage() {
   const [banner, setBanner] = useState<Record<string, unknown> | null>(null);
   const [games, setGames] = useState<{ id: string; title: string }[]>([]);
   const [preSales, setPreSales] = useState<{ id: string; title: string }[]>([]);
+  const [lives, setLives] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,6 +21,7 @@ export default function AdminBannerEditarPage() {
       fetch(`/api/admin/home-banners/${id}`, { cache: 'no-store' }).then((r) => r.json()).then((d) => setBanner(d?.id ? d : null)),
       fetch('/api/admin/games').then((r) => r.json()).then((d) => setGames(Array.isArray(d) ? d : [])),
       fetch('/api/admin/pre-sale-games').then((r) => r.json()).then((d) => setPreSales(Array.isArray(d) ? d : [])),
+      fetch('/api/admin/lives').then((r) => r.json()).then((d) => setLives(Array.isArray(d) ? d : [])),
     ]).finally(() => setLoading(false));
   }, [id]);
 
@@ -63,6 +65,7 @@ export default function AdminBannerEditarPage() {
     secondaryMediaUrl: string;
     gameId: string;
     preSaleId: string;
+    liveId: string;
     showOnlyWhenReady: boolean;
     startAt: string;
     endAt: string;
@@ -91,6 +94,7 @@ export default function AdminBannerEditarPage() {
     secondaryMediaUrl: String((banner.secondaryMediaUrl ?? (banner as { secondary_media_url?: string }).secondary_media_url) ?? ''),
     gameId: String((banner.game as { id?: string })?.id ?? ''),
     preSaleId: String((banner.preSale as { id?: string })?.id ?? ''),
+    liveId: String((banner.live as { id?: string })?.id ?? ''),
     showOnlyWhenReady: Boolean(banner.showOnlyWhenReady ?? true),
     startAt: banner.startAt ? new Date(banner.startAt as string).toISOString().slice(0, 16) : '',
     endAt: banner.endAt ? new Date(banner.endAt as string).toISOString().slice(0, 16) : '',
@@ -100,7 +104,7 @@ export default function AdminBannerEditarPage() {
     <div className="max-w-2xl mx-auto px-6 py-10">
       <Link href="/admin/banner" className="text-netflix-light hover:text-white text-sm mb-6 inline-block">Voltar</Link>
       <h1 className="text-2xl font-bold text-white mb-8">Editar banner</h1>
-      <BannerForm key={id} games={games} preSales={preSales} initialData={initialData} onSubmit={handleSubmit} />
+      <BannerForm key={id} games={games} preSales={preSales} lives={lives} initialData={initialData} onSubmit={handleSubmit} />
     </div>
   );
 }

@@ -9,7 +9,17 @@ const createSchema = z.object({
   championship: z.string().min(1, 'Campeonato obrigatório'),
   gameDate: z.string().min(10, 'Data inválida'),
   description: z.string().optional(),
-  videoUrl: z.string().url('URL do vídeo inválida'),
+  videoUrl: z
+    .string()
+    .optional()
+    .refine(
+      (val) =>
+        !val ||
+        val.trim() === '' ||
+        (val.startsWith('stream:') && val.length > 7) ||
+        z.string().url().safeParse(val).success,
+      'URL do vídeo inválida. Use YouTube, Vimeo, PandaVideo ou stream:VIDEO_ID'
+    ),
   thumbnailUrl: z.string().optional(),
   featured: z.boolean().optional(),
   categoryId: z.string().optional().nullable(),
@@ -59,7 +69,7 @@ export async function POST(request: NextRequest) {
         championship: data.championship,
         gameDate: new Date(data.gameDate),
         description: data.description || null,
-        videoUrl: data.videoUrl,
+        videoUrl: data.videoUrl?.trim() || null,
         thumbnailUrl: data.thumbnailUrl || null,
         featured: data.featured ?? false,
         categoryId: data.categoryId || null,

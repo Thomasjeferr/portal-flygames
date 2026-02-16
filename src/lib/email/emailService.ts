@@ -8,7 +8,14 @@ function getResend(): Resend | null {
   return new Resend(key);
 }
 
-export type EmailTemplateKey = 'WELCOME' | 'VERIFY_EMAIL' | 'RESET_PASSWORD' | 'PASSWORD_CHANGED';
+export type EmailTemplateKey =
+  | 'WELCOME'
+  | 'VERIFY_EMAIL'
+  | 'RESET_PASSWORD'
+  | 'PASSWORD_CHANGED'
+  | 'PURCHASE_CONFIRMATION'
+  | 'SPONSOR_CONFIRMATION'
+  | 'LIVE_PURCHASE_CONFIRMATION';
 
 async function getEmailSettings() {
   const row = await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } });

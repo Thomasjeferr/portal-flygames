@@ -192,13 +192,14 @@ export async function GET() {
         where: { createdAt: { gte: thirtyDaysAgo } },
         select: { createdAt: true },
       });
-      playsByGame = await prisma.playEvent.groupBy({
+      const grouped = await prisma.playEvent.groupBy({
         by: ['gameId'],
         where: { createdAt: { gte: thirtyDaysAgo } },
         _count: { id: true },
-        orderBy: { _count: { id: 'desc' } },
-        take: 10,
       });
+      playsByGame = grouped
+        .sort((a, b) => b._count.id - a._count.id)
+        .slice(0, 10);
     } catch {
       // PlayEvent pode não existir se Prisma client não foi regenerado
     }
