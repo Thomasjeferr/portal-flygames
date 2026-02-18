@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 
 const BILLING_LABEL: Record<string, string> = {
   monthly: 'mensal',
@@ -27,7 +27,7 @@ type Plan = {
 
 type Team = { id: string; name: string; city?: string | null; state?: string | null };
 
-export default function PatrocinarComprarPage() {
+function PatrocinarComprarContent() {
   const searchParams = useSearchParams();
   const planId = searchParams.get('planId');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -318,5 +318,19 @@ export default function PatrocinarComprarPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PatrocinarComprarPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="pt-20 pb-16 px-4 min-h-screen bg-futvar-darker flex items-center justify-center">
+          <p className="text-futvar-light">Carregando...</p>
+        </div>
+      }
+    >
+      <PatrocinarComprarContent />
+    </Suspense>
   );
 }
