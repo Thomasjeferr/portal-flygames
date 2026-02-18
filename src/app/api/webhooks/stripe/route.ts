@@ -72,8 +72,7 @@ export async function POST(request: NextRequest) {
 
           if (order.partnerId && order.partner && order.partner.status === 'approved') {
             const grossAmountCents = order.amountCents;
-            let commissionPercent = order.sponsorPlan.sponsorCommissionPercent ?? order.partner.sponsorCommissionPercent;
-            if (commissionPercent == null) commissionPercent = order.partner.sponsorCommissionPercent;
+            let commissionPercent = order.partner.sponsorCommissionPercent ?? 0;
             if (commissionPercent < 0) commissionPercent = 0;
             if (commissionPercent > 100) commissionPercent = 100;
             const partnerAmountCents = Math.round((grossAmountCents * commissionPercent) / 100);
