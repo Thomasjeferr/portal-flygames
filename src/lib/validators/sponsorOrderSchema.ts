@@ -8,6 +8,12 @@ export const sponsorOrderCheckoutSchema = z.object({
   whatsapp: z.string().optional(),
   logoUrl: z.string().min(1, 'Logo é obrigatória'),
   teamId: z.string().nullable().optional(),
+  utmSource: z.string().optional(),
+  utmMedium: z.string().optional(),
+  utmCampaign: z.string().optional(),
+  utmContent: z.string().optional(),
+  utmTerm: z.string().optional(),
+  refCode: z.string().optional(),
 });
 
 export type SponsorOrderCheckoutInput = z.infer<typeof sponsorOrderCheckoutSchema>;

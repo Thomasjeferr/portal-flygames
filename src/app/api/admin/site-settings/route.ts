@@ -18,6 +18,9 @@ export async function GET() {
         youtubeUrl: '',
         companyName: 'Fly Games',
         companyCnpj: '',
+        gaMeasurementId: '',
+        fbPixelId: '',
+        tiktokPixelId: '',
       });
     return NextResponse.json({
       supportEmail: row.supportEmail ?? '',
@@ -28,6 +31,9 @@ export async function GET() {
       youtubeUrl: row.youtubeUrl ?? '',
       companyName: row.companyName ?? '',
       companyCnpj: row.companyCnpj ?? '',
+      gaMeasurementId: row.gaMeasurementId ?? '',
+      fbPixelId: row.fbPixelId ?? '',
+      tiktokPixelId: row.tiktokPixelId ?? '',
     });
   } catch (e) {
     console.error(e);
@@ -50,6 +56,9 @@ export async function POST(request: NextRequest) {
       youtubeUrl: typeof body.youtubeUrl === 'string' ? body.youtubeUrl.trim() || null : null,
       companyName: typeof body.companyName === 'string' ? body.companyName.trim() || null : null,
       companyCnpj: typeof body.companyCnpj === 'string' ? body.companyCnpj.trim() || null : null,
+      gaMeasurementId: typeof body.gaMeasurementId === 'string' ? body.gaMeasurementId.trim() || null : null,
+      fbPixelId: typeof body.fbPixelId === 'string' ? body.fbPixelId.trim() || null : null,
+      tiktokPixelId: typeof body.tiktokPixelId === 'string' ? body.tiktokPixelId.trim() || null : null,
     };
     const existing = await prisma.siteSettings.findFirst();
     let row;

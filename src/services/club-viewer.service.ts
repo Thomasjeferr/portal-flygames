@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
-import { sendEmailToMany } from '@/lib/email/emailService';
+import { sendTransactionalEmail } from '@/lib/email/emailService';
 
 const INTERNAL_EMAIL_DOMAIN = 'clubviewer.interno.portal';
 
@@ -16,35 +16,6 @@ function generatePassword(length = 10): string {
 function generateUsername(slotId: string, slotIndex: number): string {
   const suffix = slotId.slice(-6);
   return `clube-${suffix}-${slotIndex}`;
-}
-
-function buildCredentialsEmailHtml(params: {
-  gameTitle: string;
-  watchUrl: string;
-  username: string;
-  password: string;
-  isNewPassword?: boolean;
-}): string {
-  const { gameTitle, watchUrl, username, password, isNewPassword } = params;
-  const title = isNewPassword ? 'Nova senha de acesso à pré-estreia' : 'Acesso à pré-estreia - Credenciais';
-  return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>${title}</title></head>
-<body style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 560px; margin: 0 auto; padding: 20px;">
-  <h2 style="color: #111;">${title}</h2>
-  <p>Olá,</p>
-  <p>${isNewPassword ? 'Foi gerada uma nova senha para o acesso à pré-estreia.' : 'O pagamento foi confirmado. Seguem os dados de acesso à pré-estreia:'}</p>
-  <p><strong>Jogo:</strong> ${gameTitle}</p>
-  <p><strong>Link para assistir:</strong> <a href="${watchUrl}">${watchUrl}</a></p>
-  <p><strong>Usuário:</strong> <code style="background: #f0f0f0; padding: 2px 6px;">${username}</code></p>
-  <p><strong>Senha:</strong> <code style="background: #f0f0f0; padding: 2px 6px;">${password}</code></p>
-  <p>Compartilhe o usuário e a senha com os membros do clube. Este acesso vale apenas para este jogo de pré-estreia.</p>
-  <p>Para comprar planos ou outros jogos no site, é necessário criar uma conta normal (cadastro).</p>
-  <p style="margin-top: 24px; color: #666; font-size: 12px;">Fly Games - Pré-estreia Clubes</p>
-</body>
-</html>
-  `.trim();
 }
 
 /**
@@ -104,13 +75,6 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.flygames.com.br';
   const watchUrl = `${baseUrl}/pre-estreia/assistir/${slot.preSaleGame.slug}`;
-  const html = buildCredentialsEmailHtml({
-    gameTitle: slot.preSaleGame.title,
-    watchUrl,
-    username: loginUsername,
-    password: plainPassword,
-  });
-
   const recipients: string[] = [];
   if (slot.responsibleEmail?.trim()) recipients.push(slot.responsibleEmail.trim());
   const siteSettings = await prisma.siteSettings.findFirst();
@@ -118,9 +82,19 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
     recipients.push(siteSettings.adminCredentialsEmail.trim());
   const uniqueRecipients = Array.from(new Set(recipients));
 
-  if (uniqueRecipients.length > 0) {
-    const subject = `Acesso à pré-estreia: ${slot.preSaleGame.title}`;
-    await sendEmailToMany(uniqueRecipients, subject, html);
+  const vars = {
+    game_title: slot.preSaleGame.title,
+    watch_url: watchUrl,
+    username: loginUsername,
+    password: plainPassword,
+    intro_text: 'O pagamento foi confirmado. Seguem os dados de acesso à pré-estreia.',
+  };
+  for (const to of uniqueRecipients) {
+    await sendTransactionalEmail({
+      to,
+      templateKey: 'PRE_SALE_CREDENTIALS',
+      vars,
+    }).catch((e) => console.error('[club-viewer] Email credenciais:', e));
   }
 
   await prisma.preSaleClubSlot.update({
@@ -152,26 +126,24 @@ export async function regenerateClubViewerPassword(slotId: string): Promise<{ pa
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.flygames.com.br';
   const watchUrl = `${baseUrl}/pre-estreia/assistir/${slot.preSaleGame.slug}`;
-  const html = buildCredentialsEmailHtml({
-    gameTitle: slot.preSaleGame.title,
-    watchUrl,
-    username: slot.clubViewerAccount.loginUsername,
-    password: newPassword,
-    isNewPassword: true,
-  });
-
   const recipients: string[] = [];
   if (slot.responsibleEmail?.trim()) recipients.push(slot.responsibleEmail.trim());
   const siteSettings = await prisma.siteSettings.findFirst();
   if (siteSettings?.adminCredentialsEmail?.trim())
     recipients.push(siteSettings.adminCredentialsEmail.trim());
   const uniqueRecipients = Array.from(new Set(recipients));
-  if (uniqueRecipients.length > 0) {
-    await sendEmailToMany(
-      uniqueRecipients,
-      `Nova senha - Pré-estreia: ${slot.preSaleGame.title}`,
-      html
-    );
+  const vars = {
+    game_title: slot.preSaleGame.title,
+    watch_url: watchUrl,
+    username: slot.clubViewerAccount.loginUsername,
+    password: newPassword,
+  };
+  for (const to of uniqueRecipients) {
+    await sendTransactionalEmail({
+      to,
+      templateKey: 'PRE_SALE_CREDENTIALS_NEW_PASSWORD',
+      vars,
+    }).catch((e) => console.error('[club-viewer] Email nova senha:', e));
   }
 
   await prisma.preSaleClubSlot.update({

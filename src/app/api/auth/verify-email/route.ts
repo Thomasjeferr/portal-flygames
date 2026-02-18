@@ -2,14 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { hashToken } from '@/lib/email/tokenUtils';
+import { checkVerifyEmailRateLimit, incrementVerifyEmailRateLimit } from '@/lib/email/rateLimit';
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
   code: z.string().length(6, 'Código deve ter 6 dígitos'),
 });
 
+function getClientIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '0.0.0.0';
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const allowed = await checkVerifyEmailRateLimit(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em 15 minutos.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
@@ -35,9 +49,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!emailToken) {
+      await incrementVerifyEmailRateLimit(ip);
       return NextResponse.json({ error: 'Código inválido ou expirado.' }, { status: 400 });
     }
 
+    await incrementVerifyEmailRateLimit(ip);
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },

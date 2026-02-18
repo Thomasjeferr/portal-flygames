@@ -25,12 +25,22 @@ export async function POST(request: NextRequest) {
 
     const amountCents = Math.round(plan.price * 100);
     let amountToTeamCents = 0;
+    let partnerId: string | null = null;
 
     if (d.teamId && plan.teamPayoutPercent > 0) {
       amountToTeamCents = Math.round((amountCents * plan.teamPayoutPercent) / 100);
       const team = await prisma.team.findUnique({ where: { id: d.teamId } });
       if (!team || !team.isActive) {
         return NextResponse.json({ error: 'Time não encontrado ou inativo' }, { status: 400 });
+      }
+    }
+
+    if (d.refCode && d.refCode.trim()) {
+      const partner = await prisma.partner.findUnique({
+        where: { refCode: d.refCode.trim() },
+      });
+      if (partner && partner.status === 'approved') {
+        partnerId = partner.id;
       }
     }
 
@@ -46,6 +56,12 @@ export async function POST(request: NextRequest) {
         amountCents,
         amountToTeamCents,
         paymentStatus: 'pending',
+        partnerId,
+        utmSource: d.utmSource || null,
+        utmMedium: d.utmMedium || null,
+        utmCampaign: d.utmCampaign || null,
+        utmContent: d.utmContent || null,
+        utmTerm: d.utmTerm || null,
       },
     });
 

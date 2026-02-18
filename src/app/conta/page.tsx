@@ -9,8 +9,9 @@ interface Purchase {
   purchasedAt: string;
   paymentStatus: string;
   expiresAt: string | null;
-  plan: { name: string; type: string; price: number };
+  plan: { name: string; type: string; price: number; teamPayoutPercent?: number };
   game: { title: string; slug: string } | null;
+  team?: { id: string; name: string } | null;
 }
 interface Subscription {
   active: boolean;
@@ -24,27 +25,72 @@ export default function ContaPage() {
   const [loading, setLoading] = useState(true);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
+  const [savingTeamId, setSavingTeamId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/me/purchases')
-      .then((r) => {
-        if (r.status === 401) {
+    Promise.all([
+      fetch('/api/me/purchases'),
+      fetch('/api/public/teams', { cache: 'no-store' }),
+    ])
+      .then(async ([purchasesRes, teamsRes]) => {
+        if (purchasesRes.status === 401) {
           router.replace('/entrar?redirect=/conta');
           return null;
         }
-        return r.json();
-      })
-      .then((data) => {
+        const data = await purchasesRes.json();
+        const teamsData = await teamsRes.json().catch(() => []);
         if (data) {
           setPurchases(data.purchases ?? []);
           setSubscription(data.subscription ?? null);
         }
+        if (Array.isArray(teamsData)) {
+          setTeams(teamsData.map((t: { id: string; name: string }) => ({ id: t.id, name: t.name })));
+        }
+        return null;
       })
       .finally(() => setLoading(false));
   }, [router]);
 
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  const canChooseTeam = (p: Purchase) => {
+    const payoutPercent = p.plan.teamPayoutPercent ?? 0;
+    return (
+      p.paymentStatus === 'paid' &&
+      payoutPercent > 0 &&
+      !p.team
+    );
+  };
+
+  const handleChooseTeam = async (purchaseId: string, teamId: string) => {
+    if (!teamId) return;
+    setSavingTeamId(purchaseId);
+    try {
+      const res = await fetch(`/api/me/purchases/${purchaseId}/choose-team`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Não foi possível salvar o time de coração. Tente novamente.');
+        return;
+      }
+      setPurchases((prev) =>
+        prev.map((p) =>
+          p.id === purchaseId
+            ? { ...p, team: teams.find((t) => t.id === teamId) ?? null }
+            : p
+        )
+      );
+    } catch {
+      alert('Erro de conexão ao salvar o time de coração.');
+    } finally {
+      setSavingTeamId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -86,19 +132,70 @@ export default function ContaPage() {
           ) : (
             <ul className="space-y-4">
               {purchases.map((p) => (
-                <li key={p.id} className="flex flex-wrap items-center justify-between gap-4 py-3 border-b border-white/10 last:border-0">
-                  <div>
-                    <p className="text-white font-medium">{p.plan.name}</p>
-                    {p.game && (
-                      <Link href={`/jogo/${p.game.slug}`} className="text-sm text-futvar-green hover:underline">
-                        {p.game.title}
-                      </Link>
-                    )}
-                    <p className="text-futvar-light text-sm">{formatDate(p.purchasedAt)}</p>
+                <li
+                  key={p.id}
+                  className="flex flex-col gap-2 py-3 border-b border-white/10 last:border-0"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <p className="text-white font-medium">{p.plan.name}</p>
+                      {p.game && (
+                        <Link
+                          href={`/jogo/${p.game.slug}`}
+                          className="text-sm text-futvar-green hover:underline"
+                        >
+                          {p.game.title}
+                        </Link>
+                      )}
+                      <p className="text-futvar-light text-sm">
+                        {formatDate(p.purchasedAt)}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-sm ${
+                        p.paymentStatus === 'paid'
+                          ? 'text-green-400'
+                          : p.paymentStatus === 'pending'
+                          ? 'text-amber-400'
+                          : 'text-futvar-light'
+                      }`}
+                    >
+                      {p.paymentStatus === 'paid'
+                        ? 'Pago'
+                        : p.paymentStatus === 'pending'
+                        ? 'Aguardando pagamento'
+                        : p.paymentStatus}
+                    </span>
                   </div>
-                  <span className={`text-sm ${p.paymentStatus === 'paid' ? 'text-green-400' : p.paymentStatus === 'pending' ? 'text-amber-400' : 'text-futvar-light'}`}>
-                    {p.paymentStatus === 'paid' ? 'Pago' : p.paymentStatus === 'pending' ? 'Aguardando pagamento' : p.paymentStatus}
-                  </span>
+
+                  {p.team && (
+                    <p className="text-xs text-futvar-light">
+                      Time de coração: <span className="text-futvar-green">{p.team.name}</span>
+                    </p>
+                  )}
+
+                  {canChooseTeam(p) && teams.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="text-xs text-futvar-light">
+                        Escolher time de coração para esta compra:
+                      </label>
+                      <select
+                        defaultValue=""
+                        onChange={(e) =>
+                          handleChooseTeam(p.id, e.target.value || '')
+                        }
+                        disabled={savingTeamId === p.id}
+                        className="px-3 py-1 rounded bg-futvar-darker border border-futvar-green/40 text-xs text-white focus:outline-none focus:ring-1 focus:ring-futvar-green"
+                      >
+                        <option value="">Selecione um time</option>
+                        {teams.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

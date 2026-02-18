@@ -4,13 +4,15 @@ export default function SuportePage() {
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 lg:px-12 bg-futvar-darker">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">Suporte</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">Suporte e Atendimento</h1>
         <p className="text-futvar-light mb-8">
-          Entre em contato conosco para tirar dúvidas ou reportar problemas.
+          Use os canais abaixo para tirar dúvidas, reportar problemas técnicos, falar sobre cobranças ou sugerir
+          melhorias na plataforma.
         </p>
+
         <div className="space-y-4 text-futvar-light">
           <p>
-            <strong className="text-white">E-mail:</strong>{' '}
+            <strong className="text-white">E-mail de suporte:</strong>{' '}
             <a href="mailto:contato@flygames.com.br" className="text-futvar-green hover:underline">
               contato@flygames.com.br
             </a>
@@ -26,7 +28,12 @@ export default function SuportePage() {
               (11) 99999-9999
             </a>
           </p>
+          <p className="text-sm">
+            <strong className="text-white">Assinantes e compras:</strong> informe sempre o e-mail utilizado na conta
+            para agilizar seu atendimento.
+          </p>
         </div>
+
         <p className="mt-10 text-futvar-light text-sm">
           <Link href="/" className="text-futvar-green hover:underline">
             Voltar ao início

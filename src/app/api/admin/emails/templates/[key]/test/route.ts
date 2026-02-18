@@ -11,6 +11,8 @@ const KEYS = [
   'PURCHASE_CONFIRMATION',
   'SPONSOR_CONFIRMATION',
   'LIVE_PURCHASE_CONFIRMATION',
+  'PRE_SALE_CREDENTIALS',
+  'PRE_SALE_CREDENTIALS_NEW_PASSWORD',
 ] as const;
 const schema = z.object({ to: z.string().email() });
 
@@ -22,6 +24,19 @@ const SAMPLE_VARS: Record<string, Record<string, string>> = {
   PURCHASE_CONFIRMATION: { name: 'Teste', plan_name: 'Plano Mensal', amount: '29,90' },
   SPONSOR_CONFIRMATION: { company_name: 'Empresa XYZ', plan_name: 'Patrocínio Oficial', amount: '199,90' },
   LIVE_PURCHASE_CONFIRMATION: { name: 'Teste', live_title: 'Jogo ao vivo - Final', amount: '9,90' },
+  PRE_SALE_CREDENTIALS: {
+    game_title: 'Amistoso Clube A x Clube B',
+    watch_url: 'https://portal.flygames.com.br/pre-estreia/assistir/amistoso-clube-a-b',
+    username: 'clube-abc123-1',
+    password: 'Xy7kL9mN2p',
+    intro_text: 'O pagamento foi confirmado. Seguem os dados de acesso à pré-estreia.',
+  },
+  PRE_SALE_CREDENTIALS_NEW_PASSWORD: {
+    game_title: 'Amistoso Clube A x Clube B',
+    watch_url: 'https://portal.flygames.com.br/pre-estreia/assistir/amistoso-clube-a-b',
+    username: 'clube-abc123-1',
+    password: 'NovaSenha9K',
+  },
 };
 
 export async function POST(

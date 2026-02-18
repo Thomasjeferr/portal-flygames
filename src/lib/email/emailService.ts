@@ -15,7 +15,9 @@ export type EmailTemplateKey =
   | 'PASSWORD_CHANGED'
   | 'PURCHASE_CONFIRMATION'
   | 'SPONSOR_CONFIRMATION'
-  | 'LIVE_PURCHASE_CONFIRMATION';
+  | 'LIVE_PURCHASE_CONFIRMATION'
+  | 'PRE_SALE_CREDENTIALS'
+  | 'PRE_SALE_CREDENTIALS_NEW_PASSWORD';
 
 async function getEmailSettings() {
   const row = await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } });

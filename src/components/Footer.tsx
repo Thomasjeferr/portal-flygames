@@ -118,6 +118,9 @@ export async function Footer() {
               <Link href="/patrocinar" className="hover:text-futvar-green transition-colors">
                 Seja Patrocinador
               </Link>
+              <Link href="/parceiros" className="hover:text-futvar-green transition-colors">
+                Programa de parceiros
+              </Link>
               <Link href="/entrar" className="hover:text-futvar-green transition-colors">
                 Entrar
               </Link>
@@ -166,7 +169,7 @@ export async function Footer() {
         {/* Linha compacta de patrocinadores */}
         <div className="mt-10 pt-8 border-t border-white/5">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <p className="text-xs text-futvar-light/70 uppercase tracking-wider">Patrocinadores</p>
+            <p className="text-xs text-futvar-light/70 tracking-wider">Patrocinadores</p>
             <Link href="/patrocinar" className="text-sm text-futvar-green hover:text-futvar-green-light font-medium">
               Seja um Patrocinador →
             </Link>

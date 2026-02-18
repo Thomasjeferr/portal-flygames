@@ -5,6 +5,7 @@ import path from 'path';
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
 const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB para logo
 const ALLOWED_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.svg'];
+const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
 
 function getExtFromMagic(buffer: Buffer): string | null {
   if (buffer[0] === 0xff && buffer[1] === 0xd8) return '.jpg';
@@ -34,6 +35,11 @@ export async function POST(request: NextRequest) {
     const claimedExt = path.extname(file.name).toLowerCase();
     if (!ALLOWED_EXT.includes(claimedExt)) {
       return NextResponse.json({ error: 'Tipo não permitido. Use: jpg, png, webp ou svg.' }, { status: 400 });
+    }
+
+    const claimedMime = file.type?.toLowerCase();
+    if (claimedMime && !ALLOWED_MIMES.includes(claimedMime)) {
+      return NextResponse.json({ error: 'Tipo de arquivo não permitido.' }, { status: 400 });
     }
 
     const detectedExt = getExtFromMagic(buffer);

@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     const purchase = await prisma.purchase.findUnique({
       where: { id: externalId },
-      include: { plan: true },
+      include: { plan: true, partner: true },
     });
     if (!purchase || purchase.paymentStatus === 'paid') return NextResponse.json({ received: true });
 
@@ -56,6 +56,29 @@ export async function POST(request: NextRequest) {
           status: 'pending',
         },
       });
+    }
+
+    if (purchase.partnerId && purchase.partner && purchase.partner.status === 'approved') {
+      const planPriceCents = Math.round((purchase.plan.price ?? 0) * 100);
+      let commissionPercent = purchase.plan.type === 'unitario'
+        ? purchase.partner.gameCommissionPercent
+        : purchase.partner.planCommissionPercent;
+      if (commissionPercent < 0) commissionPercent = 0;
+      if (commissionPercent > 100) commissionPercent = 100;
+      const partnerAmountCents = Math.round((planPriceCents * commissionPercent) / 100);
+      if (partnerAmountCents > 0) {
+        await prisma.partnerEarning.create({
+          data: {
+            partnerId: purchase.partnerId,
+            sourceType: 'purchase',
+            sourceId: purchase.id,
+            grossAmountCents: planPriceCents,
+            commissionPercent,
+            amountCents: partnerAmountCents,
+            status: 'pending',
+          },
+        });
+      }
     }
 
     if (purchase.plan.type === 'recorrente' && purchase.plan.acessoTotal) {

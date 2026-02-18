@@ -13,6 +13,8 @@ const TEMPLATE_LABELS: Record<string, string> = {
   PURCHASE_CONFIRMATION: 'Confirmação de compra',
   SPONSOR_CONFIRMATION: 'Confirmação de patrocínio',
   LIVE_PURCHASE_CONFIRMATION: 'Confirmação de compra de live',
+  PRE_SALE_CREDENTIALS: 'Pré-estreia: credenciais de acesso',
+  PRE_SALE_CREDENTIALS_NEW_PASSWORD: 'Pré-estreia: nova senha',
 };
 
 const TEMPLATE_VARS: Record<string, string[]> = {
@@ -23,6 +25,8 @@ const TEMPLATE_VARS: Record<string, string[]> = {
   PURCHASE_CONFIRMATION: ['name', 'plan_name', 'amount'],
   SPONSOR_CONFIRMATION: ['company_name', 'plan_name', 'amount'],
   LIVE_PURCHASE_CONFIRMATION: ['name', 'live_title', 'amount'],
+  PRE_SALE_CREDENTIALS: ['game_title', 'watch_url', 'username', 'password', 'intro_text'],
+  PRE_SALE_CREDENTIALS_NEW_PASSWORD: ['game_title', 'watch_url', 'username', 'password'],
 };
 
 export default function AdminEmailTemplateEditPage() {

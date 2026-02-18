@@ -52,11 +52,6 @@ function RegisterForm() {
   return (
     <div className="min-h-screen pt-28 pb-16 px-4 flex items-center justify-center">
       <div className="w-full max-w-md">
-        <div className="mb-8">
-          <Link href="/" className="flex items-center gap-2 text-3xl font-bold text-futvar-green hover:text-futvar-green-light transition-colors">
-            <span>⚽</span> FLY GAMES
-          </Link>
-        </div>
         <div className="bg-futvar-dark/95 border border-futvar-green/20 rounded-2xl p-8 shadow-2xl shadow-futvar-green/5">
           <h1 className="text-3xl font-bold text-white mb-6">Cadastrar</h1>
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -129,6 +124,11 @@ function RegisterForm() {
             Já tem conta?{' '}
             <Link href={redirectTo === '/' ? '/entrar' : `/entrar?redirect=${encodeURIComponent(redirectTo)}`} className="text-white hover:underline">
               Entrar
+            </Link>
+          </p>
+          <p className="mt-3 text-center text-futvar-light text-xs">
+            <Link href="/" className="hover:text-white">
+              ← Voltar para a página inicial
             </Link>
           </p>
         </div>

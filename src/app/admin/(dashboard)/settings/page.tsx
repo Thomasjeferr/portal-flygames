@@ -17,6 +17,9 @@ export default function AdminSettingsPage() {
     youtubeUrl: '',
     companyName: 'Fly Games',
     companyCnpj: '',
+    gaMeasurementId: '',
+    fbPixelId: '',
+    tiktokPixelId: '',
   });
 
   useEffect(() => {
@@ -36,6 +39,9 @@ export default function AdminSettingsPage() {
           youtubeUrl: data.youtubeUrl ?? '',
           companyName: data.companyName ?? 'Fly Games',
           companyCnpj: data.companyCnpj ?? '',
+          gaMeasurementId: data.gaMeasurementId ?? '',
+          fbPixelId: data.fbPixelId ?? '',
+          tiktokPixelId: data.tiktokPixelId ?? '',
         });
       })
       .catch(() => setError('Erro ao carregar'))
@@ -167,6 +173,47 @@ export default function AdminSettingsPage() {
             placeholder="00.000.000/0001-00"
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
+        </div>
+        <div className="pt-4 border-t border-white/10">
+          <h2 className="text-sm font-semibold text-white mb-3">Pixels e Analytics</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-netflix-light mb-1">
+                Google Analytics (GA4 Measurement ID)
+              </label>
+              <input
+                type="text"
+                value={form.gaMeasurementId}
+                onChange={(e) => setForm((f) => ({ ...f, gaMeasurementId: e.target.value }))}
+                placeholder="G-XXXXXXXXXX"
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-netflix-light mb-1">
+                Facebook / Meta Pixel ID
+              </label>
+              <input
+                type="text"
+                value={form.fbPixelId}
+                onChange={(e) => setForm((f) => ({ ...f, fbPixelId: e.target.value }))}
+                placeholder="123456789012345"
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-netflix-light mb-1">
+                TikTok Pixel ID
+              </label>
+              <input
+                type="text"
+                value={form.tiktokPixelId}
+                onChange={(e) => setForm((f) => ({ ...f, tiktokPixelId: e.target.value }))}
+                placeholder="XXXXXXXXXXXXXXX"
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              />
+            </div>
+          </div>
         </div>
         <div className="pt-4">
           <button

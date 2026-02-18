@@ -8,7 +8,7 @@ async function main() {
   console.log('--- Criando usuários de teste ---\n');
 
   // 1. Admin
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@portal.com';
+  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@portal.com').toLowerCase();
   const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
   const adminHash = await bcrypt.hash(adminPassword, 12);
 
@@ -32,7 +32,7 @@ async function main() {
   }
 
   // 2. Cliente teste (com assinatura ativa para ver a área logada e assistir)
-  const clientEmail = process.env.CLIENT_EMAIL || 'cliente@teste.com';
+  const clientEmail = (process.env.CLIENT_EMAIL || 'cliente@teste.com').toLowerCase();
   const clientPassword = process.env.CLIENT_PASSWORD || 'Cliente@123';
   const clientHash = await bcrypt.hash(clientPassword, 12);
 
@@ -68,7 +68,7 @@ async function main() {
   console.log('Assinatura ativa atribuída ao cliente teste.\n');
 
   // 3. Responsável de time (para testar a Área do time)
-  const timeEmail = process.env.TIME_EMAIL || 'time@teste.com';
+  const timeEmail = (process.env.TIME_EMAIL || 'time@teste.com').toLowerCase();
   const timePassword = process.env.TIME_PASSWORD || 'Time@123';
   const timeHash = await bcrypt.hash(timePassword, 12);
 
@@ -125,7 +125,7 @@ async function main() {
   }
 
   // 4. Usuário vinculado ao time SUCATAS NOGUEIRA (para acessar a Área do time desse time aprovado)
-  const sucatasEmail = process.env.SUCATAS_EMAIL || 'sucatas@teste.com';
+  const sucatasEmail = (process.env.SUCATAS_EMAIL || 'sucatas@teste.com').toLowerCase();
   const sucatasPassword = process.env.SUCATAS_PASSWORD || 'Sucatas@123';
   const sucatasHash = await bcrypt.hash(sucatasPassword, 12);
 

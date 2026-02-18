@@ -164,14 +164,6 @@ export default function VerificarEmailPage() {
   return (
     <div className="min-h-screen pt-28 pb-16 px-4 flex items-center justify-center">
       <div className="w-full max-w-md">
-        <div className="mb-8">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-3xl font-bold text-futvar-green hover:text-futvar-green-light"
-          >
-            <span>⚽</span> FLY GAMES
-          </Link>
-        </div>
         <Suspense
           fallback={
             <div className="bg-futvar-dark/95 border border-futvar-green/20 rounded-2xl p-8 text-center text-futvar-light">

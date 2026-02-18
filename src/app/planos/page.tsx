@@ -91,12 +91,12 @@ export default function PlanosPage() {
                     <span className="px-2 py-0.5 rounded text-xs font-medium bg-futvar-green/20 text-futvar-green">
                       {typeLabel[plan.type] ?? plan.type}
                     </span>
-                    <span className="text-futvar-light text-xs uppercase tracking-wide">
+                    <span className="text-futvar-light text-xs tracking-wide">
                       {periodLabel[plan.periodicity] ?? plan.periodicity}
                     </span>
                   </div>
                   {plan.id === recommendedPlanId && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-futvar-green text-futvar-darker uppercase tracking-wide">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-futvar-green text-futvar-darker tracking-wide">
                       Mais escolhido
                     </span>
                   )}

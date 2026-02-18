@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { sendTransactionalEmail } from '@/lib/email/emailService';
+import { checkSendVerifyEmailRateLimit, incrementSendVerifyEmailRateLimit } from '@/lib/email/rateLimit';
 import {
   generateVerificationCode,
   hashToken,
@@ -10,8 +11,13 @@ import {
 
 const schema = z.object({ email: z.string().email('E-mail inválido') });
 
+function getClientIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '0.0.0.0';
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
     const body = await request.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
@@ -22,6 +28,13 @@ export async function POST(request: NextRequest) {
     }
 
     const email = parsed.data.email.toLowerCase();
+    const allowed = await checkSendVerifyEmailRateLimit(ip, email);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Muitas solicitações de código. Tente novamente em 1 hora.' },
+        { status: 429 }
+      );
+    }
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       return NextResponse.json({ message: 'Se o e-mail existir, você receberá o código.' }, { status: 200 });
@@ -43,6 +56,8 @@ export async function POST(request: NextRequest) {
         expiresAt,
       },
     });
+
+    await incrementSendVerifyEmailRateLimit(ip, email);
 
     const result = await sendTransactionalEmail({
       to: user.email,

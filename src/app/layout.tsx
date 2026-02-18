@@ -4,6 +4,7 @@ import './globals.css';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { VisitTracker } from '@/components/VisitTracker';
+import { AnalyticsScripts } from '@/components/AnalyticsScripts';
 
 const bebas = Bebas_Neue({
   weight: '400',
@@ -26,6 +27,7 @@ export default function RootLayout({
     <html lang="pt-BR" className={bebas.variable}>
       <body className="font-sans antialiased">
         <VisitTracker />
+        <AnalyticsScripts />
         <Header />
         <main className="min-h-screen">{children}</main>
         <Footer />

@@ -10,6 +10,12 @@ const bodySchema = z.object({
   gameId: z.string().optional(),
   teamId: z.string().nullable().optional(),
   method: z.enum(['pix', 'card']),
+  utmSource: z.string().optional(),
+  utmMedium: z.string().optional(),
+  utmCampaign: z.string().optional(),
+  utmContent: z.string().optional(),
+  utmTerm: z.string().optional(),
+  refCode: z.string().optional(),
 });
 
 /**
@@ -42,7 +48,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 });
     }
 
-    const { planId, gameId, teamId, method } = parsed.data;
+    const { planId, gameId, teamId, method, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, refCode } = parsed.data;
 
     const plan = await prisma.plan.findUnique({ where: { id: planId } });
     if (!plan || !plan.active) {
@@ -65,11 +71,21 @@ export async function POST(request: NextRequest) {
 
     const amountCents = Math.round(plan.price * 100);
     let amountToTeamCents = 0;
+    let partnerId: string | null = null;
 
     if (teamId && plan.teamPayoutPercent > 0) {
       const team = await prisma.team.findUnique({ where: { id: teamId } });
       if (team && team.isActive) {
         amountToTeamCents = Math.round((amountCents * plan.teamPayoutPercent) / 100);
+      }
+    }
+
+    if (refCode && refCode.trim()) {
+      const partner = await prisma.partner.findUnique({
+        where: { refCode: refCode.trim() },
+      });
+      if (partner && partner.status === 'approved') {
+        partnerId = partner.id;
       }
     }
 
@@ -85,9 +101,15 @@ export async function POST(request: NextRequest) {
         planId,
         gameId: plan.type === 'unitario' ? gameId : null,
         teamId: amountToTeamCents > 0 ? teamId : null,
+        partnerId,
         amountToTeamCents,
         paymentStatus: 'pending',
         expiresAt,
+        utmSource: utmSource || null,
+        utmMedium: utmMedium || null,
+        utmCampaign: utmCampaign || null,
+        utmContent: utmContent || null,
+        utmTerm: utmTerm || null,
       },
     });
 

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -26,6 +26,7 @@ model User {
   emailTokens       EmailToken[]
   clubViewerAccount ClubViewerAccount?
   teamManagers      TeamManager[]
+  partners          Partner[]
 }
 
 model Session {
@@ -378,6 +379,7 @@ model SponsorOrder {
   id               String    @id @default(cuid())
   sponsorPlanId    String    @map("sponsor_plan_id")
   teamId           String?   @map("team_id")
+  partnerId        String?   @map("partner_id")
   companyName      String    @map("company_name")
   email            String    @map("email")
   websiteUrl       String?   @map("website_url")
@@ -388,11 +390,17 @@ model SponsorOrder {
   paymentStatus    String    @default("pending") @map("payment_status") // pending | paid | failed
   paymentGateway   String?   @map("payment_gateway")
   externalId       String?   @map("external_id")
+  utmSource        String?   @map("utm_source")
+  utmMedium        String?   @map("utm_medium")
+  utmCampaign      String?   @map("utm_campaign")
+  utmContent       String?   @map("utm_content")
+  utmTerm          String?   @map("utm_term")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
   sponsorPlan SponsorPlan @relation(fields: [sponsorPlanId], references: [id], onDelete: Restrict)
   team        Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  partner     Partner?    @relation(fields: [partnerId], references: [id], onDelete: SetNull)
   earnings    TeamSponsorshipEarning[]
 }
 
@@ -444,6 +452,9 @@ model SiteSettings {
   youtubeUrl             String?  @map("youtube_url")
   companyName            String?  @map("company_name")
   companyCnpj            String?  @map("company_cnpj")
+  gaMeasurementId        String?  @map("ga_measurement_id")
+  fbPixelId              String?  @map("fb_pixel_id")
+  tiktokPixelId          String?  @map("tiktok_pixel_id")
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
 }
@@ -549,20 +560,70 @@ model Purchase {
   planId             String    @map("plan_id")
   gameId             String?   @map("game_id") // preenchido para plano unitário (jogo específico)
   teamId             String?   @map("team_id") // time de coração (opcional)
+  partnerId          String?   @map("partner_id") // parceiro/revendedor (opcional)
   amountToTeamCents  Int       @default(0) @map("amount_to_team_cents")
   purchasedAt        DateTime  @default(now()) @map("purchased_at")
   expiresAt          DateTime? @map("expires_at") // null = não expira
   paymentStatus      String    @default("pending") @map("payment_status") // pending | paid | failed | refunded
   paymentGateway     String?   @map("payment_gateway") // woovi | stripe | manual
   externalId         String?   @map("external_id") // id da cobrança no gateway
+  utmSource          String?   @map("utm_source")
+  utmMedium          String?   @map("utm_medium")
+  utmCampaign        String?   @map("utm_campaign")
+  utmContent         String?   @map("utm_content")
+  utmTerm            String?   @map("utm_term")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Restrict)
-  game   Game?  @relation(fields: [gameId], references: [id], onDelete: SetNull)
-  team   Team?  @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan    Plan     @relation(fields: [planId], references: [id], onDelete: Restrict)
+  game    Game?    @relation(fields: [gameId], references: [id], onDelete: SetNull)
+  team    Team?    @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  partner Partner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
   planEarnings TeamPlanEarning[]
+}
+
+// Programa de parceiros / revendedores
+model Partner {
+  id                       String   @id @default(cuid())
+  userId                   String?  @map("user_id")
+  type                     String   @default("revendedor") @map("type") // revendedor | influencer | lojista | outro
+  status                   String   @default("pending") @map("status") // pending | approved | rejected | blocked
+  name                     String   @map("name")
+  companyName              String?  @map("company_name")
+  document                 String?  @map("document") // CPF ou CNPJ
+  whatsapp                 String?  @map("whatsapp")
+  city                     String?  @map("city")
+  state                    String?  @map("state")
+  refCode                  String   @unique @map("ref_code")
+  planCommissionPercent    Int      @default(0) @map("plan_commission_percent") // % sobre planos/assinaturas
+  gameCommissionPercent    Int      @default(0) @map("game_commission_percent") // % sobre jogos/lives avulsos
+  sponsorCommissionPercent Int      @default(0) @map("sponsor_commission_percent") // % sobre patrocínio
+  pixKey                   String?  @map("pix_key")
+  pixKeyType               String?  @map("pix_key_type") // cpf | cnpj | email | phone | aleatoria
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+
+  user      User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  purchases Purchase[]
+  sponsorOrders SponsorOrder[]
+  earnings  PartnerEarning[]
+}
+
+model PartnerEarning {
+  id               String    @id @default(cuid())
+  partnerId        String    @map("partner_id")
+  sourceType       String    @map("source_type") // purchase | sponsor
+  sourceId         String    @map("source_id")
+  grossAmountCents Int       @map("gross_amount_cents")
+  commissionPercent Int      @map("commission_percent")
+  amountCents      Int       @map("amount_cents")
+  status           String    @default("pending") @map("status") // pending | paid
+  paidAt           DateTime? @map("paid_at")
+  paymentReference String?   @map("payment_reference")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  partner Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
 }
 
 // Ganho do time com compra de plano/jogo (comissão do time de coração)

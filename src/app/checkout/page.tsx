@@ -102,6 +102,12 @@ function CheckoutContent() {
           gameId: plan.type === 'unitario' ? selectedGameId : undefined,
           teamId: selectedTeamId || null,
           method,
+          utmSource: searchParams.get('utm_source') || undefined,
+          utmMedium: searchParams.get('utm_medium') || undefined,
+          utmCampaign: searchParams.get('utm_campaign') || undefined,
+          utmContent: searchParams.get('utm_content') || undefined,
+          utmTerm: searchParams.get('utm_term') || undefined,
+          refCode: searchParams.get('ref') || undefined,
         }),
       });
       const data = await res.json();

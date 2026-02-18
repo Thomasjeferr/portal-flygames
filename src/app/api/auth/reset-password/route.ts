@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { hashToken } from '@/lib/email/tokenUtils';
 import { sendTransactionalEmail } from '@/lib/email/emailService';
+import { checkResetPasswordRateLimit, incrementResetPasswordRateLimit } from '@/lib/email/rateLimit';
 
 const schema = z.object({
   token: z.string().min(1, 'Token obrigatório'),
@@ -15,8 +16,21 @@ const schema = z.object({
     .regex(/[0-9]/, 'Senha deve ter ao menos um número'),
 });
 
+function getClientIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '0.0.0.0';
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const allowed = await checkResetPasswordRateLimit(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em 1 hora.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
@@ -37,9 +51,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!emailToken) {
+      await incrementResetPasswordRateLimit(ip);
       return NextResponse.json({ error: 'Link inválido ou expirado. Solicite novamente.' }, { status: 400 });
     }
 
+    await incrementResetPasswordRateLimit(ip);
     const passwordHash = await hashPassword(password);
     await prisma.user.update({
       where: { id: emailToken.userId },

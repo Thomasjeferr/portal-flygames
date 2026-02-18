@@ -101,6 +101,39 @@ async function main() {
 <p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
 </div></body></html>`,
     },
+    {
+      key: 'PRE_SALE_CREDENTIALS',
+      subject: 'Acesso à pré-estreia: {{game_title}}',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<h2 style="color:#111">Acesso à pré-estreia - Credenciais</h2>
+<p>Olá,</p>
+<p>{{intro_text}}</p>
+<p><strong>Jogo:</strong> {{game_title}}</p>
+<p><strong>Link para assistir:</strong> <a href="{{watch_url}}">{{watch_url}}</a></p>
+<p><strong>Usuário:</strong> <code style="background:#f0f0f0;padding:2px 6px">{{username}}</code></p>
+<p><strong>Senha:</strong> <code style="background:#f0f0f0;padding:2px 6px">{{password}}</code></p>
+<p>Compartilhe o usuário e a senha com os membros do clube. Este acesso vale apenas para este jogo de pré-estreia.</p>
+<p>Para comprar planos ou outros jogos no site, é necessário criar uma conta normal (cadastro).</p>
+<p style="margin-top:24px;color:#666;font-size:12px">{{footer_text}}</p>
+</div></body></html>`,
+    },
+    {
+      key: 'PRE_SALE_CREDENTIALS_NEW_PASSWORD',
+      subject: 'Nova senha - Pré-estreia: {{game_title}}',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<h2 style="color:#111">Nova senha de acesso à pré-estreia</h2>
+<p>Olá,</p>
+<p>Foi gerada uma nova senha para o acesso à pré-estreia.</p>
+<p><strong>Jogo:</strong> {{game_title}}</p>
+<p><strong>Link para assistir:</strong> <a href="{{watch_url}}">{{watch_url}}</a></p>
+<p><strong>Usuário:</strong> <code style="background:#f0f0f0;padding:2px 6px">{{username}}</code></p>
+<p><strong>Senha:</strong> <code style="background:#f0f0f0;padding:2px 6px">{{password}}</code></p>
+<p>Compartilhe o usuário e a senha com os membros do clube. Este acesso vale apenas para este jogo de pré-estreia.</p>
+<p style="margin-top:24px;color:#666;font-size:12px">{{footer_text}}</p>
+</div></body></html>`,
+    },
   ];
 
   for (const t of templates) {

@@ -191,11 +191,6 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen pt-28 pb-16 px-4 flex items-center justify-center">
       <div className="w-full max-w-md">
-        <div className="mb-8">
-          <Link href="/" className="text-3xl font-bold text-netflix-red">
-            FLY GAMES
-          </Link>
-        </div>
         <Suspense fallback={<div className="bg-netflix-dark/80 border border-white/10 rounded-lg p-8 text-netflix-light text-center">Carregando...</div>}>
           <ForgotPasswordForm />
         </Suspense>

@@ -29,12 +29,20 @@ export async function SponsorsSection() {
             <span className="w-1 h-8 rounded-full bg-futvar-gold" />
             <h2 className="text-2xl lg:text-3xl font-bold text-white">Quem nos patrocina</h2>
           </div>
-          <Link
-            href="/patrocinar"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light transition-colors text-sm"
-          >
-            Seja um Patrocinador
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/patrocinar"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light transition-colors text-sm"
+            >
+              Seja um Patrocinador
+            </Link>
+            <Link
+              href="/parceiros"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-futvar-green/60 text-sm font-semibold text-futvar-green hover:bg-futvar-green/10 transition-colors"
+            >
+              Programa de parceiros
+            </Link>
+          </div>
         </div>
         <div className="space-y-10">
           {TIER_ORDER.map((tier) => {
@@ -48,7 +56,7 @@ export async function SponsorsSection() {
             }));
             return (
               <div key={tier}>
-                <h3 className="text-sm font-medium text-futvar-light/80 uppercase tracking-wider mb-4">
+                <h3 className="text-sm font-medium text-futvar-light/80 tracking-wider mb-4">
                   {TIER_LABEL[tier] ?? tier}
                 </h3>
                 <SponsorsCarousel sponsors={sponsorsForCarousel} />

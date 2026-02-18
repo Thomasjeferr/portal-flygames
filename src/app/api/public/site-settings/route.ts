@@ -14,6 +14,9 @@ export async function GET() {
       youtubeUrl: null as string | null,
       companyName: 'Fly Games',
       companyCnpj: '',
+      gaMeasurementId: null as string | null,
+      fbPixelId: null as string | null,
+      tiktokPixelId: null as string | null,
     };
     if (!row) return NextResponse.json(defaults);
     return NextResponse.json({
@@ -24,6 +27,9 @@ export async function GET() {
       youtubeUrl: row.youtubeUrl ?? defaults.youtubeUrl,
       companyName: row.companyName ?? defaults.companyName,
       companyCnpj: row.companyCnpj ?? defaults.companyCnpj,
+      gaMeasurementId: row.gaMeasurementId ?? defaults.gaMeasurementId,
+      fbPixelId: row.fbPixelId ?? defaults.fbPixelId,
+      tiktokPixelId: row.tiktokPixelId ?? defaults.tiktokPixelId,
     });
   } catch (e) {
     console.error(e);

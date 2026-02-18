@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db';
 import { verifyPassword, createSession } from '@/lib/auth';
 import { checkLoginRateLimit, incrementLoginRateLimit } from '@/lib/email/rateLimit';
@@ -33,8 +34,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, password } = parsed.data;
-    const user = await prisma.user.findUnique({ where: { email } });
+    const { email: rawEmail, password } = parsed.data;
+    const email = rawEmail.toLowerCase();
+
+    const adminEnvEmail = (process.env.ADMIN_EMAIL || 'admin@portal.com').toLowerCase();
+    const adminEnvPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
+
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    // Auto-cria/atualiza admin no primeiro login se bater com ADMIN_EMAIL/ADMIN_PASSWORD
+    if (!user && email === adminEnvEmail && password === adminEnvPassword) {
+      const adminHash = await bcrypt.hash(adminEnvPassword, 12);
+      user = await prisma.user.upsert({
+        where: { email },
+        update: { role: 'admin', passwordHash: adminHash, name: 'Administrador' },
+        create: {
+          email,
+          name: 'Administrador',
+          passwordHash: adminHash,
+          role: 'admin',
+        },
+      });
+    }
+
     if (!user) {
       return NextResponse.json({ error: 'E-mail ou senha incorretos' }, { status: 401 });
     }
@@ -45,7 +67,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'E-mail ou senha incorretos' }, { status: 401 });
     }
 
-    if (!user.emailVerified) {
+    if (!user.emailVerified && user.role !== 'admin') {
       return NextResponse.json(
         {
           error: 'Verifique seu e-mail para entrar. Enviamos um código de 6 dígitos.',
