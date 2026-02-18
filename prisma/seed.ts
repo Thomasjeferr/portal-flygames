@@ -110,18 +110,23 @@ async function main() {
         responsibleEmail: timeEmail,
         isActive: true,
         approvalStatus: 'approved',
+        managers: {
+          create: { userId: timeUser.id, role: 'OWNER' },
+        },
       },
+      include: { managers: { where: { userId: timeUser.id } } },
     });
     console.log('Time de teste criado.');
-  }
-  const alreadyManager = await prisma.teamManager.findUnique({
-    where: { userId_teamId: { userId: timeUser.id, teamId: team.id } },
-  });
-  if (!alreadyManager) {
-    await prisma.teamManager.create({
-      data: { userId: timeUser.id, teamId: team.id, role: 'OWNER' },
+  } else {
+    const alreadyManager = await prisma.teamManager.findUnique({
+      where: { userId_teamId: { userId: timeUser.id, teamId: team.id } },
     });
-    console.log('Vínculo responsável ↔ time criado.');
+    if (!alreadyManager) {
+      await prisma.teamManager.create({
+        data: { userId: timeUser.id, teamId: team.id, role: 'OWNER' },
+      });
+      console.log('Vínculo responsável ↔ time criado.');
+    }
   }
 
   // 4. Usuário vinculado ao time SUCATAS NOGUEIRA (para acessar a Área do time desse time aprovado)
