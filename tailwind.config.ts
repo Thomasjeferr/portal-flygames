@@ -31,7 +31,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-netflix)', 'system-ui', 'sans-serif'],
+        // Pilha “estilo Apple”: San Francisco no Mac/iOS, Segoe UI no Windows, Roboto no Android
+        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Oxygen', 'Ubuntu', 'sans-serif'],
+        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

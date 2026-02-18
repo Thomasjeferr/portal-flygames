@@ -9,7 +9,7 @@ import { AnalyticsScripts } from '@/components/AnalyticsScripts';
 const bebas = Bebas_Neue({
   weight: '400',
   subsets: ['latin'],
-  variable: '--font-netflix',
+  variable: '--font-display',
 });
 
 export const metadata: Metadata = {

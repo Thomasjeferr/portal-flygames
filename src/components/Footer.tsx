@@ -121,6 +121,9 @@ export async function Footer() {
               <Link href="/parceiros" className="hover:text-futvar-green transition-colors">
                 Programa de parceiros
               </Link>
+              <Link href="/sobre-nos" className="hover:text-futvar-green transition-colors">
+                Sobre nós
+              </Link>
               <Link href="/entrar" className="hover:text-futvar-green transition-colors">
                 Entrar
               </Link>
