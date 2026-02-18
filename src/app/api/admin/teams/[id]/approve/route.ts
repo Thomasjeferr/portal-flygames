@@ -43,7 +43,7 @@ export async function POST(
     });
     const managerEmails = managers.map((m) => m.user.email).filter(Boolean) as string[];
     const responsibleEmail = team.responsibleEmail?.trim();
-    const emails = [...new Set([...managerEmails, ...(responsibleEmail ? [responsibleEmail] : [])])];
+    const emails = Array.from(new Set([...managerEmails, ...(responsibleEmail ? [responsibleEmail] : [])]));
 
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
