@@ -55,8 +55,9 @@ export function StreamCustomPlayer({ hlsUrl }: StreamCustomPlayerProps) {
       player.src({ src: hlsUrl, type: 'application/x-mpegURL' });
 
       try {
-        if (typeof player.qualityMenu === 'function') {
-          player.qualityMenu();
+        const p = player as typeof player & { qualityMenu?: () => void };
+        if (typeof p.qualityMenu === 'function') {
+          p.qualityMenu();
         }
       } catch {
         // Plugin de qualidade pode falhar em alguns navegadores
