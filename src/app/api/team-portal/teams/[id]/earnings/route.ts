@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { getTeamAccess } from '@/lib/team-portal-auth';
 import { prisma } from '@/lib/db';
+
+type SponsorEarningWithOrder = Prisma.TeamSponsorshipEarningGetPayload<{
+  include: { sponsorOrder: { select: { companyName: true; email: true; createdAt: true; amountCents: true } } };
+}>;
+type PlanEarningWithPurchase = Prisma.TeamPlanEarningGetPayload<{
+  include: { purchase: { select: { createdAt: true; amountToTeamCents: true }; include: { user: { select: { name: true; email: true } }; plan: { select: { name: true } } } } };
+}>;
 
 /** Comissões do time (patrocínio + planos/jogos) para painel do time (somente leitura). */
 export async function GET(
@@ -18,12 +26,8 @@ export async function GET(
   });
   if (!team) return NextResponse.json({ error: 'Time não encontrado' }, { status: 404 });
 
-  let sponsorEarnings = [] as Awaited<
-    ReturnType<typeof prisma.teamSponsorshipEarning.findMany>
-  >;
-  let planEarnings = [] as Awaited<
-    ReturnType<typeof prisma.teamPlanEarning.findMany>
-  >;
+  let sponsorEarnings: SponsorEarningWithOrder[] = [];
+  let planEarnings: PlanEarningWithPurchase[] = [];
 
   try {
     [sponsorEarnings, planEarnings] = await Promise.all([
