@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+
+type SponsorEarningWithOrder = Prisma.TeamSponsorshipEarningGetPayload<{
+  include: { sponsorOrder: { select: { companyName: true; email: true; createdAt: true; amountCents: true } } };
+}>;
+type PlanEarningWithPurchase = Prisma.TeamPlanEarningGetPayload<{
+  include: { purchase: { select: { createdAt: true; amountToTeamCents: true }; include: { user: { select: { name: true; email: true } }; plan: { select: { name: true } } } } };
+}>;
 
 /** Lista comissões do time (patrocínio + planos/jogos) (admin). */
 export async function GET(
@@ -19,10 +27,10 @@ export async function GET(
     });
     if (!team) return NextResponse.json({ error: 'Time não encontrado' }, { status: 404 });
 
-    let sponsorEarnings: Awaited<ReturnType<typeof prisma.teamSponsorshipEarning.findMany>> = [];
-    let planEarnings: Awaited<ReturnType<typeof prisma.teamPlanEarning.findMany>> = [];
+    let sponsorEarnings: SponsorEarningWithOrder[] = [];
+    let planEarnings: PlanEarningWithPurchase[] = [];
     try {
-      [sponsorEarnings, planEarnings] = await Promise.all([
+      const [sponsorResult, planResult] = await Promise.all([
         prisma.teamSponsorshipEarning.findMany({
           where: { teamId: id },
           include: {
@@ -41,6 +49,8 @@ export async function GET(
           orderBy: { createdAt: 'desc' },
         }),
       ]);
+      sponsorEarnings = sponsorResult;
+      planEarnings = planResult;
     } catch (queryErr) {
       console.error('[GET /api/admin/teams/[id]/earnings] query', queryErr);
       // Se as tabelas não existirem (ex.: db push não foi rodado), retorna listas vazias
