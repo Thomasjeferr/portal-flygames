@@ -58,7 +58,7 @@ export async function GET(
     console.error('[GET /api/team-portal/teams/[id]/earnings] query', e);
   }
 
-  const sponsorItems = sponsorEarnings.map((e) => ({
+  const sponsorItems = (sponsorEarnings as SponsorEarningWithOrder[]).map((e) => ({
     id: e.id,
     source: 'sponsor' as const,
     amountCents: e.amountCents,
@@ -71,7 +71,7 @@ export async function GET(
     orderCreatedAt: e.sponsorOrder?.createdAt ?? e.createdAt,
   }));
 
-  const planItems = planEarnings.map((e) => ({
+  const planItems = (planEarnings as PlanEarningWithPurchase[]).map((e) => ({
     id: e.id,
     source: 'plan' as const,
     amountCents: e.amountCents,
