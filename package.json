@@ -30,6 +30,7 @@
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
     "recharts": "^3.7.0",
+    "@vercel/blob": "^0.25.0",
     "resend": "^6.9.2",
     "stripe": "^20.3.1",
     "tus-js-client": "^4.3.1",

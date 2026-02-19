@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import path from 'path';
 import { getSession } from '@/lib/auth';
 import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { put } from '@vercel/blob';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
@@ -50,14 +51,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Extensão do arquivo não confere com o conteúdo.' }, { status: 400 });
     }
 
-    const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}${claimedExt}`;
+    const safeName = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}${claimedExt}`;
 
+    // Em produção (Vercel): disco é read-only → usar Vercel Blob
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      const blob = await put(safeName, file, { access: 'public', addRandomSuffix: false });
+      return NextResponse.json({ url: blob.url });
+    }
+
+    // Local: gravar em public/uploads
     await mkdir(UPLOAD_DIR, { recursive: true });
-    const filePath = path.join(UPLOAD_DIR, safeName);
+    const filePath = path.join(UPLOAD_DIR, path.basename(safeName));
     await writeFile(filePath, buffer);
-
-    const url = `/uploads/${safeName}`;
-    return NextResponse.json({ url });
+    return NextResponse.json({ url: `/uploads/${path.basename(safeName)}` });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: 'Erro no upload' }, { status: 500 });
