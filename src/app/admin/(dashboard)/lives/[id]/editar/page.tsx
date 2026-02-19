@@ -12,6 +12,7 @@ export default function EditLivePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [creatingInput, setCreatingInput] = useState(false);
+  const [syncingReplay, setSyncingReplay] = useState(false);
   const [error, setError] = useState('');
   const [showStreamKey, setShowStreamKey] = useState(false);
   const [credentials, setCredentials] = useState<{ ingestUrl: string; streamKey: string } | null>(null);
@@ -85,6 +86,24 @@ export default function EditLivePage() {
       setError('Erro de conexão');
     } finally {
       setCreatingInput(false);
+    }
+  };
+
+  const handleSyncReplay = async () => {
+    setError('');
+    setSyncingReplay(true);
+    try {
+      const res = await fetch(`/api/admin/lives/${id}/sync-replay`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Erro ao buscar replay no Cloudflare');
+        return;
+      }
+      setForm((f) => ({ ...f, cloudflarePlaybackId: data.cloudflarePlaybackId || '' }));
+    } catch {
+      setError('Erro de conexão ao buscar replay');
+    } finally {
+      setSyncingReplay(false);
     }
   };
 
@@ -227,6 +246,23 @@ export default function EditLivePage() {
               className="px-4 py-2 rounded bg-amber-600 text-white text-sm font-medium hover:bg-amber-500 disabled:opacity-50"
             >
               {creatingInput ? 'Criando...' : 'Gerar credenciais OBS'}
+            </button>
+          </div>
+        )}
+        {form.cloudflareLiveInputId && !form.cloudflarePlaybackId && (
+          <div className="bg-futvar-dark border border-futvar-green/30 rounded-lg p-4 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm text-futvar-light">
+                Esta live já tem Live Input no Cloudflare. Após encerrar a transmissão, clique abaixo para buscar o replay gravado.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSyncReplay}
+              disabled={syncingReplay}
+              className="px-4 py-2 rounded bg-futvar-green text-futvar-darker text-sm font-semibold hover:bg-futvar-green-light disabled:opacity-50"
+            >
+              {syncingReplay ? 'Buscando replay...' : 'Buscar replay no Cloudflare'}
             </button>
           </div>
         )}

@@ -3,7 +3,7 @@
  * Docs: https://developers.cloudflare.com/stream/stream-live/
  */
 
-import { getStreamBaseUrl } from './cloudflare-stream';
+import { getStreamBaseUrl, getSignedHlsUrl } from './cloudflare-stream';
 
 const CF_API_BASE = 'https://api.cloudflare.com/client/v4';
 
@@ -83,8 +83,10 @@ export async function createLiveInput(options?: {
  * Retorna a URL HLS para reprodução ao vivo (usa Live Input UID).
  * Formato: https://customer-XXX.cloudflarestream.com/<uid>/manifest/video.m3u8
  */
-export function getLiveHlsUrl(liveInputUid: string): string {
+export async function getLiveHlsUrl(liveInputUid: string): Promise<string> {
   const baseUrl = getStreamBaseUrl();
+  // Para Live Input (ao vivo), usamos a URL pública HLS.
+  // A proteção principal continua sendo o controle de acesso no portal.
   return `${baseUrl}/${liveInputUid}/manifest/video.m3u8`;
 }
 
@@ -92,9 +94,8 @@ export function getLiveHlsUrl(liveInputUid: string): string {
  * Retorna a URL HLS para replay (vídeo gravado) usando o video uid.
  * Use cloudflare_playback_id (uid do vídeo) quando status = ENDED.
  */
-export function getReplayHlsUrl(videoUid: string): string {
-  const baseUrl = getStreamBaseUrl();
-  return `${baseUrl}/${videoUid}/manifest/video.m3u8`;
+export async function getReplayHlsUrl(videoUid: string): Promise<string> {
+  return getSignedHlsUrl(videoUid);
 }
 
 /**

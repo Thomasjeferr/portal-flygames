@@ -31,9 +31,23 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, code } = parsed.data;
-    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    const normalizedEmail = email.toLowerCase();
+
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
       return NextResponse.json({ error: 'E-mail não encontrado.' }, { status: 400 });
+    }
+
+    // Atalho de teste para conta cliente@teste.com
+    if (normalizedEmail === 'cliente@teste.com' && code.trim() === '000000') {
+      await incrementVerifyEmailRateLimit(ip);
+      if (!user.emailVerified) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { emailVerified: true },
+        });
+      }
+      return NextResponse.json({ message: 'E-mail verificado com sucesso.' });
     }
 
     const tokenHash = hashToken(code.trim());

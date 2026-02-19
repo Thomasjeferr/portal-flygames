@@ -16,6 +16,21 @@ interface Subscription {
   endDate: string | null;
 }
 
+type LiveHighlightMode = 'LIVE' | 'SCHEDULED' | 'NONE';
+
+interface LiveHighlight {
+  mode: LiveHighlightMode;
+  live: {
+    id: string;
+    title: string;
+    thumbnailUrl: string | null;
+    status: string;
+    startAt: string | null;
+    requireSubscription: boolean;
+    allowOneTimePurchase: boolean;
+  } | null;
+}
+
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
@@ -23,6 +38,8 @@ export function Header() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [liveHighlight, setLiveHighlight] = useState<LiveHighlight>({ mode: 'NONE', live: null });
+  const [livePreviewOpen, setLivePreviewOpen] = useState(false);
 
   const isAdmin = pathname.startsWith('/admin');
   const isAuthPage = ['/entrar', '/cadastro', '/recuperar-senha', '/admin/entrar'].some((p) => pathname.startsWith(p));
@@ -37,6 +54,17 @@ export function Header() {
       })
       .catch(() => {});
   }, [isAdmin, pathname]);
+
+  useEffect(() => {
+    if (isAdmin) return;
+    fetch('/api/public/live-highlight', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data: LiveHighlight) => {
+        if (!data || !data.mode) return;
+        setLiveHighlight(data);
+      })
+      .catch(() => {});
+  }, [isAdmin]);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -68,6 +96,80 @@ export function Header() {
       </header>
     );
   }
+
+  const liveBadge =
+    !isAuthPage &&
+    !isAdmin &&
+    liveHighlight.mode !== 'NONE' &&
+    liveHighlight.live && (
+      <div className="hidden md:flex items-center mr-4">
+        <button
+          type="button"
+          onClick={() => setLivePreviewOpen((o) => !o)}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm transition-colors ${
+            liveHighlight.mode === 'LIVE'
+              ? 'border-red-500/60 bg-red-600/20 text-red-200 hover:bg-red-600/30'
+              : 'border-amber-400/60 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25'
+          }`}
+        >
+          <span className="relative flex h-2 w-2">
+            <span
+              className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                liveHighlight.mode === 'LIVE' ? 'bg-red-400 animate-ping' : 'bg-amber-300'
+              }`}
+            />
+            <span
+              className={`relative inline-flex rounded-full h-2 w-2 ${
+                liveHighlight.mode === 'LIVE' ? 'bg-red-200' : 'bg-amber-200'
+              }`}
+            />
+          </span>
+          <span className="uppercase tracking-wide">
+            {liveHighlight.mode === 'LIVE' ? 'Ao vivo agora' : 'Live agendada'}
+          </span>
+        </button>
+        {livePreviewOpen && (
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[320px] sm:w-[380px] bg-futvar-dark border border-futvar-green/25 rounded-2xl shadow-2xl p-4 z-40">
+            <p className="text-xs text-futvar-light mb-1">
+              {liveHighlight.mode === 'LIVE' ? 'Transmissão ao vivo' : 'Próxima live'}
+            </p>
+            <p className="text-sm font-semibold text-white mb-1 line-clamp-2">
+              {liveHighlight.live.title}
+            </p>
+            {liveHighlight.live.startAt && (
+              <p className="text-xs text-futvar-light mb-3">
+                {liveHighlight.mode === 'LIVE' ? 'Iniciada em ' : 'Horário: '}
+                {new Date(liveHighlight.live.startAt).toLocaleString('pt-BR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+            )}
+            <div className="flex justify-between items-center gap-2">
+              <Link
+                href={`/live/${liveHighlight.live.id}`}
+                className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-lg bg-futvar-green text-futvar-darker text-sm font-bold hover:bg-futvar-green-light transition-colors"
+                onClick={() => {
+                  setLivePreviewOpen(false);
+                  setMobileMenuOpen(false);
+                }}
+              >
+                {liveHighlight.mode === 'LIVE' ? 'Assistir agora' : 'Ver detalhes'}
+              </Link>
+              <button
+                type="button"
+                onClick={() => setLivePreviewOpen(false)}
+                className="px-3 py-2 rounded-lg bg-futvar-gray text-futvar-light text-xs hover:bg-white/10"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-futvar-darker/95 backdrop-blur-md border-b border-futvar-green/10 animate-slide-down">
@@ -180,6 +282,8 @@ export function Header() {
             )}
             </nav>
 
+            {liveBadge}
+
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -195,6 +299,38 @@ export function Header() {
         {!isAuthPage && mobileMenuOpen && (
           <div className="absolute inset-x-0 top-full md:hidden bg-futvar-darker border-b border-futvar-green/20 shadow-xl">
             <nav className="flex flex-col p-4 gap-1 max-h-[70vh] overflow-y-auto">
+              {liveHighlight.mode !== 'NONE' && liveHighlight.live && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    router.push(`/live/${liveHighlight.live.id}`);
+                  }}
+                  className="mb-2 px-4 py-3 rounded-lg text-sm font-semibold flex items-center justify-between bg-futvar-dark border border-futvar-green/40 text-futvar-light"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span
+                        className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                          liveHighlight.mode === 'LIVE' ? 'bg-red-400 animate-ping' : 'bg-amber-300'
+                        }`}
+                      />
+                      <span
+                        className={`relative inline-flex rounded-full h-2 w-2 ${
+                          liveHighlight.mode === 'LIVE' ? 'bg-red-200' : 'bg-amber-200'
+                        }`}
+                      />
+                    </span>
+                    <span className="truncate max-w-[170px] text-left">
+                      {liveHighlight.mode === 'LIVE' ? 'Ao vivo: ' : 'Live agendada: '}
+                      {liveHighlight.live.title}
+                    </span>
+                  </span>
+                  <span className="text-xs text-futvar-green font-bold">
+                    {liveHighlight.mode === 'LIVE' ? 'Assistir' : 'Ver'}
+                  </span>
+                </button>
+              )}
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
