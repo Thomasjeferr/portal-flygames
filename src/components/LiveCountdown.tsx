@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface LiveCountdownProps {
   startAt: Date;
@@ -13,6 +14,8 @@ function pad(n: number) {
 
 export function LiveCountdown({ startAt, title }: LiveCountdownProps) {
   const [diff, setDiff] = useState<number | null>(null);
+  const router = useRouter();
+  const refreshDone = useRef(false);
 
   useEffect(() => {
     const update = () => {
@@ -26,11 +29,29 @@ export function LiveCountdown({ startAt, title }: LiveCountdownProps) {
     return () => clearInterval(t);
   }, [startAt]);
 
+  // Quando a contagem chega a zero, revalidar a página para buscar status LIVE e exibir o player.
+  useEffect(() => {
+    if (diff !== 0 || refreshDone.current) return;
+    refreshDone.current = true;
+    router.refresh();
+    const t2 = setTimeout(() => router.refresh(), 2500);
+    const t3 = setTimeout(() => router.refresh(), 6000);
+    return () => {
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [diff, router]);
+
   if (diff === null) return null;
   if (diff <= 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-futvar-light text-lg">A transmissão deve começar em instantes. Atualize a página.</p>
+        <p className="text-futvar-light text-lg mb-2">
+          A transmissão deve começar em instantes.
+        </p>
+        <p className="text-futvar-light/80 text-sm">
+          Atualizando a página automaticamente…
+        </p>
       </div>
     );
   }

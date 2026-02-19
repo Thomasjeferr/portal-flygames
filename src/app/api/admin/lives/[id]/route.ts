@@ -66,8 +66,18 @@ export async function PATCH(
     if (data.title !== undefined) update.title = data.title;
     if (data.description !== undefined) update.description = data.description;
     if (data.thumbnailUrl !== undefined) update.thumbnailUrl = data.thumbnailUrl || null;
-    if (data.cloudflarePlaybackId !== undefined) update.cloudflarePlaybackId = data.cloudflarePlaybackId || null;
+
+    if (data.cloudflarePlaybackId !== undefined) {
+      update.cloudflarePlaybackId = data.cloudflarePlaybackId || null;
+    }
+
     if (data.status !== undefined) update.status = data.status;
+
+    // Se tem ID de replay preenchido, live é considerada encerrada (não mostrar como "ao vivo").
+    const finalPlaybackId = data.cloudflarePlaybackId !== undefined ? (data.cloudflarePlaybackId || null) : existing.cloudflarePlaybackId;
+    if (finalPlaybackId) {
+      update.status = 'ENDED';
+    }
     if (data.startAt !== undefined) update.startAt = data.startAt ? new Date(data.startAt) : null;
     if (data.endAt !== undefined) update.endAt = data.endAt ? new Date(data.endAt) : null;
     if (data.requireSubscription !== undefined) update.requireSubscription = data.requireSubscription;

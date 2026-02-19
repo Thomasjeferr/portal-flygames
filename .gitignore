@@ -36,6 +36,7 @@ prisma/dev.db
 # OS
 .DS_Store
 Thumbs.db
+*.bak
 
 # Prisma
 prisma/migrations/**/migration_lock.toml

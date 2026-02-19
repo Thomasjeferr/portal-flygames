@@ -14,8 +14,35 @@ interface Props {
 
 export default async function LivePage({ params }: Props) {
   const { id } = await params;
-  const live = await prisma.live.findUnique({ where: { id } });
+  let live = await prisma.live.findUnique({ where: { id } });
   if (!live) notFound();
+
+  // Ajustar status pelo horário: SCHEDULED → LIVE quando startAt passou; LIVE → ENDED quando endAt passou.
+  const now = new Date();
+  const startAtDate = live.startAt ? new Date(live.startAt) : null;
+  const endAtDate = live.endAt ? new Date(live.endAt) : null;
+  if (
+    live.status === 'SCHEDULED' &&
+    startAtDate &&
+    startAtDate <= now &&
+    (!endAtDate || endAtDate > now)
+  ) {
+    await prisma.live.update({
+      where: { id: live.id },
+      data: { status: 'LIVE' },
+    });
+    live = await prisma.live.findUnique({ where: { id } }) ?? live;
+  } else if (
+    live.status === 'LIVE' &&
+    endAtDate &&
+    endAtDate <= now
+  ) {
+    await prisma.live.update({
+      where: { id: live.id },
+      data: { status: 'ENDED' },
+    });
+    live = await prisma.live.findUnique({ where: { id } }) ?? live;
+  }
 
   const session = await getSession();
   const userId = session?.userId ?? null;
@@ -25,16 +52,22 @@ export default async function LivePage({ params }: Props) {
     allowOneTimePurchase: live.allowOneTimePurchase,
   });
 
+  // Replay tem prioridade: se tem playbackId, exibe replay mesmo que status ainda seja LIVE no banco.
   let hlsUrl: string | null = null;
   if (canWatch) {
-    if (live.status === 'LIVE' && live.cloudflareLiveInputId) {
-      hlsUrl = getLiveHlsUrl(live.cloudflareLiveInputId);
-    } else if (live.status === 'ENDED' && live.cloudflarePlaybackId) {
-      hlsUrl = getReplayHlsUrl(live.cloudflarePlaybackId);
+    if (live.cloudflarePlaybackId) {
+      hlsUrl = await getReplayHlsUrl(live.cloudflarePlaybackId);
+    } else if (live.status === 'LIVE' && live.cloudflareLiveInputId) {
+      hlsUrl = await getLiveHlsUrl(live.cloudflareLiveInputId);
     }
   }
 
   const startAt = live.startAt ? new Date(live.startAt) : null;
+  const endAt = live.endAt ? new Date(live.endAt) : null;
+  const hasReplay = !!live.cloudflarePlaybackId;
+  const isLive = live.status === 'LIVE' && !hasReplay;
+  const isScheduled = live.status === 'SCHEDULED';
+  const isReplay = live.status === 'ENDED' || hasReplay;
 
   return (
     <div className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
@@ -153,17 +186,109 @@ export default async function LivePage({ params }: Props) {
                 <div className="aspect-video bg-futvar-dark flex items-center justify-center">
                   <p className="text-futvar-light">Transmissão em breve. Aguarde ou atualize a página.</p>
                 </div>
-              ) : live.status === 'ENDED' && !live.cloudflarePlaybackId ? (
-                <div className="aspect-video bg-futvar-dark flex items-center justify-center">
-                  <p className="text-futvar-light">Replay não disponível.</p>
+              ) : (live.status === 'ENDED' || (endAt && endAt <= now)) && !live.cloudflarePlaybackId ? (
+                <div className="aspect-video bg-futvar-dark flex flex-col items-center justify-center gap-6 px-6">
+                  <p className="text-futvar-light text-lg text-center">
+                    O jogo acabou.
+                  </p>
+                  <p className="text-futvar-light/80 text-sm text-center max-w-md">
+                    Quando o replay estiver disponível, ele aparecerá na home. Você pode assistir de novo por lá.
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <Link
+                      href="/#ultimos-jogos"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-futvar-green text-futvar-darker font-bold rounded-lg hover:bg-futvar-green-light transition-colors"
+                    >
+                      Ver últimos jogos na home
+                    </Link>
+                    <Link
+                      href="/"
+                      className="inline-flex items-center gap-2 px-6 py-3 border border-futvar-green/50 text-futvar-green font-semibold rounded-lg hover:bg-futvar-green/10 transition-colors"
+                    >
+                      Voltar ao início
+                    </Link>
+                  </div>
                 </div>
               ) : null}
             </div>
 
-            <div className="space-y-4">
-              <h1 className="text-3xl md:text-4xl font-bold text-white">{live.title}</h1>
+            <div className="space-y-4 md:space-y-5">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white">
+                  {live.title}
+                </h1>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide ${
+                      isLive
+                        ? 'bg-red-600/15 text-red-300 border border-red-500/50'
+                        : isScheduled
+                        ? 'bg-amber-500/10 text-amber-200 border border-amber-400/40'
+                        : 'bg-futvar-gray text-futvar-light border border-white/10'
+                    }`}
+                  >
+                    <span className="relative flex h-2 w-2">
+                      <span
+                        className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                          isLive ? 'bg-red-400 animate-ping' : 'bg-futvar-green/60'
+                        }`}
+                      />
+                      <span
+                        className={`relative inline-flex rounded-full h-2 w-2 ${
+                          isLive ? 'bg-red-200' : 'bg-futvar-green'
+                        }`}
+                      />
+                    </span>
+                    {isLive ? 'Ao vivo agora' : isScheduled ? 'Live agendada' : 'Replay disponível'}
+                  </span>
+                  <span className="hidden md:inline-block h-4 w-px bg-futvar-light/30" aria-hidden />
+                  <span className="text-xs md:text-sm text-futvar-light">
+                    {startAt && (
+                      <>
+                        Início:{' '}
+                        {startAt.toLocaleString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </>
+                    )}
+                    {endAt && (
+                      <>
+                        {' '}
+                        • Fim:{' '}
+                        {endAt.toLocaleString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-futvar-light">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-futvar-dark border border-futvar-green/20">
+                  <span className="w-2 h-2 rounded-full bg-futvar-green" />
+                  {live.requireSubscription
+                    ? 'Disponível para assinantes'
+                    : 'Disponível sem assinatura'}
+                </span>
+                {live.allowOneTimePurchase && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-futvar-dark border border-futvar-gold/40 text-futvar-gold">
+                    <span className="w-2 h-2 rounded-full bg-futvar-gold" />
+                    Acesso avulso disponível
+                  </span>
+                )}
+              </div>
+
               {live.description && (
-                <p className="text-futvar-light leading-relaxed max-w-3xl">{live.description}</p>
+                <p className="text-futvar-light leading-relaxed max-w-3xl">
+                  {live.description}
+                </p>
               )}
             </div>
           </>

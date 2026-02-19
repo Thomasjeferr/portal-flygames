@@ -19,6 +19,13 @@ type GameWithCategory = {
   href?: string;
 };
 
+type LiveReplayCard = {
+  id: string;
+  title: string;
+  thumbnailUrl: string | null;
+  endedAt: string;
+};
+
 async function getPreSaleForClubs() {
   try {
     return prisma.preSaleGame.findMany({
@@ -94,6 +101,38 @@ async function getGames(): Promise<GameWithCategory[]> {
   }
 }
 
+async function getLiveReplays(): Promise<LiveReplayCard[]> {
+  try {
+    // Mostra lives que têm replay (com ou sem status ENDED no banco).
+    const lives = await prisma.live.findMany({
+      where: {
+        cloudflarePlaybackId: { not: null },
+      },
+      orderBy: [
+        { endAt: 'desc' },
+        { createdAt: 'desc' },
+      ],
+      select: {
+        id: true,
+        title: true,
+        thumbnailUrl: true,
+        endAt: true,
+        updatedAt: true,
+      },
+      take: 8,
+    });
+
+    return lives.map((l) => ({
+      id: l.id,
+      title: l.title,
+      thumbnailUrl: l.thumbnailUrl,
+      endedAt: (l.endAt ?? l.updatedAt).toISOString(),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 function groupByCategory(games: GameWithCategory[]): { name: string; id: string; order: number; games: GameWithCategory[] }[] {
   const map = new Map<string, { name: string; id: string; order: number; games: GameWithCategory[] }>();
   const noCategory: GameWithCategory[] = [];
@@ -112,9 +151,10 @@ function groupByCategory(games: GameWithCategory[]): { name: string; id: string;
 }
 
 export default async function HomePage() {
-  const [games, preSaleForClubs] = await Promise.all([
+  const [games, preSaleForClubs, liveReplays] = await Promise.all([
     getGames(),
     getPreSaleForClubs(),
+    getLiveReplays(),
   ]);
   const featured = games.filter((g) => g.featured);
   const byCategory = groupByCategory(games);
@@ -149,6 +189,42 @@ export default async function HomePage() {
                       featured={false}
                       href={`/pre-estreia/${g.id}/checkout`}
                       badgeText="APOIAR"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {liveReplays.length > 0 && (
+            <div id="ultimos-jogos" className="mb-14 scroll-mt-24">
+              <div className="flex items-center gap-3 mb-6 animate-fade-in-up opacity-0 [animation-delay:0.12s]">
+                <span className="w-1 h-8 rounded-full bg-red-500" />
+                <h2 className="text-2xl lg:text-3xl font-bold text-white flex items-center gap-2">
+                  Últimos jogos ao vivo
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-500/10 text-red-300 border border-red-500/40">
+                    Replays
+                  </span>
+                </h2>
+              </div>
+              <p className="text-futvar-light mb-6 max-w-2xl">
+                Assista às transmissões que já rolaram, disponíveis como replay para quem tem acesso.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+                {liveReplays.map((live, i) => (
+                  <div
+                    key={live.id}
+                    className="animate-scale-in opacity-0"
+                    style={{ animationDelay: `${0.18 + i * 0.05}s` }}
+                  >
+                    <GameCard
+                      slug={live.id}
+                      title={live.title}
+                      championship="Replay de live"
+                      thumbnailUrl={live.thumbnailUrl}
+                      gameDate={live.endedAt}
+                      featured={false}
+                      href={`/live/${live.id}`}
+                      badgeText="REPLAY"
                     />
                   </div>
                 ))}
