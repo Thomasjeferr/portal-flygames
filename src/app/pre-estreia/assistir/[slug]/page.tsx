@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { VideoPlayer } from '@/components/VideoPlayer';
+import { PlayerMatchInfo } from '@/components/PlayerMatchInfo';
 
 interface PreSaleGame {
   id: string;
@@ -187,11 +188,13 @@ export default function PreEstreiaWatchPage() {
               streamContext={{ preSaleSlug: slug, sessionToken: sessionToken ?? undefined }}
             />
           </div>
-          <div className="space-y-4">
-            <h1 className="text-3xl md:text-4xl font-bold text-white">{game.title}</h1>
-            <p className="text-futvar-green font-medium">Pre-estreia Clubes</p>
-            {game.description && <p className="text-futvar-light leading-relaxed max-w-3xl">{game.description}</p>}
+          <div className="mb-6">
+            <PlayerMatchInfo
+              title={game.title}
+              subtitle={<span className="text-futvar-green font-medium">Pre-estreia Clubes</span>}
+            />
           </div>
+          {game.description && <p className="text-futvar-light leading-relaxed max-w-3xl">{game.description}</p>}
         </div>
       </div>
     );

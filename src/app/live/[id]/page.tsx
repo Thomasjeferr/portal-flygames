@@ -7,6 +7,7 @@ import { prisma } from '@/lib/db';
 import { getLiveHlsUrl, getReplayHlsUrl } from '@/lib/cloudflare-live';
 import { StreamCustomPlayer } from '@/components/StreamCustomPlayer';
 import { LiveCountdown } from '@/components/LiveCountdown';
+import { PlayerMatchInfo } from '@/components/PlayerMatchInfo';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -213,61 +214,62 @@ export default async function LivePage({ params }: Props) {
             </div>
 
             <div className="space-y-4 md:space-y-5">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white">
-                  {live.title}
-                </h1>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide ${
-                      isLive
-                        ? 'bg-red-600/15 text-red-300 border border-red-500/50'
-                        : isScheduled
-                        ? 'bg-amber-500/10 text-amber-200 border border-amber-400/40'
-                        : 'bg-futvar-gray text-futvar-light border border-white/10'
-                    }`}
-                  >
-                    <span className="relative flex h-2 w-2">
-                      <span
-                        className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                          isLive ? 'bg-red-400 animate-ping' : 'bg-futvar-green/60'
-                        }`}
-                      />
-                      <span
-                        className={`relative inline-flex rounded-full h-2 w-2 ${
-                          isLive ? 'bg-red-200' : 'bg-futvar-green'
-                        }`}
-                      />
-                    </span>
-                    {isLive ? 'Ao vivo agora' : isScheduled ? 'Live agendada' : 'Replay disponível'}
+              <PlayerMatchInfo
+                title={live.title}
+                subtitle={
+                  startAt || endAt ? (
+                    <>
+                      {startAt && (
+                        <>
+                          Início:{' '}
+                          {startAt.toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </>
+                      )}
+                      {startAt && endAt && ' • '}
+                      {endAt && (
+                        <>
+                          Fim:{' '}
+                          {endAt.toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </>
+                      )}
+                    </>
+                  ) : undefined
+                }
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide ${
+                    isLive
+                      ? 'bg-red-600/15 text-red-300 border border-red-500/50'
+                      : isScheduled
+                      ? 'bg-amber-500/10 text-amber-200 border border-amber-400/40'
+                      : 'bg-futvar-gray text-futvar-light border border-white/10'
+                  }`}
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span
+                      className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                        isLive ? 'bg-red-400 animate-ping' : 'bg-futvar-green/60'
+                      }`}
+                    />
+                    <span
+                      className={`relative inline-flex rounded-full h-2 w-2 ${
+                        isLive ? 'bg-red-200' : 'bg-futvar-green'
+                      }`}
+                    />
                   </span>
-                  <span className="hidden md:inline-block h-4 w-px bg-futvar-light/30" aria-hidden />
-                  <span className="text-xs md:text-sm text-futvar-light">
-                    {startAt && (
-                      <>
-                        Início:{' '}
-                        {startAt.toLocaleString('pt-BR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </>
-                    )}
-                    {endAt && (
-                      <>
-                        {' '}
-                        • Fim:{' '}
-                        {endAt.toLocaleString('pt-BR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </>
-                    )}
-                  </span>
-                </div>
+                  {isLive ? 'Ao vivo agora' : isScheduled ? 'Live agendada' : 'Replay disponível'}
+                </span>
               </div>
 
               <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-futvar-light">

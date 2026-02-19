@@ -5,6 +5,7 @@ import { VideoPlayer } from '@/components/VideoPlayer';
 import { GamePlayTracker } from '@/components/GamePlayTracker';
 import { BuyGameButton } from '@/components/BuyGameButton';
 import { GameCard } from '@/components/GameCard';
+import { PlayerMatchInfo } from '@/components/PlayerMatchInfo';
 import { getSession } from '@/lib/auth';
 import { canAccessGameBySlug } from '@/lib/access';
 import { prisma } from '@/lib/db';
@@ -32,7 +33,13 @@ async function getSuggestedGames(currentGameId: string, championship: string) {
 
 export default async function GamePage({ params }: Props) {
   const { slug } = await params;
-  const game = await prisma.game.findUnique({ where: { slug } });
+  const game = await prisma.game.findUnique({
+    where: { slug },
+    include: {
+      homeTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
+      awayTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
+    },
+  });
   if (!game) notFound();
 
   const session = await getSession();
@@ -75,8 +82,14 @@ export default async function GamePage({ params }: Props) {
 
         {!canWatch ? (
           <div className="bg-futvar-dark border border-futvar-green/20 rounded-2xl p-8 md:p-12 text-center">
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{game.title}</h1>
-            <p className="text-futvar-light mb-6">{game.championship} • {gameDateFormatted}</p>
+            <div className="mb-6">
+              <PlayerMatchInfo
+                title={game.title}
+                homeTeam={game.homeTeam ?? undefined}
+                awayTeam={game.awayTeam ?? undefined}
+                subtitle={`${game.championship} • ${gameDateFormatted}`}
+              />
+            </div>
             {game.thumbnailUrl && (
               <div className="relative aspect-video max-w-2xl mx-auto rounded-lg overflow-hidden mb-8">
                 <Image
@@ -142,17 +155,23 @@ export default async function GamePage({ params }: Props) {
                 </div>
               )}
             </div>
-            <div className="space-y-4">
-              <h1 className="text-3xl md:text-4xl font-bold text-white">{game.title}</h1>
-              <div className="flex flex-wrap gap-4 text-futvar-light">
-                <span>{game.championship}</span>
-                <span>•</span>
-                <span>{gameDateFormatted}</span>
-              </div>
-              {game.description && (
-                <p className="text-futvar-light leading-relaxed max-w-3xl">{game.description}</p>
-              )}
+            <div className="mb-6">
+              <PlayerMatchInfo
+                title={game.title}
+                homeTeam={game.homeTeam ?? undefined}
+                awayTeam={game.awayTeam ?? undefined}
+                subtitle={
+                  <>
+                    <span>{game.championship}</span>
+                    <span>•</span>
+                    <span>{gameDateFormatted}</span>
+                  </>
+                }
+              />
             </div>
+            {game.description && (
+              <p className="text-futvar-light leading-relaxed max-w-3xl mb-6">{game.description}</p>
+            )}
           </>
         )}
 
