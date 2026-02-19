@@ -304,7 +304,8 @@ export function Header() {
                   type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    router.push(`/live/${liveHighlight.live.id}`);
+                    const live = liveHighlight.live;
+                    if (live) router.push(`/live/${live.id}`);
                   }}
                   className="mb-2 px-4 py-3 rounded-lg text-sm font-semibold flex items-center justify-between bg-futvar-dark border border-futvar-green/40 text-futvar-light"
                 >
