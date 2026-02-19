@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
+import { createSession } from '@/lib/auth';
 import { hashToken } from '@/lib/email/tokenUtils';
 import { checkVerifyEmailRateLimit, incrementVerifyEmailRateLimit } from '@/lib/email/rateLimit';
+
+const SESSION_COOKIE = 'portal_session';
+const SESSION_DAYS = 30;
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -47,7 +51,19 @@ export async function POST(request: NextRequest) {
           data: { emailVerified: true },
         });
       }
-      return NextResponse.json({ message: 'E-mail verificado com sucesso.' });
+      const token = await createSession(user.id);
+      const response = NextResponse.json({
+        message: 'E-mail verificado com sucesso.',
+        user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      });
+      response.cookies.set(SESSION_COOKIE, token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: SESSION_DAYS * 24 * 60 * 60,
+        path: '/',
+      });
+      return response;
     }
 
     const tokenHash = hashToken(code.trim());
@@ -79,7 +95,19 @@ export async function POST(request: NextRequest) {
       }),
     ]);
 
-    return NextResponse.json({ message: 'E-mail verificado com sucesso.' });
+    const token = await createSession(user.id);
+    const response = NextResponse.json({
+      message: 'E-mail verificado com sucesso.',
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+    });
+    response.cookies.set(SESSION_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_DAYS * 24 * 60 * 60,
+      path: '/',
+    });
+    return response;
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: 'Erro ao verificar e-mail' }, { status: 500 });

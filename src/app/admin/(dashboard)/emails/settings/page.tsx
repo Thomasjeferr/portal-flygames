@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function AdminEmailSettingsPage() {
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [testEmail, setTestEmail] = useState('');
@@ -67,6 +69,29 @@ export default function AdminEmailSettingsPage() {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+    setError('');
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setForm((f) => ({ ...f, logo_url: data.url }));
+      } else {
+        setError(data.error || 'Erro no upload');
+      }
+    } catch {
+      setError('Erro de conexão no upload.');
+    } finally {
+      setLogoUploading(false);
+      e.target.value = '';
+    }
+  };
+
   const handleTest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!testEmail.trim()) return;
@@ -118,7 +143,36 @@ export default function AdminEmailSettingsPage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">URL do logo (opcional)</label>
-          <input type="url" value={form.logo_url} onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value }))} className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white" />
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={form.logo_url}
+              onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value }))}
+              className="flex-1 px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white"
+              placeholder="https://... ou use o botão para enviar imagem"
+            />
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.gif,.webp,.svg,image/*"
+              className="hidden"
+              onChange={handleLogoUpload}
+            />
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              disabled={logoUploading}
+              className="px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white font-medium hover:bg-white/10 disabled:opacity-50 whitespace-nowrap"
+            >
+              {logoUploading ? 'Enviando...' : 'Carregar imagem'}
+            </button>
+          </div>
+          {form.logo_url && (
+            <p className="mt-2 text-netflix-light text-xs flex items-center gap-2">
+              <span>Preview:</span>
+              <img src={form.logo_url} alt="Logo" className="h-8 max-w-[120px] object-contain" />
+            </p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">E-mail de suporte</label>

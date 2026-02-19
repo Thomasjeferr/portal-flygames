@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
 
 function VerificarEmailContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const emailParam = searchParams.get('email') ?? '';
+  const redirectTo = searchParams.get('redirect') ?? '/';
   const [email, setEmail] = useState(emailParam);
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -67,16 +69,28 @@ function VerificarEmailContent() {
     }
   };
 
+  // Após verificação, usuário já está logado (cookie definido pela API). Redireciona em breve.
+  useEffect(() => {
+    if (status !== 'success') return;
+    const t = setTimeout(() => {
+      router.replace(redirectTo.startsWith('/') ? redirectTo : '/');
+    }, 1800);
+    return () => clearTimeout(t);
+  }, [status, redirectTo, router]);
+
   if (status === 'success') {
     return (
       <div className="bg-futvar-dark/95 border border-futvar-green/20 rounded-2xl p-8 shadow-2xl">
-        <h1 className="text-2xl font-bold text-white mb-4">E-mail verificado!</h1>
+        <h1 className="text-2xl font-bold text-white mb-4">Cadastro concluído!</h1>
         <p className="text-futvar-light mb-6">{message}</p>
+        <p className="text-futvar-light/80 text-sm mb-6">
+          Você já está logado. Redirecionando...
+        </p>
         <Link
-          href="/entrar"
+          href={redirectTo.startsWith('/') ? redirectTo : '/'}
           className="inline-block w-full py-4 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light text-center"
         >
-          Entrar
+          Ir agora
         </Link>
       </div>
     );

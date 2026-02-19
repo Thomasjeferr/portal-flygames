@@ -37,7 +37,9 @@ function RegisterForm() {
         return;
       }
       if (data.needsVerification && data.user?.email) {
-        router.push(`/verificar-email?email=${encodeURIComponent(data.user.email)}`);
+        const params = new URLSearchParams({ email: data.user.email });
+        if (redirectTo !== '/') params.set('redirect', redirectTo);
+        router.push(`/verificar-email?${params.toString()}`);
         return;
       }
       router.push(redirectTo);
