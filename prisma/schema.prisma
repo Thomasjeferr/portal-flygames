@@ -463,7 +463,7 @@ model SiteSettings {
 model EmailSettings {
   id           String   @id @default(cuid())
   fromName     String   @default("Fly Games") @map("from_name")
-  fromEmail    String   @default("no-reply@flygames.com.br") @map("from_email")
+  fromEmail    String   @default("no-reply@flygames.app") @map("from_email")
   replyTo      String?  @map("reply_to")
   brandColor   String   @default("#22c55e") @map("brand_color")
   logoUrl      String?  @map("logo_url")

@@ -12,7 +12,7 @@ export default function AdminEmailSettingsPage() {
   const [testEmail, setTestEmail] = useState('');
   const [form, setForm] = useState({
     from_name: 'Fly Games',
-    from_email: 'no-reply@flygames.com.br',
+    from_email: 'no-reply@flygames.app',
     reply_to: '',
     brand_color: '#22c55e',
     logo_url: '',
@@ -29,7 +29,7 @@ export default function AdminEmailSettingsPage() {
         if (data.error) setError(data.error);
         else setForm({
           from_name: data.from_name ?? 'Fly Games',
-          from_email: data.from_email ?? 'no-reply@flygames.com.br',
+          from_email: data.from_email ?? 'no-reply@flygames.app',
           reply_to: data.reply_to ?? '',
           brand_color: data.brand_color ?? '#22c55e',
           logo_url: data.logo_url ?? '',
@@ -110,7 +110,7 @@ export default function AdminEmailSettingsPage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Reply-To (opcional)</label>
-          <input type="email" value={form.reply_to} onChange={(e) => setForm((f) => ({ ...f, reply_to: e.target.value }))} className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white" placeholder="resposta@flygames.com.br" />
+          <input type="email" value={form.reply_to} onChange={(e) => setForm((f) => ({ ...f, reply_to: e.target.value }))} className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white" placeholder="resposta@flygames.app" />
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Cor da marca (hex)</label>
@@ -134,7 +134,7 @@ export default function AdminEmailSettingsPage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">URL base do app</label>
-          <input type="url" value={form.app_base_url} onChange={(e) => setForm((f) => ({ ...f, app_base_url: e.target.value }))} className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white" placeholder="https://flygames.com.br" />
+          <input type="url" value={form.app_base_url} onChange={(e) => setForm((f) => ({ ...f, app_base_url: e.target.value }))} className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white" placeholder="https://flygames.app" />
         </div>
         <div className="flex gap-3">
           <button type="submit" disabled={saving} className="px-6 py-3 rounded bg-netflix-red text-white font-semibold hover:bg-red-600 disabled:opacity-50">{saving ? 'Salvando...' : 'Salvar'}</button>

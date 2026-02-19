@@ -13,8 +13,8 @@ export default function SuportePage() {
         <div className="space-y-4 text-futvar-light">
           <p>
             <strong className="text-white">E-mail de suporte:</strong>{' '}
-            <a href="mailto:contato@flygames.com.br" className="text-futvar-green hover:underline">
-              contato@flygames.com.br
+            <a href="mailto:contato@flygames.app" className="text-futvar-green hover:underline">
+              contato@flygames.app
             </a>
           </p>
           <p>

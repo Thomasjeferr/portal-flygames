@@ -6,7 +6,7 @@ import { emailSettingsSchema } from '@/lib/validators/emailSchema';
 function toBody(data: Record<string, unknown>) {
   return {
     from_name: data.from_name ?? 'Fly Games',
-    from_email: data.from_email ?? 'no-reply@flygames.com.br',
+    from_email: data.from_email ?? 'no-reply@flygames.app',
     reply_to: data.reply_to ?? '',
     brand_color: data.brand_color ?? '#22c55e',
     logo_url: data.logo_url ?? '',
@@ -27,7 +27,7 @@ export async function GET() {
     if (!row)
       return NextResponse.json({
         from_name: 'Fly Games',
-        from_email: 'no-reply@flygames.com.br',
+        from_email: 'no-reply@flygames.app',
         reply_to: '',
         brand_color: '#22c55e',
         logo_url: '',

@@ -125,8 +125,8 @@ export default function PoliticaPrivacidadePage() {
             <p>
               Em caso de dúvidas sobre esta Política de Privacidade ou para exercer seus direitos como titular de
               dados, envie uma mensagem para{' '}
-              <a href="mailto:contato@flygames.com.br" className="text-futvar-green hover:underline">
-                contato@flygames.com.br
+              <a href="mailto:contato@flygames.app" className="text-futvar-green hover:underline">
+                contato@flygames.app
               </a>
               .
             </p>

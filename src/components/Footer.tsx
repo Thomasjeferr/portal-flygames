@@ -15,7 +15,7 @@ async function getSiteSettings() {
 export async function Footer() {
   const [settings, sponsors] = await Promise.all([getSiteSettings(), getCompactSponsors()]);
 
-  const supportEmail = settings?.supportEmail ?? 'contato@flygames.com.br';
+  const supportEmail = settings?.supportEmail ?? 'contato@flygames.app';
   const whatsappNumber = settings?.whatsappNumber ?? '5511999999999';
   const instagramUrl = settings?.instagramUrl ?? 'https://instagram.com';
   const tiktokUrl = settings?.tiktokUrl ?? null;

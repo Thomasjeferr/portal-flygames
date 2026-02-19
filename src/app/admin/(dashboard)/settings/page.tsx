@@ -99,7 +99,7 @@ export default function AdminSettingsPage() {
             type="email"
             value={form.supportEmail}
             onChange={(e) => setForm((f) => ({ ...f, supportEmail: e.target.value }))}
-            placeholder="contato@flygames.com.br"
+            placeholder="contato@flygames.app"
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
         </div>
@@ -109,7 +109,7 @@ export default function AdminSettingsPage() {
             type="email"
             value={form.adminCredentialsEmail}
             onChange={(e) => setForm((f) => ({ ...f, adminCredentialsEmail: e.target.value }))}
-            placeholder="admin@flygames.com.br"
+            placeholder="admin@flygames.app"
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
           <p className="text-xs text-netflix-light mt-1">Usuário e senha dos clubes são enviados a este e-mail quando o pagamento é confirmado.</p>

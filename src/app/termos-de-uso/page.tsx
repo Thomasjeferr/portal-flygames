@@ -109,8 +109,8 @@ export default function TermosDeUsoPage() {
             <p>
               Em caso de dúvidas sobre estes Termos de Uso, você pode entrar em contato pelos canais indicados na
               página de Suporte ou pelo e-mail{' '}
-              <a href="mailto:contato@flygames.com.br" className="text-futvar-green hover:underline">
-                contato@flygames.com.br
+              <a href="mailto:contato@flygames.app" className="text-futvar-green hover:underline">
+                contato@flygames.app
               </a>
               .
             </p>

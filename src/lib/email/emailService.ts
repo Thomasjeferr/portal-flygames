@@ -24,7 +24,7 @@ async function getEmailSettings() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   return {
     fromName: row?.fromName ?? 'Fly Games',
-    fromEmail: row?.fromEmail ?? 'no-reply@flygames.com.br',
+    fromEmail: row?.fromEmail ?? 'no-reply@flygames.app',
     replyTo: row?.replyTo ?? null,
     brandColor: row?.brandColor ?? '#22c55e',
     logoUrl: row?.logoUrl ?? null,
@@ -138,7 +138,7 @@ export async function sendTestEmail(to: string, subject: string, html: string): 
 
   const row = await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } });
   const fromName = row?.fromName ?? 'Fly Games';
-  const fromEmail = row?.fromEmail ?? 'no-reply@flygames.com.br';
+  const fromEmail = row?.fromEmail ?? 'no-reply@flygames.app';
 
   try {
     const { error } = await client.emails.send({
@@ -166,7 +166,7 @@ export async function sendEmailToMany(
   }
   const row = await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } });
   const fromName = row?.fromName ?? 'Fly Games';
-  const fromEmail = row?.fromEmail ?? 'no-reply@flygames.com.br';
+  const fromEmail = row?.fromEmail ?? 'no-reply@flygames.app';
   const validTo = to.filter((e) => e && String(e).trim().length > 0);
   if (validTo.length === 0) return { success: false, error: 'Nenhum destinatário válido' };
   try {

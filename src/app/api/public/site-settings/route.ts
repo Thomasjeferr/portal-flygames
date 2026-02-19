@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const row = await prisma.siteSettings.findFirst({ orderBy: { updatedAt: 'desc' } });
     const defaults = {
-      supportEmail: 'contato@flygames.com.br',
+      supportEmail: 'contato@flygames.app',
       whatsappNumber: '5511999999999',
       instagramUrl: 'https://instagram.com',
       tiktokUrl: null as string | null,
@@ -35,7 +35,7 @@ export async function GET() {
     console.error(e);
     return NextResponse.json(
       {
-        supportEmail: 'contato@flygames.com.br',
+        supportEmail: 'contato@flygames.app',
         whatsappNumber: '5511999999999',
         instagramUrl: 'https://instagram.com',
         tiktokUrl: null,

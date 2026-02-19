@@ -73,7 +73,7 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
     },
   });
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.flygames.com.br';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
   const watchUrl = `${baseUrl}/pre-estreia/assistir/${slot.preSaleGame.slug}`;
   const recipients: string[] = [];
   if (slot.responsibleEmail?.trim()) recipients.push(slot.responsibleEmail.trim());
@@ -124,7 +124,7 @@ export async function regenerateClubViewerPassword(slotId: string): Promise<{ pa
     data: { passwordHash },
   });
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.flygames.com.br';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
   const watchUrl = `${baseUrl}/pre-estreia/assistir/${slot.preSaleGame.slug}`;
   const recipients: string[] = [];
   if (slot.responsibleEmail?.trim()) recipients.push(slot.responsibleEmail.trim());

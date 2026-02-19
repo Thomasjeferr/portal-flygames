@@ -10,7 +10,7 @@ async function main() {
     await prisma.emailSettings.create({
       data: {
         fromName: 'Fly Games',
-        fromEmail: 'no-reply@flygames.com.br',
+        fromEmail: 'no-reply@flygames.app',
         brandColor: '#22c55e',
         appBaseUrl: baseUrl,
       },
