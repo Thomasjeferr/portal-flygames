@@ -23,6 +23,8 @@ const createSchema = z.object({
   thumbnailUrl: z.string().optional(),
   featured: z.boolean().optional(),
   categoryId: z.string().optional().nullable(),
+  homeTeamId: z.string().optional().nullable(),
+  awayTeamId: z.string().optional().nullable(),
 });
 
 export async function GET() {
@@ -32,7 +34,11 @@ export async function GET() {
   }
   const games = await prisma.game.findMany({
     orderBy: [{ order: 'asc' }, { gameDate: 'desc' }],
-    include: { category: { select: { id: true, name: true } } },
+    include: {
+      category: { select: { id: true, name: true } },
+      homeTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
+      awayTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
+    },
   });
   return NextResponse.json(games);
 }
@@ -73,6 +79,8 @@ export async function POST(request: NextRequest) {
         thumbnailUrl: data.thumbnailUrl || null,
         featured: data.featured ?? false,
         categoryId: data.categoryId || null,
+        homeTeamId: data.homeTeamId || null,
+        awayTeamId: data.awayTeamId || null,
         order: maxOrder + 1,
       },
     });

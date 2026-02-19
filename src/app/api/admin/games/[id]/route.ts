@@ -19,6 +19,8 @@ const updateSchema = z.object({
   thumbnailUrl: z.string().optional(),
   featured: z.boolean().optional(),
   categoryId: z.string().optional().nullable(),
+  homeTeamId: z.string().optional().nullable(),
+  awayTeamId: z.string().optional().nullable(),
 });
 
 export async function GET(
@@ -29,7 +31,14 @@ export async function GET(
   if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
   }
-  const game = await prisma.game.findUnique({ where: { id: (await params).id }, include: { category: true } });
+  const game = await prisma.game.findUnique({
+    where: { id: (await params).id },
+    include: {
+      category: true,
+      homeTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
+      awayTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
+    },
+  });
   if (!game) return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
   return NextResponse.json(game);
 }
@@ -67,6 +76,8 @@ export async function PATCH(
     if (data.thumbnailUrl !== undefined) update.thumbnailUrl = data.thumbnailUrl === '' ? null : data.thumbnailUrl;
     if (data.featured !== undefined) update.featured = data.featured;
     if (data.categoryId !== undefined) update.categoryId = data.categoryId || null;
+    if (data.homeTeamId !== undefined) update.homeTeamId = data.homeTeamId || null;
+    if (data.awayTeamId !== undefined) update.awayTeamId = data.awayTeamId || null;
     if (data.title && data.title !== existing.title) {
       const existingSlugs = (await prisma.game.findMany({ where: { id: { not: id } }, select: { slug: true } })).map((g) => g.slug);
       update.slug = uniqueSlug(data.title, existingSlugs);

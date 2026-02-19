@@ -15,6 +15,8 @@ type GameWithCategory = {
   thumbnailUrl: string | null;
   featured: boolean;
   category: { id: string; name: string; slug: string; order: number } | null;
+  homeTeam?: { id: string; name: string; shortName: string | null; crestUrl: string | null } | null;
+  awayTeam?: { id: string; name: string; shortName: string | null; crestUrl: string | null } | null;
   /** Para pre-estreia: link para /pre-estreia/[slug] */
   href?: string;
 };
@@ -52,6 +54,8 @@ async function getGames(): Promise<GameWithCategory[]> {
           thumbnailUrl: true,
           featured: true,
           category: { select: { id: true, name: true, slug: true, order: true } },
+          homeTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
+          awayTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
         },
       }),
       prisma.preSaleGame.findMany({
@@ -242,7 +246,7 @@ export default async function HomePage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
                 {featured.map((game, i) => (
                   <div key={game.id + game.slug} className="animate-scale-in opacity-0" style={{ animationDelay: `${0.2 + i * 0.06}s` }}>
-                    <GameCard slug={game.slug} title={game.title} championship={game.championship} thumbnailUrl={game.thumbnailUrl} gameDate={game.gameDate} featured={game.featured} href={game.href} />
+                    <GameCard slug={game.slug} title={game.title} championship={game.championship} thumbnailUrl={game.thumbnailUrl} gameDate={game.gameDate} featured={game.featured} href={game.href} homeTeam={game.homeTeam ?? undefined} awayTeam={game.awayTeam ?? undefined} />
                   </div>
                 ))}
               </div>
@@ -275,7 +279,7 @@ export default async function HomePage() {
                         className="animate-scale-in opacity-0"
                         style={{ animationDelay: `${0.25 + catIndex * 0.08 + i * 0.05}s` }}
                       >
-                        <GameCard slug={game.slug} title={game.title} championship={game.championship} thumbnailUrl={game.thumbnailUrl} gameDate={game.gameDate} featured={game.featured} href={game.href} />
+                        <GameCard slug={game.slug} title={game.title} championship={game.championship} thumbnailUrl={game.thumbnailUrl} gameDate={game.gameDate} featured={game.featured} href={game.href} homeTeam={game.homeTeam ?? undefined} awayTeam={game.awayTeam ?? undefined} />
                       </div>
                     ))}
                   </div>

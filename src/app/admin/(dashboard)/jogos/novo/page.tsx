@@ -12,6 +12,7 @@ export default function NewGamePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [teams, setTeams] = useState<Array<{ id: string; name: string; shortName: string | null; crestUrl: string | null }>>([]);
   const [form, setForm] = useState({
     title: '',
     championship: '',
@@ -21,12 +22,20 @@ export default function NewGamePage() {
     thumbnailUrl: '',
     categoryId: '' as string,
     featured: false,
+    homeTeamId: '' as string,
+    awayTeamId: '' as string,
   });
 
   useEffect(() => {
     fetch('/api/admin/categories')
       .then((r) => r.json())
       .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    fetch('/api/admin/teams')
+      .then((r) => r.json())
+      .then((data) => setTeams(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, []);
 
@@ -55,6 +64,8 @@ export default function NewGamePage() {
           ...form,
           thumbnailUrl: form.thumbnailUrl || undefined,
           categoryId: form.categoryId || null,
+          homeTeamId: form.homeTeamId || null,
+          awayTeamId: form.awayTeamId || null,
         }),
       });
       const data = await res.json();
@@ -86,6 +97,60 @@ export default function NewGamePage() {
           </p>
         )}
         <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">Times (opcional)</label>
+          <p className="text-xs text-netflix-light mb-2">Selecione times já cadastrados para exibir nome e logo nos cards da home.</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-netflix-light mb-1">Mandante</label>
+              <select
+                value={form.homeTeamId}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm((f) => {
+                    const next = { ...f, homeTeamId: v };
+                    if (v && f.awayTeamId) {
+                      const home = teams.find((t) => t.id === v);
+                      const away = teams.find((t) => t.id === f.awayTeamId);
+                      if (home && away && !f.title) next.title = `${home.name} x ${away.name}`;
+                    }
+                    return next;
+                  });
+                }}
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              >
+                <option value="">— Selecionar —</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>{t.shortName || t.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-netflix-light mb-1">Visitante</label>
+              <select
+                value={form.awayTeamId}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm((f) => {
+                    const next = { ...f, awayTeamId: v };
+                    if (v && f.homeTeamId) {
+                      const home = teams.find((t) => t.id === f.homeTeamId);
+                      const away = teams.find((t) => t.id === v);
+                      if (home && away && !f.title) next.title = `${home.name} x ${away.name}`;
+                    }
+                    return next;
+                  });
+                }}
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              >
+                <option value="">— Selecionar —</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>{t.shortName || t.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Título *</label>
           <input
             type="text"
@@ -95,6 +160,7 @@ export default function NewGamePage() {
             placeholder="Ex: Time A x Time B - Final"
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
+          <p className="text-xs text-netflix-light mt-1">Pode ser preenchido automaticamente ao escolher os dois times acima.</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Campeonato *</label>
