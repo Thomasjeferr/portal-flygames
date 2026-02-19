@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { put } from '@vercel/blob';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
 const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB para logo
@@ -52,12 +53,16 @@ export async function POST(request: NextRequest) {
 
     const safeName = `sponsor-${Date.now()}-${Math.random().toString(36).slice(2)}${claimedExt}`;
 
-    await mkdir(UPLOAD_DIR, { recursive: true });
-    const filePath = path.join(UPLOAD_DIR, safeName);
-    await writeFile(filePath, buffer);
+    // Em produção (Vercel): disco é read-only → usar Vercel Blob
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      const blob = await put(`sponsor-logos/${safeName}`, file, { access: 'public', addRandomSuffix: false });
+      return NextResponse.json({ url: blob.url });
+    }
 
-    const url = `/uploads/${safeName}`;
-    return NextResponse.json({ url });
+    // Local: gravar em public/uploads
+    await mkdir(UPLOAD_DIR, { recursive: true });
+    await writeFile(path.join(UPLOAD_DIR, safeName), buffer);
+    return NextResponse.json({ url: `/uploads/${safeName}` });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: 'Erro no upload' }, { status: 500 });

@@ -87,8 +87,8 @@ function PatrocinarComprarContent() {
     const res = await fetch('/api/upload/sponsor-logo', { method: 'POST', body: fd });
     const data = await res.json();
     if (res.ok && data.url) {
-      const base = typeof window !== 'undefined' ? window.location.origin : '';
-      setForm((f) => ({ ...f, logoUrl: base + data.url }));
+      const url = data.url.startsWith('http') ? data.url : (typeof window !== 'undefined' ? window.location.origin : '') + data.url;
+      setForm((f) => ({ ...f, logoUrl: url }));
     } else {
       setError(data.error || 'Erro no upload');
     }

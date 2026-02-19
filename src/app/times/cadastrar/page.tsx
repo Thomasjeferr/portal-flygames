@@ -42,8 +42,8 @@ export default function CadastrarTimePage() {
       const res = await fetch('/api/upload/team-crest', { method: 'POST', body: fd });
       const data = await res.json();
       if (res.ok && data.url) {
-        const base = typeof window !== 'undefined' ? window.location.origin : '';
-        setForm((f) => ({ ...f, crestUrl: base + data.url }));
+        const url = data.url.startsWith('http') ? data.url : (typeof window !== 'undefined' ? window.location.origin : '') + data.url;
+        setForm((f) => ({ ...f, crestUrl: url }));
       } else {
         setError(data.error || 'Erro no upload');
       }
