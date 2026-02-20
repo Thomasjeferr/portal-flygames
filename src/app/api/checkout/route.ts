@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { createWooviCharge } from '@/lib/payments/woovi';
-import { createStripePaymentIntent } from '@/lib/payments/stripe';
+import { createStripePaymentIntent, createStripeSubscription } from '@/lib/payments/stripe';
 import { z } from 'zod';
 
 const bodySchema = z.object({
@@ -87,6 +87,31 @@ export async function POST(request: NextRequest) {
       if (partner && partner.status === 'approved') {
         partnerId = partner.id;
       }
+    }
+
+    // Assinatura recorrente com cartão: criar Stripe Subscription (cobrança automática).
+    // O primeiro pagamento e as renovações são tratados no webhook invoice.paid (usa favoriteTeamId).
+    const isRecurringCard = plan.type === 'recorrente' && method === 'card';
+    if (isRecurringCard) {
+      const stripeSub = await createStripeSubscription({
+        customerEmail: session.email,
+        userId: session.userId,
+        planId,
+        planName: plan.name,
+        amountCents,
+        periodicity: plan.periodicity ?? 'mensal',
+        metadata: {},
+      });
+      if (stripeSub) {
+        return NextResponse.json({
+          purchaseId: null,
+          method: 'card',
+          clientSecret: stripeSub.clientSecret,
+          subscriptionId: stripeSub.subscriptionId,
+          isSubscription: true,
+        });
+      }
+      // Se Stripe Subscription falhar, cai no fluxo de PaymentIntent abaixo (pagamento único)
     }
 
     let expiresAt: Date | null = null;

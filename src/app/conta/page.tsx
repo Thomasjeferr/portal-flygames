@@ -263,16 +263,24 @@ export default function ContaPage() {
     );
   }
 
-  const user = data!.user;
-  const subscription = data!.subscription;
-  const purchases = data!.purchases ?? [];
+  if (!data) {
+    return (
+      <div className="pt-24 pb-16 px-4 min-h-screen bg-futvar-darker flex items-center justify-center">
+        <p className="text-futvar-light">Carregando...</p>
+      </div>
+    );
+  }
+
+  const user = data.user;
+  const subscription = data.subscription;
+  const purchases = data.purchases ?? [];
   const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'Usuário';
   const subscriptionActive = !!subscription?.active && new Date(subscription.endDate) >= new Date();
 
   return (
     <div className="pt-24 pb-16 px-4 lg:px-12 min-h-screen bg-futvar-darker">
       {favoriteTeamToast && (
-        <div className="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg bg-futvar-green text-futvar-darker font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg bg-futvar-green text-futvar-darker font-medium shadow-lg animate-fade-in">
           {favoriteTeamToast}
         </div>
       )}

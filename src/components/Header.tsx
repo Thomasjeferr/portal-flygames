@@ -49,8 +49,10 @@ export function Header() {
     fetch('/api/auth/me')
       .then((r) => r.json())
       .then((data) => {
-        setUser(data.user ?? null);
-        setSubscription(data.subscription ?? null);
+        if (data && typeof data === 'object' && !data.error) {
+          setUser(data.user ?? null);
+          setSubscription(data.subscription ?? null);
+        }
       })
       .catch(() => {});
   }, [isAdmin, pathname]);
