@@ -44,13 +44,12 @@ export async function POST(request: NextRequest) {
 
     const detectedExt = getExtFromMagic(buffer);
     if (!detectedExt || !ALLOWED_EXT.includes(detectedExt)) {
-      return NextResponse.json({ error: 'Conteúdo do arquivo não corresponde à imagem.' }, { status: 400 });
+      return NextResponse.json({ error: 'Conteúdo do arquivo não é uma imagem válida (use JPG, PNG ou WebP).' }, { status: 400 });
     }
-    if (claimedExt !== detectedExt) {
-      return NextResponse.json({ error: 'Extensão do arquivo não confere com o conteúdo.' }, { status: 400 });
-    }
+    // Usa a extensão detectada pelo conteúdo (aceita arquivo renomeado, ex.: PNG salvo como .jpg)
+    const extToUse = detectedExt;
 
-    const safeName = `user-avatar-${session.userId}-${Date.now()}${claimedExt}`;
+    const safeName = `user-avatar-${session.userId}-${Date.now()}${extToUse}`;
 
     let url: string;
     if (process.env.BLOB_READ_WRITE_TOKEN) {
