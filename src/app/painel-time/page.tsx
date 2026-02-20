@@ -10,11 +10,42 @@ export default async function PainelTimePage() {
   let teams: { id: string; name: string; shortName: string | null; city: string | null; state: string | null; crestUrl: string | null; isActive: boolean; approvalStatus: string; role?: string }[] = [];
 
   if (session) {
-    const managers = await prisma.teamManager.findMany({
+    let managers = await prisma.teamManager.findMany({
       where: { userId: session.userId },
       include: { team: true },
       orderBy: { createdAt: 'desc' },
     });
+    if (managers.length === 0) {
+      const sessionEmail = session.email?.trim().toLowerCase();
+      if (sessionEmail) {
+        const teamsByResponsible = await prisma.team.findMany({
+          where: {
+            approvalStatus: 'approved',
+            responsibleEmail: { equals: sessionEmail, mode: 'insensitive' },
+          },
+        });
+        for (const team of teamsByResponsible) {
+          await prisma.teamManager.upsert({
+            where: {
+              userId_teamId: { userId: session.userId, teamId: team.id },
+            },
+            update: {},
+            create: {
+              userId: session.userId,
+              teamId: team.id,
+              role: 'OWNER',
+            },
+          });
+        }
+        if (teamsByResponsible.length > 0) {
+          managers = await prisma.teamManager.findMany({
+            where: { userId: session.userId },
+            include: { team: true },
+            orderBy: { createdAt: 'desc' },
+          });
+        }
+      }
+    }
     teams = managers.map((m) => ({
       id: m.team.id,
       name: m.team.name,
