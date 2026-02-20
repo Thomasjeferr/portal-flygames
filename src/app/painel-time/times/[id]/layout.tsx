@@ -46,7 +46,6 @@ export default async function PainelTimeTeamLayout({
           name={team.name}
           shortName={team.shortName}
           crestUrl={team.crestUrl}
-          className="h-16 w-16 object-contain rounded shrink-0"
         />
         <div>
           <h1 className="text-xl font-bold text-white">
