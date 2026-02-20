@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { hashToken } from '@/lib/email/tokenUtils';
-import { sendTransactionalEmail } from '@/lib/email/emailService';
+import { sendTransactionalEmail, normalizeAppBaseUrl } from '@/lib/email/emailService';
 import { checkResetPasswordRateLimit, incrementResetPasswordRateLimit } from '@/lib/email/rateLimit';
 
 const schema = z.object({
@@ -68,7 +68,8 @@ export async function POST(request: NextRequest) {
     });
 
     const settings = await prisma.emailSettings.findFirst();
-    const supportUrl = settings?.supportEmail ? `mailto:${settings.supportEmail}` : (settings?.appBaseUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app');
+    const baseUrl = normalizeAppBaseUrl(settings?.appBaseUrl);
+    const supportUrl = settings?.supportEmail ? `mailto:${settings.supportEmail}` : baseUrl;
 
     await sendTransactionalEmail({
       to: emailToken.user.email,

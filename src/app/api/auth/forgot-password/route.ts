@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { sendTransactionalEmail } from '@/lib/email/emailService';
+import { sendTransactionalEmail, normalizeAppBaseUrl } from '@/lib/email/emailService';
 import { generateSecureToken, hashToken, getExpiryDate } from '@/lib/email/tokenUtils';
 import { checkForgotPasswordRateLimit, incrementForgotPasswordRateLimit } from '@/lib/email/rateLimit';
 
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     });
 
     const settings = await prisma.emailSettings.findFirst();
-    const baseUrl = settings?.appBaseUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
+    const baseUrl = normalizeAppBaseUrl(settings?.appBaseUrl);
     const resetUrl = `${baseUrl}/recuperar-senha?token=${token}`;
 
     await sendTransactionalEmail({

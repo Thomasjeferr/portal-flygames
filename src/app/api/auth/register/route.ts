@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
-import { sendTransactionalEmail } from '@/lib/email/emailService';
+import { sendTransactionalEmail, normalizeAppBaseUrl } from '@/lib/email/emailService';
 import { checkRegisterRateLimit, incrementRegisterRateLimit } from '@/lib/email/rateLimit';
 import {
   generateVerificationCode,
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     });
 
     const settings = await prisma.emailSettings.findFirst();
-    const baseUrl = settings?.appBaseUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
+    const baseUrl = normalizeAppBaseUrl(settings?.appBaseUrl);
     const loginUrl = `${baseUrl}/entrar`;
 
     sendTransactionalEmail({

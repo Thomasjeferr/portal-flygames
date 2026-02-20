@@ -47,12 +47,15 @@ export async function POST(
       },
     });
 
-    const baseUrl =
+    let baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
       (await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } }).then((s) => s?.appBaseUrl)) ||
       'https://flygames.app';
-    const loginUrl = `${baseUrl.replace(/\/$/, '')}/entrar`;
-    const accessLinkUrl = `${baseUrl.replace(/\/$/, '')}/api/team-portal/access?token=${panelAccessToken}`;
+    // Em produção, links de e-mail devem usar sempre o domínio canônico
+    if (/portal-flygames\.vercel\.app|\.vercel\.app$/i.test(baseUrl)) baseUrl = 'https://flygames.app';
+    baseUrl = baseUrl.replace(/\/$/, '');
+    const loginUrl = `${baseUrl}/entrar`;
+    const accessLinkUrl = `${baseUrl}/api/team-portal/access?token=${panelAccessToken}`;
 
     const responsibleEmail = team.responsibleEmail?.trim().toLowerCase();
     let tempPasswordForEmail: string | null = null;

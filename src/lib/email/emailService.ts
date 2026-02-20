@@ -19,9 +19,16 @@ export type EmailTemplateKey =
   | 'PRE_SALE_CREDENTIALS'
   | 'PRE_SALE_CREDENTIALS_NEW_PASSWORD';
 
+/** Garante que links de e-mail usem o domínio canônico (flygames.app), nunca vercel.app. */
+export function normalizeAppBaseUrl(url: string | null | undefined): string {
+  const base = url || process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
+  if (/portal-flygames\.vercel\.app|\.vercel\.app$/i.test(base)) return 'https://flygames.app';
+  return base.replace(/\/$/, '');
+}
+
 async function getEmailSettings() {
   const row = await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } });
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
+  const baseUrl = normalizeAppBaseUrl(row?.appBaseUrl);
   return {
     fromName: row?.fromName ?? 'Fly Games',
     fromEmail: row?.fromEmail ?? 'no-reply@flygames.app',
@@ -31,7 +38,7 @@ async function getEmailSettings() {
     supportEmail: row?.supportEmail ?? null,
     whatsappUrl: row?.whatsappUrl ?? null,
     footerText: row?.footerText ?? null,
-    appBaseUrl: row?.appBaseUrl ?? baseUrl,
+    appBaseUrl: baseUrl,
   };
 }
 

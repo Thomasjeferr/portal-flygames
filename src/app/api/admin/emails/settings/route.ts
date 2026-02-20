@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { normalizeAppBaseUrl } from '@/lib/email/emailService';
 import { emailSettingsSchema } from '@/lib/validators/emailSchema';
 
 function toBody(data: Record<string, unknown>) {
@@ -23,7 +24,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
   try {
     const row = await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } });
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
+    const baseUrl = normalizeAppBaseUrl(row?.appBaseUrl);
     if (!row)
       return NextResponse.json({
         from_name: 'Fly Games',
@@ -45,7 +46,7 @@ export async function GET() {
       support_email: row.supportEmail ?? '',
       whatsapp_url: row.whatsappUrl ?? '',
       footer_text: row.footerText ?? '',
-      app_base_url: row.appBaseUrl ?? baseUrl,
+      app_base_url: row.appBaseUrl ? normalizeAppBaseUrl(row.appBaseUrl) : baseUrl,
     });
   } catch (e) {
     console.error(e);
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
       supportEmail: d.support_email?.trim() || null,
       whatsappUrl: d.whatsapp_url?.trim() || null,
       footerText: d.footer_text?.trim() || null,
-      appBaseUrl: d.app_base_url?.trim() || process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app',
+      appBaseUrl: normalizeAppBaseUrl(d.app_base_url?.trim()),
     };
     if (existing) {
       await prisma.emailSettings.update({ where: { id: existing.id }, data });
