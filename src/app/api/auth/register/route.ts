@@ -72,7 +72,8 @@ export async function POST(request: NextRequest) {
         expiresAt,
       },
     });
-    sendTransactionalEmail({
+
+    const emailResult = await sendTransactionalEmail({
       to: user.email,
       templateKey: 'VERIFY_EMAIL',
       vars: {
@@ -81,7 +82,16 @@ export async function POST(request: NextRequest) {
         expires_in: '15',
       },
       userId: user.id,
-    }).catch((e) => console.error('[Email] VERIFY_EMAIL:', e));
+    });
+
+    if (!emailResult.success) {
+      console.error('[Email] VERIFY_EMAIL no cadastro:', emailResult.error);
+      return NextResponse.json({
+        user: { id: user.id, email: user.email, name: user.name, role: user.role },
+        needsVerification: true,
+        message: 'Cadastro realizado! O envio do código pode demorar alguns segundos. Se não receber em 1 minuto, use "Não recebeu? Reenviar código" na tela de verificação.',
+      });
+    }
 
     return NextResponse.json({
       user: {

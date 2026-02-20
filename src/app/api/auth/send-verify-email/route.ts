@@ -44,6 +44,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'E-mail já verificado.' }, { status: 200 });
     }
 
+    // Remove códigos antigos de verificação para este usuário (evita 2 e-mails válidos ao mesmo tempo)
+    await prisma.emailToken.deleteMany({
+      where: { userId: user.id, type: 'VERIFY_EMAIL' },
+    });
+
     const code =
       email === 'cliente@teste.com'
         ? '000000'

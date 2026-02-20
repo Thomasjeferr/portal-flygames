@@ -100,7 +100,7 @@ function VerificarEmailContent() {
     <div className="bg-futvar-dark/95 border border-futvar-green/20 rounded-2xl p-8 shadow-2xl">
       <h1 className="text-2xl font-bold text-white mb-2">Verificar e-mail</h1>
       <p className="text-futvar-light text-sm mb-6">
-        Digite o código de 6 dígitos que enviamos para seu e-mail.
+        Digite o código de 6 dígitos que enviamos para seu e-mail. O código pode levar até 1 minuto para chegar.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">

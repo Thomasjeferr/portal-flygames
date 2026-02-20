@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useRef, useEffect } from 'react';
 
 function safeRedirect(path: string | null): string {
   if (!path || typeof path !== 'string') return '/';
@@ -20,6 +20,13 @@ function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const formTopRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (error && formTopRef.current) {
+      formTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [error]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +62,9 @@ function RegisterForm() {
     <div className="min-h-screen pt-28 pb-16 px-4 flex items-center justify-center">
       <div className="w-full max-w-md">
         <div className="bg-futvar-dark/95 border border-futvar-green/20 rounded-2xl p-8 shadow-2xl shadow-futvar-green/5">
-          <h1 className="text-3xl font-bold text-white mb-6">Cadastrar</h1>
+          <div ref={formTopRef}>
+            <h1 className="text-3xl font-bold text-white mb-6">Cadastrar</h1>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <p className="text-amber-400 text-sm bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
