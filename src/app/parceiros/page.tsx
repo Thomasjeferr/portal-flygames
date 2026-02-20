@@ -11,7 +11,10 @@ export default function ParceirosPage() {
   useEffect(() => {
     fetch('/api/auth/me')
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setUser(data?.email ? { email: data.email, name: data.name ?? null } : null))
+      .then((data) => {
+        const u = data?.user;
+        setUser(u?.email ? { email: u.email, name: u.name ?? null } : null);
+      })
       .catch(() => setUser(null));
   }, []);
 
