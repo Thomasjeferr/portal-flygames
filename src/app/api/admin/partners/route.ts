@@ -24,13 +24,26 @@ export async function GET() {
       gameCommissionPercent: true,
       sponsorCommissionPercent: true,
       createdAt: true,
+      _count: { select: { earnings: true } },
     },
   });
 
   return NextResponse.json(
     partners.map((p) => ({
-      ...p,
+      id: p.id,
+      name: p.name,
+      companyName: p.companyName,
+      type: p.type,
+      status: p.status,
+      whatsapp: p.whatsapp,
+      city: p.city,
+      state: p.state,
+      refCode: p.refCode,
+      planCommissionPercent: p.planCommissionPercent,
+      gameCommissionPercent: p.gameCommissionPercent,
+      sponsorCommissionPercent: p.sponsorCommissionPercent,
       createdAt: p.createdAt.toISOString(),
+      totalIndicacoes: p._count.earnings,
     }))
   );
 }

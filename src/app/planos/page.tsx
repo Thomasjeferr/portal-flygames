@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface Plan {
@@ -27,6 +28,8 @@ const periodLabel: Record<string, string> = {
 };
 
 export default function PlanosPage() {
+  const searchParams = useSearchParams();
+  const ref = searchParams.get('ref');
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isTeamManager, setIsTeamManager] = useState(false);
@@ -126,7 +129,7 @@ export default function PlanosPage() {
                 </ul>
                 <div className="mt-auto">
                   <Link
-                    href={`/checkout?planId=${plan.id}${plan.type === 'unitario' ? '&gameId=' : ''}`}
+                    href={`/checkout?planId=${plan.id}${plan.type === 'unitario' ? '&gameId=' : ''}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}`}
                     className="block w-full py-3 rounded-lg bg-futvar-green text-futvar-darker font-bold text-center hover:bg-futvar-green-light transition-colors"
                   >
                     {plan.type === 'unitario' ? 'Comprar este jogo' : 'Assinar agora'}

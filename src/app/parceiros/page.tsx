@@ -1,11 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 type PartnerType = 'revendedor' | 'influencer' | 'lojista' | 'outro';
 
 export default function ParceirosPage() {
+  const [user, setUser] = useState<{ email: string; name: string | null } | null | undefined>(undefined);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setUser(data?.email ? { email: data.email, name: data.name ?? null } : null))
+      .catch(() => setUser(null));
+  }, []);
+
   const [form, setForm] = useState<{
     name: string;
     companyName: string;
@@ -50,11 +59,15 @@ export default function ParceirosPage() {
       });
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 401) {
+          setError('Faça login ou cadastre-se para solicitar parceria.');
+          return;
+        }
         setError(data.error || 'Não foi possível enviar seu cadastro. Tente novamente.');
         return;
       }
       setSuccess(
-        'Recebemos seu interesse em ser parceiro. Vamos analisar e entrar em contato pelo WhatsApp informado.'
+        'Recebemos seu cadastro. Enviamos um e-mail de confirmação para você. Nossa equipe vai analisar e entrar em contato pelo WhatsApp informado.'
       );
       setForm({
         name: '',
@@ -86,12 +99,36 @@ export default function ParceirosPage() {
           você indicar assinantes, vendas de jogos e patrocinadores, com comissão sobre cada venda gerada.
         </p>
 
+        {user === null && (
+          <div className="mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/40 text-amber-200 text-sm">
+            <p className="font-semibold text-white mb-1">Cadastro obrigatório</p>
+            <p className="mb-2">
+              Para solicitar parceria você precisa estar cadastrado no site. Faça login ou crie uma conta para continuar.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/entrar"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-futvar-green text-futvar-darker font-semibold text-sm hover:bg-futvar-green-light"
+              >
+                Entrar
+              </Link>
+              <Link
+                href="/cadastro"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-white/30 text-white font-medium text-sm hover:bg-white/10"
+              >
+                Cadastrar
+              </Link>
+            </div>
+          </div>
+        )}
+
         <div className="mb-6 p-4 rounded-lg bg-futvar-dark border border-futvar-green/20 text-sm text-futvar-light">
           <p className="font-semibold text-white mb-1">Como funciona:</p>
           <ul className="list-disc list-inside space-y-1">
-            <li>Você preenche o formulário abaixo com seus dados.</li>
+            <li>Faça login ou cadastre-se no site.</li>
+            <li>Preencha o formulário abaixo com seus dados.</li>
             <li>Nosso time analisa o cadastro e entra em contato pelo WhatsApp.</li>
-            <li>Após aprovado, você recebe um código de parceiro e orientações de uso.</li>
+            <li>Após aprovado, você recebe um e-mail com seu código de parceiro e orientações de uso.</li>
           </ul>
         </div>
 
@@ -194,10 +231,16 @@ export default function ParceirosPage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || user === undefined || user === null}
             className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold text-sm hover:bg-futvar-green-light disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
-            {submitting ? 'Enviando...' : 'Enviar cadastro para análise'}
+            {user === undefined
+              ? 'Carregando...'
+              : user === null
+              ? 'Faça login para enviar'
+              : submitting
+              ? 'Enviando...'
+              : 'Enviar cadastro para análise'}
           </button>
         </form>
       </div>

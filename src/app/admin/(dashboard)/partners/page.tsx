@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 type Partner = {
@@ -16,6 +17,7 @@ type Partner = {
   gameCommissionPercent: number;
   sponsorCommissionPercent: number;
   createdAt: string;
+  totalIndicacoes: number;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -163,6 +165,7 @@ export default function AdminPartnersPage() {
                 <th className="px-4 py-3">WhatsApp</th>
                 <th className="px-4 py-3">Cidade/UF</th>
                 <th className="px-4 py-3">Código</th>
+                <th className="px-4 py-3 text-center">Indicações</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Comissões (%)</th>
                 <th className="px-4 py-3 text-right">Ações</th>
@@ -185,6 +188,9 @@ export default function AdminPartnersPage() {
                     {p.city || p.state ? `${p.city ?? ''}${p.city && p.state ? ' / ' : ''}${p.state ?? ''}` : '-'}
                   </td>
                   <td className="px-4 py-3 align-top text-xs font-mono text-futvar-green">{p.refCode}</td>
+                  <td className="px-4 py-3 align-top text-center text-xs text-netflix-light">
+                    {p.totalIndicacoes ?? 0}
+                  </td>
                   <td className="px-4 py-3 align-top text-xs">
                     <span
                       className={`inline-flex items-center rounded-full px-2 py-0.5 ${
@@ -245,6 +251,12 @@ export default function AdminPartnersPage() {
                   </td>
                   <td className="px-4 py-3 align-top text-right text-xs">
                     <div className="inline-flex flex-col gap-1">
+                      <Link
+                        href={`/admin/partners/${p.id}`}
+                        className="px-3 py-1 rounded-md bg-netflix-gray text-white hover:bg-white/20 text-center"
+                      >
+                        Ver
+                      </Link>
                       <button
                         type="button"
                         onClick={() => updateStatus(p.id, 'approved')}

@@ -46,6 +46,8 @@ export function Header() {
   const isAdmin = pathname.startsWith('/admin');
   const isAuthPage = ['/entrar', '/cadastro', '/recuperar-senha', '/admin/entrar'].some((p) => pathname.startsWith(p));
 
+  const [isPartner, setIsPartner] = useState(false);
+
   const fetchUser = useCallback(() => {
     if (isAdmin) return;
     fetch('/api/auth/me')
@@ -54,6 +56,7 @@ export function Header() {
         if (data && typeof data === 'object' && !data.error) {
           setUser(data.user ?? null);
           setSubscription(data.subscription ?? null);
+          setIsPartner(!!data.isPartner);
         }
       })
       .catch(() => {});
@@ -262,6 +265,15 @@ export function Header() {
                       >
                         Área do time
                       </Link>
+                      {isPartner && (
+                        <Link
+                          href="/parceiro"
+                          className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          Área do parceiro
+                        </Link>
+                      )}
                       <Link
                         href="/conta"
                         className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
@@ -404,6 +416,11 @@ export function Header() {
                   <Link href="/painel-time" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
                     Área do time
                   </Link>
+                  {isPartner && (
+                    <Link href="/parceiro" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
+                      Área do parceiro
+                    </Link>
+                  )}
                   <Link href="/conta" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
                     Minha conta
                   </Link>

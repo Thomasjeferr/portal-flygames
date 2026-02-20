@@ -8,13 +8,17 @@ export async function GET() {
     return NextResponse.json({ user: null }, { status: 200 });
   }
 
-  const [user, subscription, teamManagerCount] = await Promise.all([
+  const [user, subscription, teamManagerCount, approvedPartner] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.userId },
       select: { id: true, email: true, name: true, role: true, emailVerified: true, createdAt: true, favoriteTeamId: true, avatarUrl: true },
     }),
     prisma.subscription.findUnique({ where: { userId: session.userId } }),
     prisma.teamManager.count({ where: { userId: session.userId } }),
+    prisma.partner.findFirst({
+      where: { userId: session.userId, status: 'approved' },
+      select: { id: true, refCode: true },
+    }),
   ]);
 
   if (!user) return NextResponse.json({ user: null }, { status: 200 });
@@ -39,5 +43,7 @@ export async function GET() {
       endDate: subscription?.endDate?.toISOString() ?? null,
     },
     isTeamManager,
+    isPartner: !!approvedPartner,
+    partner: approvedPartner ? { id: approvedPartner.id, refCode: approvedPartner.refCode } : null,
   });
 }

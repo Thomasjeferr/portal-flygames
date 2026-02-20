@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth';
 import { z } from 'zod';
 import { checkPartnerApplyRateLimit, incrementPartnerApplyRateLimit } from '@/lib/email/rateLimit';
+import { sendEmailToMany } from '@/lib/email/emailService';
 
 const bodySchema = z.object({
   name: z.string().min(3, 'Informe seu nome completo'),
@@ -27,6 +29,14 @@ function generateRefCodeBase() {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Faça login ou cadastre-se para solicitar parceria.' },
+        { status: 401 }
+      );
+    }
+
     const ip = getClientIp(request);
     const allowed = await checkPartnerApplyRateLimit(ip);
     if (!allowed) {
@@ -46,7 +56,6 @@ export async function POST(request: NextRequest) {
     const data = parsed.data;
 
     let refCode = generateRefCodeBase();
-    // Garante unicidade simples do código
     for (let i = 0; i < 5; i++) {
       const existing = await prisma.partner.findUnique({ where: { refCode } });
       if (!existing) break;
@@ -55,6 +64,7 @@ export async function POST(request: NextRequest) {
 
     await prisma.partner.create({
       data: {
+        userId: session.userId,
         name: data.name.trim(),
         companyName: data.companyName?.trim() || null,
         type: data.type,
@@ -68,6 +78,25 @@ export async function POST(request: NextRequest) {
     });
 
     await incrementPartnerApplyRateLimit(ip);
+
+    const toEmail = session.email;
+    if (toEmail) {
+      const subject = 'Recebemos seu cadastro de parceiro – Fly Games';
+      const html = `
+        <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto;">
+          <h2 style="color: #0C1222;">Cadastro recebido</h2>
+          <p>Olá${session.name ? `, ${session.name}` : ''},</p>
+          <p>Recebemos seu cadastro para o <strong>Programa de Parceiros</strong> da Fly Games.</p>
+          <p>Nossa equipe vai analisar suas informações e entrar em contato pelo WhatsApp informado.</p>
+          <p>Assim que seu cadastro for aprovado, você receberá um código exclusivo para indicar assinantes, jogos e patrocinadores e ganhar comissão sobre cada venda.</p>
+          <p>Atenciosamente,<br/>Fly Games</p>
+        </div>
+      `;
+      await sendEmailToMany([toEmail], subject, html).catch((e) =>
+        console.error('[partners/apply] Erro ao enviar e-mail de confirmação:', e)
+      );
+    }
+
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error('partners/apply', e);
