@@ -6,6 +6,8 @@ import { Footer } from '@/components/Footer';
 import { VisitTracker } from '@/components/VisitTracker';
 import { AnalyticsScripts } from '@/components/AnalyticsScripts';
 
+export const dynamic = 'force-dynamic';
+
 const bebas = Bebas_Neue({
   weight: '400',
   subsets: ['latin'],
