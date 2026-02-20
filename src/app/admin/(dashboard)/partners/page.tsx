@@ -72,6 +72,26 @@ export default function AdminPartnersPage() {
     }
   };
 
+  const deletePartner = async (p: Partner) => {
+    if (!confirm(`Tem certeza que deseja excluir o parceiro "${p.name}" (${p.refCode})? O cadastro e o histórico de comissões serão removidos.`)) {
+      return;
+    }
+    setSavingId(p.id);
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/partners/${p.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Erro ao excluir parceiro');
+      }
+      load();
+    } catch (e: any) {
+      setError(e.message || 'Erro ao excluir parceiro');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   const updateCommissions = async (p: Partner) => {
     setSavingId(p.id);
     setError('');
@@ -240,6 +260,14 @@ export default function AdminPartnersPage() {
                         className="px-3 py-1 rounded-md bg-red-700 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         Bloquear
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deletePartner(p)}
+                        disabled={savingId === p.id}
+                        className="px-3 py-1 rounded-md border border-red-500/60 bg-transparent text-red-300 hover:bg-red-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Deletar
                       </button>
                     </div>
                   </td>
