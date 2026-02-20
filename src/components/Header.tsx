@@ -318,7 +318,13 @@ export function Header() {
         )}
 
         {!isAuthPage && mobileMenuOpen && (
-          <div className="absolute inset-x-0 top-full md:hidden bg-futvar-darker border-b border-futvar-green/20 shadow-xl">
+          <>
+            <div
+              className="fixed inset-0 z-40 md:hidden bg-black/50"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-hidden
+            />
+            <div className="absolute inset-x-0 top-full z-50 md:hidden bg-futvar-darker border-b border-futvar-green/20 shadow-xl">
             <nav className="flex flex-col p-4 gap-1 max-h-[70vh] overflow-y-auto">
               {liveHighlight.mode !== 'NONE' && liveHighlight.live && (
                 <button
@@ -418,6 +424,7 @@ export function Header() {
               )}
             </nav>
           </div>
+          </>
         )}
       </div>
     </header>
