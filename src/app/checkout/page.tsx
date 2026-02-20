@@ -81,23 +81,28 @@ function CheckoutContent() {
         setTeams(teamsList);
         if (gameIdParam) setSelectedGameId(gameIdParam);
 
-        // Sugere o último time de coração escolhido em compras anteriores (se o plano repassa % ao time)
+        // Pré-seleciona o time: preferir favoriteTeamId do usuário; senão último time de compras anteriores
         const planTeamPayout = (p as { teamPayoutPercent?: number } | null)?.teamPayoutPercent ?? 0;
         if (planTeamPayout > 0) {
-          try {
-            const purchasesRes = await fetch('/api/me/purchases', { credentials: 'include' });
-            if (purchasesRes.ok) {
-              const { purchases } = await purchasesRes.json();
-              const lastWithTeam = Array.isArray(purchases)
-                ? purchases.find((pu: { team?: { id: string } | null }) => pu.team?.id)
-                : null;
-              const teamId = lastWithTeam?.team?.id;
-              if (teamId && teamsList.some((t: { id: string }) => t.id === teamId)) {
-                setSelectedTeamId(teamId);
+          const favoriteId = user.favoriteTeamId;
+          if (favoriteId && teamsList.some((t: { id: string }) => t.id === favoriteId)) {
+            setSelectedTeamId(favoriteId);
+          } else {
+            try {
+              const purchasesRes = await fetch('/api/me/purchases', { credentials: 'include' });
+              if (purchasesRes.ok) {
+                const { purchases } = await purchasesRes.json();
+                const lastWithTeam = Array.isArray(purchases)
+                  ? purchases.find((pu: { team?: { id: string } | null }) => pu.team?.id)
+                  : null;
+                const teamId = lastWithTeam?.team?.id;
+                if (teamId && teamsList.some((t: { id: string }) => t.id === teamId)) {
+                  setSelectedTeamId(teamId);
+                }
               }
+            } catch {
+              // ignora; seleção de time fica vazia
             }
-          } catch {
-            // ignora; seleção de time fica vazia
           }
         }
       })

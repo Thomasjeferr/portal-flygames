@@ -47,6 +47,14 @@ export async function POST(request: NextRequest) {
       data: { paymentStatus: 'paid' },
     });
 
+    // Atualiza time do coração do usuário quando a compra tem time
+    if (purchase.teamId) {
+      await prisma.user.update({
+        where: { id: purchase.userId },
+        data: { favoriteTeamId: purchase.teamId },
+      });
+    }
+
     if (purchase.teamId && purchase.amountToTeamCents > 0) {
       await prisma.teamPlanEarning.create({
         data: {

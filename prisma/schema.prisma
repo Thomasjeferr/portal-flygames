@@ -9,17 +9,18 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  passwordHash  String    @map("password_hash")
-  role          String    @default("user") // "user" | "admin" | "club_viewer"
-  emailVerified Boolean   @default(false) @map("email_verified")
+  id               String    @id @default(cuid())
+  email            String    @unique
+  name             String?
+  passwordHash     String    @map("password_hash")
+  role             String    @default("user") // "user" | "admin" | "club_viewer"
+  emailVerified    Boolean   @default(false) @map("email_verified")
   mustChangePassword Boolean @default(false) @map("must_change_password")
-  resetToken    String?   @map("reset_token")
-  resetExpires  DateTime? @map("reset_expires")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  resetToken       String?   @map("reset_token")
+  resetExpires     DateTime? @map("reset_expires")
+  favoriteTeamId   String?   @map("favorite_team_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   subscription      Subscription?
   sessions          Session[]
@@ -29,6 +30,7 @@ model User {
   clubViewerAccount ClubViewerAccount?
   teamManagers      TeamManager[]
   partners          Partner[]
+  favoriteTeam      Team?     @relation("UserFavoriteTeam", fields: [favoriteTeamId], references: [id], onDelete: SetNull)
 }
 
 model Session {
@@ -104,6 +106,7 @@ model Team {
   purchases           Purchase[]
   managers            TeamManager[]
   members             TeamMember[]
+  favoritedByUsers    User[]         @relation("UserFavoriteTeam")
 }
 
 // Responsáveis pelo time (usuários que gerenciam o time no painel do clube)
