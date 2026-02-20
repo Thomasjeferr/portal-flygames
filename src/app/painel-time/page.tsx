@@ -76,6 +76,9 @@ export default async function PainelTimePage() {
           <p className="text-futvar-light mb-4">
             Nenhum time vinculado à sua conta ainda.
           </p>
+          <p className="text-futvar-light text-sm mb-4">
+            Use o mesmo e-mail com o qual você foi aprovado como responsável pelo time. Se você acabou de redefinir sua senha, faça login novamente com esse e-mail e a nova senha.
+          </p>
           <Link
             href="/times/cadastrar"
             className="inline-flex items-center px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"

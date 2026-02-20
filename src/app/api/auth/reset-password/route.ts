@@ -59,7 +59,10 @@ export async function POST(request: NextRequest) {
     const passwordHash = await hashPassword(password);
     await prisma.user.update({
       where: { id: emailToken.userId },
-      data: { passwordHash },
+      data: {
+        passwordHash,
+        mustChangePassword: false,
+      },
     });
 
     await prisma.emailToken.update({
