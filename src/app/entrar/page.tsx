@@ -39,7 +39,11 @@ function LoginForm() {
         setError(data.error || 'Erro ao entrar');
         return;
       }
-      router.push(redirectTo);
+      if (data.user?.mustChangePassword) {
+        router.push('/painel-time/alterar-senha');
+      } else {
+        router.push(redirectTo);
+      }
       router.refresh();
     } catch {
       setError('Erro de conexão');

@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 model User {
@@ -14,6 +15,7 @@ model User {
   passwordHash  String    @map("password_hash")
   role          String    @default("user") // "user" | "admin" | "club_viewer"
   emailVerified Boolean   @default(false) @map("email_verified")
+  mustChangePassword Boolean @default(false) @map("must_change_password")
   resetToken    String?   @map("reset_token")
   resetExpires  DateTime? @map("reset_expires")
   createdAt     DateTime  @default(now()) @map("created_at")

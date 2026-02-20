@@ -21,6 +21,7 @@ export default function EditTeamPage() {
   const [error, setError] = useState('');
   const [approvalStatus, setApprovalStatus] = useState<'approved' | 'pending' | 'rejected'>('approved');
   const [approving, setApproving] = useState(false);
+  const [members, setMembers] = useState<{ id: string; name: string; role: string; number: number | null; position: string | null; isActive: boolean }[]>([]);
   const [form, setForm] = useState({
     name: '',
     shortName: '',
@@ -61,6 +62,7 @@ export default function EditTeamPage() {
           payoutName: data.payoutName ?? '',
           payoutDocument: data.payoutDocument ?? '',
         });
+        setMembers(Array.isArray(data.members) ? data.members : []);
       })
       .catch(() => setError('Erro ao carregar'))
       .finally(() => setLoading(false));
@@ -371,6 +373,48 @@ export default function EditTeamPage() {
           </Link>
         </div>
       </form>
+
+      {/* Elenco cadastrado pelo time (somente leitura no admin) */}
+      <section className="mt-10 p-6 rounded-lg bg-netflix-dark border border-white/10">
+        <h2 className="text-lg font-bold text-white mb-2">Elenco do time</h2>
+        <p className="text-sm text-netflix-light mb-4">
+          Jogadores e comissão cadastrados pelo time no painel. Atualize a página para ver alterações.
+        </p>
+        {members.length === 0 ? (
+          <p className="text-netflix-light text-sm">Nenhum membro cadastrado ainda.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-netflix-light border-b border-white/10">
+                  <th className="py-2 pr-4">Nome</th>
+                  <th className="py-2 pr-4">Função</th>
+                  <th className="py-2 pr-4">Nº</th>
+                  <th className="py-2 pr-4">Posição</th>
+                  <th className="py-2">Ativo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((m) => (
+                  <tr key={m.id} className="border-b border-white/5">
+                    <td className="py-2 pr-4 text-white">{m.name}</td>
+                    <td className="py-2 pr-4 text-netflix-light">
+                      {m.role === 'PLAYER' && 'Jogador'}
+                      {m.role === 'GOALKEEPER' && 'Goleiro'}
+                      {m.role === 'COACH' && 'Treinador'}
+                      {m.role === 'STAFF' && 'Staff'}
+                      {!['PLAYER', 'GOALKEEPER', 'COACH', 'STAFF'].includes(m.role) && m.role}
+                    </td>
+                    <td className="py-2 pr-4 text-netflix-light">{m.number ?? '—'}</td>
+                    <td className="py-2 pr-4 text-netflix-light">{m.position ?? '—'}</td>
+                    <td className="py-2 text-netflix-light">{m.isActive ? 'Sim' : 'Não'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

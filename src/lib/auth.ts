@@ -25,7 +25,7 @@ export async function createSession(userId: string): Promise<string> {
   return token;
 }
 
-export async function getSession(): Promise<{ userId: string; email: string; name: string | null; role: string } | null> {
+export async function getSession(): Promise<{ userId: string; email: string; name: string | null; role: string; mustChangePassword?: boolean } | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -45,6 +45,7 @@ export async function getSession(): Promise<{ userId: string; email: string; nam
     email: session.user.email,
     name: session.user.name,
     role: session.user.role,
+    mustChangePassword: session.user.mustChangePassword ?? false,
   };
 }
 

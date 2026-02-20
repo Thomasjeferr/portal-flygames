@@ -28,7 +28,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!session || session.role !== 'admin')
     return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
   const id = (await params).id;
-  const team = await prisma.team.findUnique({ where: { id } });
+  const team = await prisma.team.findUnique({
+    where: { id },
+    include: {
+      members: {
+        orderBy: [{ role: 'asc' }, { name: 'asc' }],
+        select: { id: true, name: true, role: true, number: true, position: true, isActive: true, createdAt: true },
+      },
+    },
+  });
   if (!team) return NextResponse.json({ error: 'Time não encontrado' }, { status: 404 });
   return NextResponse.json(team);
 }
