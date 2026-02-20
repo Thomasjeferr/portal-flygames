@@ -30,8 +30,9 @@ export async function POST(request: NextRequest) {
   try {
     // Cobrança de assinatura recorrente: tratada em invoice.paid (usa favoriteTeamId do usuário).
     if (event.type === 'invoice.paid') {
-      const invoice = event.data.object as { id: string; subscription?: string; amount_paid?: number };
-      const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
+      const invoice = event.data.object as { id: string; subscription?: string | { id: string }; amount_paid?: number };
+      const sub = invoice.subscription;
+      const subscriptionId = typeof sub === 'string' ? sub : sub != null && typeof sub === 'object' ? sub.id : null;
       if (!subscriptionId) return NextResponse.json({ received: true });
 
       const stripe = await getStripe();
