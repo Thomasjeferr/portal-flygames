@@ -42,7 +42,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
   }
 
-  const updateData: { name?: string; email?: string; emailVerified?: boolean } = {};
+  const updateData: { name?: string | null; email?: string; emailVerified?: boolean } = {};
   if (name !== undefined) updateData.name = name.trim() || null;
   if (email !== undefined) {
     const newEmail = email.trim().toLowerCase();
