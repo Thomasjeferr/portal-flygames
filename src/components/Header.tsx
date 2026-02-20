@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface User {
   id: string;
@@ -317,15 +318,16 @@ export function Header() {
           </>
         )}
 
-        {!isAuthPage && mobileMenuOpen && (
+        {!isAuthPage && mobileMenuOpen && typeof document !== 'undefined' && createPortal(
           <>
-            <div
-              className="fixed inset-0 z-40 md:hidden bg-black/50"
+            <button
+              type="button"
+              className="fixed inset-0 z-[9998] md:hidden bg-black/50 cursor-default w-full h-full"
               onClick={() => setMobileMenuOpen(false)}
-              aria-hidden
+              aria-label="Fechar menu"
             />
-            <div className="absolute inset-x-0 top-full z-50 md:hidden bg-futvar-darker border-b border-futvar-green/20 shadow-xl">
-            <nav className="flex flex-col p-4 gap-1 max-h-[70vh] overflow-y-auto">
+            <div className="fixed inset-x-0 top-0 z-[9999] md:hidden pt-[4.5rem] bg-futvar-darker border-b border-futvar-green/20 shadow-xl max-h-[85vh] overflow-y-auto">
+            <nav className="flex flex-col p-4 gap-1">
               {liveHighlight.mode !== 'NONE' && liveHighlight.live && (
                 <button
                   type="button"
@@ -424,7 +426,8 @@ export function Header() {
               )}
             </nav>
           </div>
-          </>
+          </>,
+          document.body
         )}
       </div>
     </header>
