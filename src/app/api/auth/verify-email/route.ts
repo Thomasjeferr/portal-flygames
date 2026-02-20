@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { createSession } from '@/lib/auth';
 import { hashToken } from '@/lib/email/tokenUtils';
 import { checkVerifyEmailRateLimit, incrementVerifyEmailRateLimit } from '@/lib/email/rateLimit';
+import { sendTransactionalEmail, normalizeAppBaseUrl } from '@/lib/email/emailService';
 
 const SESSION_COOKIE = 'portal_session';
 const SESSION_DAYS = 30;
@@ -42,15 +43,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'E-mail não encontrado.' }, { status: 400 });
     }
 
+    // E-mail de conta ativada (WELCOME) só após o usuário verificar o código; não é enviado no cadastro.
+    async function sendWelcomeEmail(u: { id: string; email: string; name: string | null }) {
+      const settings = await prisma.emailSettings.findFirst();
+      const baseUrl = normalizeAppBaseUrl(settings?.appBaseUrl);
+      const loginUrl = `${baseUrl}/entrar`;
+      await sendTransactionalEmail({
+        to: u.email,
+        templateKey: 'WELCOME',
+        vars: {
+          name: u.name || u.email.split('@')[0],
+          login_url: loginUrl,
+        },
+        userId: u.id,
+      }).catch((e) => console.error('[Email] WELCOME:', e));
+    }
+
     // Atalho de teste para conta cliente@teste.com
     if (normalizedEmail === 'cliente@teste.com' && code.trim() === '000000') {
       await incrementVerifyEmailRateLimit(ip);
-      if (!user.emailVerified) {
+      const wasUnverified = !user.emailVerified;
+      if (wasUnverified) {
         await prisma.user.update({
           where: { id: user.id },
           data: { emailVerified: true },
         });
       }
+      if (wasUnverified) await sendWelcomeEmail(user);
       const token = await createSession(user.id);
       const response = NextResponse.json({
         message: 'E-mail verificado com sucesso.',
@@ -95,6 +114,7 @@ export async function POST(request: NextRequest) {
       }),
     ]);
 
+    await sendWelcomeEmail(user);
     const token = await createSession(user.id);
     const response = NextResponse.json({
       message: 'E-mail verificado com sucesso.',

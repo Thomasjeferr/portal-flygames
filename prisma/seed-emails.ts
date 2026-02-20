@@ -21,11 +21,11 @@ async function main() {
   const templates = [
     {
       key: 'WELCOME',
-      subject: 'Bem-vindo ao Fly Games!',
+      subject: 'Sua conta foi ativada – Fly Games',
       htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
 <div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
 <p>Olá {{name}}!</p>
-<p>Sua conta foi criada com sucesso. Acesse o link abaixo para entrar.</p>
+<p>Seu e-mail foi verificado e sua conta está ativa. Acesse o link abaixo para entrar.</p>
 <p style="margin-top:24px"><a href="{{login_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Acessar minha conta</a></p>
 <p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
 </div></body></html>`,

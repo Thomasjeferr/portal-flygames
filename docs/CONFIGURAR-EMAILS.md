@@ -142,7 +142,7 @@ Qualquer outra variável (ex.: `name`, `code`, `plan_name`) é escapada antes de
 |----------|-------------------|
 | **VERIFY_EMAIL** | `name`, `code`, `expires_in` |
 | **RESET_PASSWORD** | `name`, `reset_url`, `expires_in` |
-| **WELCOME** | `name`, `login_url` |
+| **WELCOME** | `name`, `login_url` — enviado **após** o usuário ativar a conta com o código de verificação |
 | **PURCHASE_CONFIRMATION** | `name`, `plan_name`, `amount` |
 | **SPONSOR_CONFIRMATION** | `company_name`, `plan_name`, `amount` |
 | **PASSWORD_CHANGED** | `name`, `support_url` |
