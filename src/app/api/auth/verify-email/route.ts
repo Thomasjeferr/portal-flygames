@@ -18,6 +18,22 @@ function getClientIp(req: NextRequest): string {
   return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '0.0.0.0';
 }
 
+/** E-mail de conta ativada (WELCOME) só após o usuário verificar o código; não é enviado no cadastro. */
+async function sendWelcomeEmail(u: { id: string; email: string; name: string | null }) {
+  const settings = await prisma.emailSettings.findFirst();
+  const baseUrl = normalizeAppBaseUrl(settings?.appBaseUrl);
+  const loginUrl = `${baseUrl}/entrar`;
+  await sendTransactionalEmail({
+    to: u.email,
+    templateKey: 'WELCOME',
+    vars: {
+      name: u.name || u.email.split('@')[0],
+      login_url: loginUrl,
+    },
+    userId: u.id,
+  }).catch((e) => console.error('[Email] WELCOME:', e));
+}
+
 export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request);
@@ -41,22 +57,6 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
       return NextResponse.json({ error: 'E-mail não encontrado.' }, { status: 400 });
-    }
-
-    // E-mail de conta ativada (WELCOME) só após o usuário verificar o código; não é enviado no cadastro.
-    async function sendWelcomeEmail(u: { id: string; email: string; name: string | null }) {
-      const settings = await prisma.emailSettings.findFirst();
-      const baseUrl = normalizeAppBaseUrl(settings?.appBaseUrl);
-      const loginUrl = `${baseUrl}/entrar`;
-      await sendTransactionalEmail({
-        to: u.email,
-        templateKey: 'WELCOME',
-        vars: {
-          name: u.name || u.email.split('@')[0],
-          login_url: loginUrl,
-        },
-        userId: u.id,
-      }).catch((e) => console.error('[Email] WELCOME:', e));
     }
 
     // Atalho de teste para conta cliente@teste.com
