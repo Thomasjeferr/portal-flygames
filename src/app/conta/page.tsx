@@ -15,6 +15,7 @@ interface AccountUser {
   createdAt?: string;
   favoriteTeamId: string | null;
   favoriteTeam: TeamOption | null;
+  avatarUrl?: string | null;
 }
 
 interface PlanInfo {
@@ -85,6 +86,7 @@ export default function ContaPage() {
 
   const [savingTeamId, setSavingTeamId] = useState<string | null>(null);
   const [teamsForPurchase, setTeamsForPurchase] = useState<TeamOption[]>([]);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const loadAccount = useCallback(async () => {
     setError(null);
@@ -229,6 +231,40 @@ export default function ContaPage() {
     return p.paymentStatus === 'paid' && payoutPercent > 0 && !p.team;
   };
 
+  const avatarSrc = (url: string | null | undefined) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    return `${typeof window !== 'undefined' ? window.location.origin : ''}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    setProfileMessage(null);
+    try {
+      const fd = new FormData();
+      fd.set('file', file);
+      const res = await fetch('/api/upload/avatar', { method: 'POST', body: fd });
+      const result = await res.json();
+      if (!res.ok) {
+        setProfileMessage({ type: 'error', text: result.error || 'Erro ao enviar foto.' });
+        return;
+      }
+      const newUrl = result.url;
+      setData((prev) =>
+        prev ? { ...prev, user: { ...prev.user, avatarUrl: newUrl } } : null
+      );
+      setProfileMessage({ type: 'success', text: 'Foto de perfil atualizada.' });
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('user-updated'));
+    } catch {
+      setProfileMessage({ type: 'error', text: 'Erro de conexão ao enviar foto.' });
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = '';
+    }
+  };
+
   if (loading) {
     return (
       <div className="pt-24 pb-16 px-4 lg:px-12 min-h-screen bg-futvar-darker">
@@ -316,6 +352,35 @@ export default function ContaPage() {
           <section className="rounded-2xl border border-white/10 bg-futvar-dark p-6 shadow-lg">
             <h2 className="text-lg font-semibold text-white mb-4">Perfil</h2>
             <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <span className="w-20 h-20 rounded-full bg-futvar-darker border-2 border-white/20 flex items-center justify-center text-2xl font-semibold text-white shrink-0 overflow-hidden">
+                    {user.avatarUrl ? (
+                      <img src={avatarSrc(user.avatarUrl) ?? ''} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      (user.name || user.email || 'U').charAt(0).toUpperCase()
+                    )}
+                  </span>
+                  <label className="absolute bottom-0 right-0 flex items-center justify-center w-8 h-8 rounded-full bg-futvar-green text-futvar-darker cursor-pointer hover:bg-futvar-green-light transition-colors">
+                    <input
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.webp"
+                      className="sr-only"
+                      onChange={handleAvatarChange}
+                      disabled={uploadingAvatar}
+                    />
+                    <span className="text-lg leading-none" aria-hidden>{uploadingAvatar ? '…' : '+'}</span>
+                  </label>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">Foto de perfil</p>
+                  <p className="text-xs text-futvar-light">JPG, PNG ou WebP. Máx. 2MB.</p>
+                  <label className="mt-1 inline-block text-sm text-futvar-green hover:underline cursor-pointer">
+                    {uploadingAvatar ? 'Enviando...' : user.avatarUrl ? 'Alterar foto' : 'Carregar foto'}
+                    <input type="file" accept=".jpg,.jpeg,.png,.webp" className="sr-only" onChange={handleAvatarChange} disabled={uploadingAvatar} />
+                  </label>
+                </div>
+              </div>
               <div>
                 <label htmlFor="profile-name" className="block text-sm text-futvar-light mb-1">
                   Nome

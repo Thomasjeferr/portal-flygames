@@ -12,6 +12,7 @@ import {
 const schema = z.object({
   name: z.string().max(200).optional(),
   email: z.string().email('E-mail inválido').optional(),
+  avatarUrl: z.string().max(2000).optional().nullable(),
 });
 
 export async function PATCH(request: NextRequest) {
@@ -29,9 +30,9 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
-  const { name, email } = parsed.data;
-  if (name === undefined && email === undefined) {
-    return NextResponse.json({ error: 'Envie name e/ou email para atualizar.' }, { status: 400 });
+  const { name, email, avatarUrl } = parsed.data;
+  if (name === undefined && email === undefined && avatarUrl === undefined) {
+    return NextResponse.json({ error: 'Envie name, email ou avatarUrl para atualizar.' }, { status: 400 });
   }
 
   const current = await prisma.user.findUnique({
@@ -42,8 +43,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
   }
 
-  const updateData: { name?: string | null; email?: string; emailVerified?: boolean } = {};
+  const updateData: { name?: string | null; email?: string; emailVerified?: boolean; avatarUrl?: string | null } = {};
   if (name !== undefined) updateData.name = name.trim() || null;
+  if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl === null || avatarUrl === '' ? null : avatarUrl;
   if (email !== undefined) {
     const newEmail = email.trim().toLowerCase();
     if (newEmail !== current.email) {
@@ -59,7 +61,7 @@ export async function PATCH(request: NextRequest) {
   const user = await prisma.user.update({
     where: { id: session.userId },
     data: updateData,
-    select: { id: true, email: true, name: true, emailVerified: true },
+    select: { id: true, email: true, name: true, emailVerified: true, avatarUrl: true },
   });
 
   if (updateData.email && updateData.email === user.email) {
@@ -92,6 +94,7 @@ export async function PATCH(request: NextRequest) {
       email: user.email,
       name: user.name,
       emailVerified: user.emailVerified,
+      avatarUrl: user.avatarUrl,
     },
     message: updateData.email
       ? 'Dados atualizados. Enviamos um código de verificação para seu novo e-mail.'

@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface User {
   id: string;
   email: string;
   name: string | null;
   role: string;
+  avatarUrl?: string | null;
 }
 
 interface Subscription {
@@ -44,7 +45,7 @@ export function Header() {
   const isAdmin = pathname.startsWith('/admin');
   const isAuthPage = ['/entrar', '/cadastro', '/recuperar-senha', '/admin/entrar'].some((p) => pathname.startsWith(p));
 
-  useEffect(() => {
+  const fetchUser = useCallback(() => {
     if (isAdmin) return;
     fetch('/api/auth/me')
       .then((r) => r.json())
@@ -55,7 +56,17 @@ export function Header() {
         }
       })
       .catch(() => {});
-  }, [isAdmin, pathname]);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser, pathname]);
+
+  useEffect(() => {
+    const onUserUpdated = () => fetchUser();
+    window.addEventListener('user-updated', onUserUpdated);
+    return () => window.removeEventListener('user-updated', onUserUpdated);
+  }, [fetchUser]);
 
   useEffect(() => {
     if (isAdmin) return;
@@ -213,8 +224,16 @@ export function Header() {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-2 text-sm text-futvar-light hover:text-white max-w-[180px] sm:max-w-none"
                 >
-                  <span className="w-8 h-8 rounded bg-netflix-gray flex items-center justify-center text-white font-semibold shrink-0">
-                    {(user.name || user.email).charAt(0).toUpperCase()}
+                  <span className="w-8 h-8 rounded-full bg-netflix-gray flex items-center justify-center text-white font-semibold shrink-0 overflow-hidden ring-2 ring-white/20">
+                    {user.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl.startsWith('http') ? user.avatarUrl : `${typeof window !== 'undefined' ? window.location.origin : ''}${user.avatarUrl.startsWith('/') ? '' : '/'}${user.avatarUrl}`}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      (user.name || user.email).charAt(0).toUpperCase()
+                    )}
                   </span>
                   <span className="hidden sm:inline truncate">{user.name || user.email}</span>
                 </button>
@@ -357,13 +376,22 @@ export function Header() {
               </Link>
               {user ? (
                 <>
-                  <div className="px-4 py-2 text-sm text-futvar-light border-b border-white/10">
-                    <p className="font-medium text-white truncate">{user.name || user.email}</p>
+                  <div className="px-4 py-2 text-sm text-futvar-light border-b border-white/10 flex items-center gap-3">
+                    <span className="w-10 h-10 rounded-full bg-netflix-gray flex items-center justify-center text-white font-semibold shrink-0 overflow-hidden">
+                      {user.avatarUrl ? (
+                        <img src={user.avatarUrl.startsWith('http') ? user.avatarUrl : `${typeof window !== 'undefined' ? window.location.origin : ''}${user.avatarUrl.startsWith('/') ? '' : '/'}${user.avatarUrl}`} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        (user.name || user.email).charAt(0).toUpperCase()
+                      )}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-medium text-white truncate">{user.name || user.email}</p>
                     {subscription && (
                       <p className={`text-xs mt-0.5 ${subscription.active ? 'text-green-400' : 'text-amber-400'}`}>
                         {subscription.active ? 'Assinatura ativa' : 'Assinatura inativa'}
                       </p>
                     )}
+                    </div>
                   </div>
                   <Link href="/painel-time" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
                     Área do time

@@ -20,6 +20,7 @@ export async function GET() {
         emailVerified: true,
         createdAt: true,
         favoriteTeamId: true,
+        avatarUrl: true,
         favoriteTeam: {
           select: { id: true, name: true, shortName: true, crestUrl: true, city: true, state: true, slug: true },
         },
@@ -57,6 +58,7 @@ export async function GET() {
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
       favoriteTeamId: user.favoriteTeamId,
+      avatarUrl: user.avatarUrl,
       favoriteTeam: user.favoriteTeam,
     },
     isTeamManager: teamManagerCount > 0,

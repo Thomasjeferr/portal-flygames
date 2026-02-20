@@ -11,7 +11,7 @@ export async function GET() {
   const [user, subscription, teamManagerCount] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.userId },
-      select: { id: true, email: true, name: true, role: true, emailVerified: true, createdAt: true, favoriteTeamId: true },
+      select: { id: true, email: true, name: true, role: true, emailVerified: true, createdAt: true, favoriteTeamId: true, avatarUrl: true },
     }),
     prisma.subscription.findUnique({ where: { userId: session.userId } }),
     prisma.teamManager.count({ where: { userId: session.userId } }),
@@ -32,6 +32,7 @@ export async function GET() {
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
       favoriteTeamId: user.favoriteTeamId,
+      avatarUrl: user.avatarUrl,
     },
     subscription: {
       active: subscriptionActive,
