@@ -14,7 +14,7 @@ export async function GET() {
     include: {
       plan: { select: { name: true, type: true, price: true, teamPayoutPercent: true } },
       game: { select: { id: true, title: true, slug: true } },
-      team: { select: { id: true, name: true } },
+      team: { select: { id: true, name: true, crestUrl: true } },
     },
   });
 

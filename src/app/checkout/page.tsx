@@ -55,7 +55,7 @@ function CheckoutContent() {
       fetch('/api/games').then((r) => r.json()),
       fetch('/api/public/teams', { cache: 'no-store' }).then((r) => r.json()),
     ])
-      .then(([authData, plansData, gamesData, teamsData]) => {
+      .then(async ([authData, plansData, gamesData, teamsData]) => {
         const user = authData?.user;
         if (!user) {
           setRedirecting(true);
@@ -77,8 +77,29 @@ function CheckoutContent() {
           }
         }
         setGames(Array.isArray(gamesData) ? gamesData : []);
-        setTeams(Array.isArray(teamsData) ? teamsData : []);
+        const teamsList = Array.isArray(teamsData) ? teamsData : [];
+        setTeams(teamsList);
         if (gameIdParam) setSelectedGameId(gameIdParam);
+
+        // Sugere o último time de coração escolhido em compras anteriores (se o plano repassa % ao time)
+        const planTeamPayout = (p as { teamPayoutPercent?: number } | null)?.teamPayoutPercent ?? 0;
+        if (planTeamPayout > 0) {
+          try {
+            const purchasesRes = await fetch('/api/me/purchases', { credentials: 'include' });
+            if (purchasesRes.ok) {
+              const { purchases } = await purchasesRes.json();
+              const lastWithTeam = Array.isArray(purchases)
+                ? purchases.find((pu: { team?: { id: string } | null }) => pu.team?.id)
+                : null;
+              const teamId = lastWithTeam?.team?.id;
+              if (teamId && teamsList.some((t: { id: string }) => t.id === teamId)) {
+                setSelectedTeamId(teamId);
+              }
+            }
+          } catch {
+            // ignora; seleção de time fica vazia
+          }
+        }
       })
       .catch(() => setError('Erro ao carregar'))
       .finally(() => setLoading(false));
