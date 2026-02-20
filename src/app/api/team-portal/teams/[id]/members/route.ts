@@ -39,6 +39,7 @@ export async function POST(
         role: String(body.role ?? 'PLAYER'),
         number: body.number != null ? Number(body.number) : null,
         position: body.position ? String(body.position) : null,
+        photoUrl: body.photoUrl ? String(body.photoUrl).trim() : null,
         isActive: body.isActive ?? true,
       },
     });
@@ -71,6 +72,7 @@ export async function PATCH(
     if (body.role !== undefined) data.role = String(body.role);
     if (body.number !== undefined) data.number = body.number != null ? Number(body.number) : null;
     if (body.position !== undefined) data.position = body.position ? String(body.position) : null;
+    if (body.photoUrl !== undefined) data.photoUrl = body.photoUrl ? String(body.photoUrl).trim() : null;
     if (body.isActive !== undefined) data.isActive = !!body.isActive;
 
     const member = await prisma.teamMember.update({

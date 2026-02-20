@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
 
 type Member = {
   id: string;
@@ -10,6 +9,7 @@ type Member = {
   role: string;
   number: number | null;
   position: string | null;
+  photoUrl: string | null;
   isActive: boolean;
 };
 
@@ -23,16 +23,19 @@ const ROLE_LABEL: Record<string, string> = {
 export default function ElencoPage() {
   const params = useParams();
   const teamId = params.id as string;
+  const photoFileRef = useRef<HTMLInputElement>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [form, setForm] = useState({
     id: '',
     name: '',
     role: 'PLAYER',
     number: '',
     position: '',
+    photoUrl: '',
     isActive: true,
   });
 
@@ -54,7 +57,28 @@ export default function ElencoPage() {
   }, [teamId]);
 
   const resetForm = () =>
-    setForm({ id: '', name: '', role: 'PLAYER', number: '', position: '', isActive: true });
+    setForm({ id: '', name: '', role: 'PLAYER', number: '', position: '', photoUrl: '', isActive: true });
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    setError('');
+    try {
+      const fd = new FormData();
+      fd.append('teamId', teamId);
+      fd.append('file', file);
+      const res = await fetch('/api/upload/member-photo', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Falha no upload');
+      setForm((f) => ({ ...f, photoUrl: data.url }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao carregar foto');
+    } finally {
+      setUploadingPhoto(false);
+      if (photoFileRef.current) photoFileRef.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,13 +89,14 @@ export default function ElencoPage() {
     setSaving(true);
     setError('');
     try {
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         name: form.name.trim(),
         role: form.role,
         number: form.number ? Number(form.number) : null,
         position: form.position.trim() || null,
         isActive: form.isActive,
       };
+      if (form.photoUrl) payload.photoUrl = form.photoUrl.trim();
       let res: Response;
       if (form.id) {
         res = await fetch(`/api/team-portal/teams/${teamId}/members`, {
@@ -107,6 +132,7 @@ export default function ElencoPage() {
       role: m.role,
       number: m.number != null ? String(m.number) : '',
       position: m.position ?? '',
+      photoUrl: m.photoUrl ?? '',
       isActive: m.isActive,
     });
   };
@@ -144,14 +170,8 @@ export default function ElencoPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10">
-      <div className="mb-8">
-        <Link href="/painel-time" className="text-futvar-light hover:text-white text-sm">
-          ← Voltar ao painel
-        </Link>
-      </div>
-
-      <h1 className="text-2xl font-bold text-white mb-4">Elenco do time</h1>
+    <>
+      <h2 className="text-xl font-bold text-white mb-4">Elenco do time</h2>
       <p className="text-futvar-light text-sm mb-6">
         Cadastre jogadores e membros da comissão técnica do seu time.
       </p>
@@ -211,6 +231,42 @@ export default function ElencoPage() {
           </div>
         </div>
         <div>
+          <label className="block text-sm font-medium text-futvar-light mb-1">Foto (opcional)</label>
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              ref={photoFileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
+            <button
+              type="button"
+              onClick={() => photoFileRef.current?.click()}
+              disabled={uploadingPhoto}
+              className="px-3 py-2 rounded bg-white/10 text-white text-sm border border-white/20 hover:bg-white/20 disabled:opacity-50"
+            >
+              {uploadingPhoto ? 'Carregando...' : 'Carregar foto'}
+            </button>
+            {form.photoUrl ? (
+              <>
+                <img
+                  src={form.photoUrl}
+                  alt=""
+                  className="h-12 w-12 rounded object-cover border border-white/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, photoUrl: '' }))}
+                  className="text-futvar-light hover:text-white text-xs"
+                >
+                  Remover
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+        <div>
           <label className="inline-flex items-center gap-2 text-futvar-light text-sm">
             <input
               type="checkbox"
@@ -250,6 +306,7 @@ export default function ElencoPage() {
           <table className="w-full text-left text-sm">
             <thead className="bg-white/5 text-futvar-light">
               <tr>
+                <th className="px-4 py-3 font-medium w-14">Foto</th>
                 <th className="px-4 py-3 font-medium">Nome</th>
                 <th className="px-4 py-3 font-medium">Função</th>
                 <th className="px-4 py-3 font-medium">Número</th>
@@ -261,6 +318,17 @@ export default function ElencoPage() {
             <tbody className="divide-y divide-white/5">
               {members.map((m) => (
                 <tr key={m.id} className="hover:bg-white/5">
+                  <td className="px-4 py-3">
+                    {m.photoUrl ? (
+                      <img
+                        src={m.photoUrl}
+                        alt=""
+                        className="h-10 w-10 rounded object-cover border border-white/20"
+                      />
+                    ) : (
+                      <span className="text-futvar-light/50 text-xs">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-white">{m.name}</td>
                   <td className="px-4 py-3 text-futvar-light">
                     {ROLE_LABEL[m.role] ?? m.role}
@@ -298,7 +366,7 @@ export default function ElencoPage() {
           </table>
         )}
       </div>
-    </div>
+    </>
   );
 }
 
