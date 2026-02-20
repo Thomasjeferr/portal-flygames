@@ -40,6 +40,9 @@
     "videojs-contrib-quality-menu": "^1.0.4",
     "zod": "^3.23.8"
   },
+  "optionalDependencies": {
+    "@next/swc-linux-x64-gnu": "14.2.35"
+  },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/leaflet": "^1.9.21",
