@@ -4,9 +4,6 @@ import { prisma } from '@/lib/db';
 import { uniqueSlug } from '@/lib/slug';
 import { teamCreateSchema } from '@/lib/validators/teamSchema';
 import { sendEmailToMany } from '@/lib/email/emailService';
-import { cookies } from 'next/headers';
-
-const TEAM_PANEL_COOKIE = 'team_panel_token';
 
 function teamToItem(team: { id: string; name: string; shortName: string | null; city: string | null; state: string | null; crestUrl: string | null; isActive: boolean; approvalStatus: string }, role?: string) {
   return {
@@ -22,34 +19,20 @@ function teamToItem(team: { id: string; name: string; shortName: string | null; 
   };
 }
 
-/** Lista times: por sessão (TeamManager) ou por cookie de acesso (token enviado por e-mail). */
+/** Lista times do usuário logado (TeamManager). Acesso apenas por login. */
 export async function GET(_req: NextRequest) {
   const session = await getSession();
-
-  if (session) {
-    const managers = await prisma.teamManager.findMany({
-      where: { userId: session.userId },
-      include: { team: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    const teams = managers.map((m) => teamToItem(m.team, m.role));
-    return NextResponse.json(teams);
+  if (!session) {
+    return NextResponse.json({ error: 'Faça login para acessar o painel do time.' }, { status: 401 });
   }
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get(TEAM_PANEL_COOKIE)?.value;
-  if (!token) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-
-  const team = await prisma.team.findFirst({
-    where: {
-      panelAccessToken: token,
-      panelTokenExpiresAt: { gt: new Date() },
-      approvalStatus: 'approved',
-    },
+  const managers = await prisma.teamManager.findMany({
+    where: { userId: session.userId },
+    include: { team: true },
+    orderBy: { createdAt: 'desc' },
   });
-  if (!team) return NextResponse.json({ error: 'Link de acesso inválido ou expirado' }, { status: 401 });
-
-  return NextResponse.json([teamToItem(team)]);
+  const teams = managers.map((m) => teamToItem(m.team, m.role));
+  return NextResponse.json(teams);
 }
 
 function getErrorMessage(e: unknown): string {
@@ -63,9 +46,29 @@ function getErrorMessage(e: unknown): string {
   return msg || 'Erro ao cadastrar time';
 }
 
-/** Cria time pendente (público – não exige login). Acesso ao painel é enviado por e-mail após aprovação. */
+/** Cria time pendente. Exige conta verificada (login + e-mail verificado). Acesso ao painel só após aprovação, via login. */
 export async function POST(request: NextRequest) {
   const session = await getSession();
+  if (!session) {
+    return NextResponse.json(
+      { error: 'É preciso estar logado para cadastrar um time. Faça login ou crie uma conta.' },
+      { status: 401 }
+    );
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { emailVerified: true, email: true, name: true },
+  });
+  if (!user) {
+    return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 403 });
+  }
+  if (!user.emailVerified) {
+    return NextResponse.json(
+      { error: 'Verifique seu e-mail antes de cadastrar um time. Confira sua caixa de entrada (e spam).' },
+      { status: 403 }
+    );
+  }
 
   let raw: unknown;
   try {
@@ -98,8 +101,8 @@ export async function POST(request: NextRequest) {
         state: d.state?.trim()?.toUpperCase() || null,
         foundedYear: d.foundedYear ?? null,
         crestUrl: d.crestUrl?.trim() || null,
-        responsibleName: d.responsibleName?.trim() || null,
-        responsibleEmail: d.responsibleEmail?.trim() || null,
+        responsibleName: (d.responsibleName?.trim() || user.name) || null,
+        responsibleEmail: user.email,
         instagram: d.instagram?.trim() || null,
         whatsapp: d.whatsapp?.replace(/\D/g, '') || null,
         description: d.description?.trim() || null,
@@ -108,33 +111,24 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (session) {
-      await prisma.teamManager.create({
-        data: { userId: session.userId, teamId: team.id, role: 'OWNER' },
-      });
-    }
+    await prisma.teamManager.create({
+      data: { userId: session.userId, teamId: team.id, role: 'OWNER' },
+    });
 
-    const emailTo = (d.responsibleEmail?.trim() || '').length > 0
-      ? [d.responsibleEmail!.trim()]
-      : session
-        ? await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true } }).then((u) => (u?.email ? [u.email] : []))
-        : [];
-    if (emailTo.length > 0) {
-      try {
-        const subject = 'Cadastro do time recebido – Fly Games';
-        const html = `
-          <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto;">
-            <h2 style="color: #0C1222;">Cadastro recebido</h2>
-            <p>Olá${d.responsibleName?.trim() ? `, ${d.responsibleName.trim()}` : ''},</p>
-            <p>Recebemos os dados do time <strong>${team.name}</strong>. Seu cadastro será analisado pela nossa equipe.</p>
-            <p>Quando o time for aprovado, você receberá um e-mail com um <strong>link de acesso exclusivo</strong> ao painel do clube (comissões e elenco).</p>
-            <p>Atenciosamente,<br/>Fly Games</p>
-          </div>
-        `;
-        await sendEmailToMany(emailTo, subject, html);
-      } catch (err) {
-        console.error('Erro ao enviar e-mail de confirmação de cadastro', err);
-      }
+    try {
+      const subject = 'Cadastro do time recebido – Fly Games';
+      const html = `
+        <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto;">
+          <h2 style="color: #0C1222;">Cadastro recebido</h2>
+          <p>Olá${user.name?.trim() ? `, ${user.name.trim()}` : ''},</p>
+          <p>Recebemos os dados do time <strong>${team.name}</strong>. Seu cadastro será analisado pela nossa equipe.</p>
+          <p>Quando o time for aprovado, você poderá acessar a <strong>Área do time</strong> entrando no site com sua conta (comissões e elenco).</p>
+          <p>Atenciosamente,<br/>Fly Games</p>
+        </div>
+      `;
+      await sendEmailToMany([user.email], subject, html);
+    } catch (err) {
+      console.error('Erro ao enviar e-mail de confirmação de cadastro', err);
     }
 
     return NextResponse.json(team, { status: 201 });

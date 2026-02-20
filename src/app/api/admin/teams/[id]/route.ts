@@ -20,6 +20,8 @@ function toBody(data: Record<string, unknown>) {
   if (data.payoutPixKey !== undefined) out.payoutPixKey = data.payoutPixKey ?? null;
   if (data.payoutName !== undefined) out.payoutName = data.payoutName ?? null;
   if (data.payoutDocument !== undefined) out.payoutDocument = data.payoutDocument ?? null;
+  if (data.responsibleName !== undefined) out.responsibleName = data.responsibleName ?? null;
+  if (data.responsibleEmail !== undefined) out.responsibleEmail = data.responsibleEmail ?? null;
   return out;
 }
 
@@ -73,6 +75,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (d.payoutPixKey !== undefined) update.payoutPixKey = d.payoutPixKey?.trim() || null;
     if (d.payoutName !== undefined) update.payoutName = d.payoutName?.trim() || null;
     if (d.payoutDocument !== undefined) update.payoutDocument = d.payoutDocument?.trim() || null;
+    if (d.responsibleName !== undefined) update.responsibleName = d.responsibleName?.trim() || null;
+    if (d.responsibleEmail !== undefined) update.responsibleEmail = d.responsibleEmail?.trim() || null;
 
     if (d.name !== undefined && d.name !== current.name) {
       const existingSlugs = (await prisma.team.findMany({ where: { id: { not: id } }, select: { slug: true } })).map(

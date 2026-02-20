@@ -1,9 +1,14 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRef, useState, useEffect } from 'react';
+
+const redirectCadastrar = '/times/cadastrar';
 
 export default function CadastrarTimePage() {
   const crestFileRef = useRef<HTMLInputElement>(null);
+  const [authCheck, setAuthCheck] = useState<'loading' | 'guest' | 'unverified' | 'ok'>('loading');
+  const [user, setUser] = useState<{ email: string; name: string | null } | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploadingCrest, setUploadingCrest] = useState(false);
   const [error, setError] = useState('');
@@ -21,6 +26,29 @@ export default function CadastrarTimePage() {
     whatsapp: '',
     description: '',
   });
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.user) {
+          setAuthCheck('guest');
+          return;
+        }
+        setUser({ email: data.user.email, name: data.user.name ?? null });
+        if (!data.user.emailVerified) {
+          setAuthCheck('unverified');
+          return;
+        }
+        setAuthCheck('ok');
+        setForm((f) => ({
+          ...f,
+          responsibleEmail: data.user.email ?? '',
+          responsibleName: data.user.name ?? '',
+        }));
+      })
+      .catch(() => setAuthCheck('guest'));
+  }, []);
 
   const handleCrestUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -90,7 +118,7 @@ export default function CadastrarTimePage() {
         setError(data.error || 'Erro ao cadastrar time. Tente novamente.');
         return;
       }
-      setSuccess('Time enviado para aprovação. Quando for aprovado, você receberá um e-mail com um link exclusivo para acessar o painel (comissões e elenco).');
+      setSuccess('Time enviado para aprovação. Quando for aprovado, você receberá um e-mail e poderá acessar a Área do time entrando no site com sua conta.');
       setForm({
         name: '',
         shortName: '',
@@ -111,13 +139,65 @@ export default function CadastrarTimePage() {
     }
   };
 
+  if (authCheck === 'loading') {
+    return (
+      <div className="pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
+        <div className="max-w-2xl mx-auto">
+          <p className="text-futvar-light">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authCheck === 'guest') {
+    return (
+      <div className="pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Cadastrar time</h1>
+          <p className="text-futvar-light mb-6">
+            Para cadastrar um time você precisa ter uma conta e ter verificado seu e-mail.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href={`/cadastro?redirect=${encodeURIComponent(redirectCadastrar)}`}
+              className="inline-flex px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
+            >
+              Criar conta
+            </Link>
+            <Link
+              href={`/entrar?redirect=${encodeURIComponent(redirectCadastrar)}`}
+              className="inline-flex px-6 py-3 rounded-lg bg-white/10 text-white font-semibold hover:bg-white/20 border border-white/20"
+            >
+              Já tenho conta – Entrar
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (authCheck === 'unverified') {
+    return (
+      <div className="pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Cadastrar time</h1>
+          <p className="text-futvar-light mb-6">
+            Verifique seu e-mail antes de cadastrar um time. Confira sua caixa de entrada (e pasta de spam) e clique no link de confirmação que enviamos para <strong className="text-white">{user?.email}</strong>.
+          </p>
+          <p className="text-futvar-light text-sm">
+            Já verificou? <Link href="/times/cadastrar" className="text-futvar-green hover:underline">Atualize a página</Link>.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Cadastrar time</h1>
         <p className="text-futvar-light mb-6 text-sm sm:text-base">
-          Preencha os dados do seu time para análise. Não é necessário ter conta. Após aprovação, você receberá
-          um e-mail com um link exclusivo para acessar o painel (comissões e elenco).
+          Preencha os dados do seu time para análise. O responsável será a sua conta ({user?.email}). Após aprovação, você acessa a Área do time entrando no site com sua conta.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-5 bg-futvar-dark border border-white/10 rounded-2xl p-6 sm:p-8">
@@ -247,12 +327,12 @@ export default function CadastrarTimePage() {
             <input
               type="email"
               value={form.responsibleEmail}
-              onChange={(e) => setForm((f) => ({ ...f, responsibleEmail: e.target.value }))}
-              className="w-full px-4 py-3 rounded bg-futvar-darker border border-white/20 text-white placeholder-futvar-light focus:outline-none focus:ring-2 focus:ring-futvar-green"
-              placeholder="Ex: responsavel@clubedotime.com.br"
+              readOnly
+              className="w-full px-4 py-3 rounded bg-white/5 border border-white/20 text-futvar-light cursor-not-allowed"
+              placeholder="E-mail da sua conta"
             />
             <p className="text-futvar-light/80 text-xs mt-1">
-              Para receber a confirmação do cadastro e o e-mail de aprovação com acesso ao painel.
+              É o e-mail da sua conta. O painel do time ficará vinculado a ela após aprovação.
             </p>
           </div>
 

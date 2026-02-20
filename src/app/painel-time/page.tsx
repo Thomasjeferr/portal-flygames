@@ -1,9 +1,6 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-
-const TEAM_PANEL_COOKIE = 'team_panel_token';
 
 export default async function PainelTimePage() {
   const session = await getSession();
@@ -18,12 +15,15 @@ export default async function PainelTimePage() {
     if (managers.length === 0) {
       const sessionEmail = session.email?.trim().toLowerCase();
       if (sessionEmail) {
-        const teamsByResponsible = await prisma.team.findMany({
-          where: {
-            approvalStatus: 'approved',
-            responsibleEmail: { equals: sessionEmail, mode: 'insensitive' },
-          },
-        });
+        const rows = await prisma.$queryRaw<{ id: string }[]>`
+          SELECT id FROM "Team"
+          WHERE approval_status = 'approved'
+            AND responsible_email IS NOT NULL
+            AND LOWER(TRIM(responsible_email)) = ${sessionEmail}
+        `;
+        const teamsByResponsible = rows.length > 0
+          ? await prisma.team.findMany({ where: { id: { in: rows.map((r) => r.id) } } })
+          : [];
         for (const team of teamsByResponsible) {
           await prisma.teamManager.upsert({
             where: {
@@ -57,43 +57,22 @@ export default async function PainelTimePage() {
       approvalStatus: m.team.approvalStatus,
       role: m.role,
     }));
-  } else {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(TEAM_PANEL_COOKIE)?.value;
-    if (token) {
-      const team = await prisma.team.findFirst({
-        where: {
-          panelAccessToken: token,
-          panelTokenExpiresAt: { gt: new Date() },
-          approvalStatus: 'approved',
-        },
-      });
-      if (team) {
-        teams = [{
-          id: team.id,
-          name: team.name,
-          shortName: team.shortName,
-          city: team.city,
-          state: team.state,
-          crestUrl: team.crestUrl,
-          isActive: team.isActive,
-          approvalStatus: team.approvalStatus,
-        }];
-      }
-    }
   }
 
-  if (teams.length === 0 && !session) {
+  if (!session) {
     return (
       <div className="pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4">Painel do time</h1>
           <p className="text-futvar-light mb-4">
-            Use o link de acesso que você recebeu por e-mail quando seu time foi aprovado. Esse link é exclusivo e não usa login do site.
+            Entre com sua conta para acessar o painel do time (comissões e elenco).
           </p>
-          <p className="text-futvar-light text-sm">
-            Se você já tem conta no site, pode <Link href="/entrar" className="text-futvar-green hover:underline">entrar</Link> e acessar o painel pelos times vinculados à sua conta.
-          </p>
+          <Link
+            href="/entrar?redirect=/painel-time"
+            className="inline-flex px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
+          >
+            Entrar
+          </Link>
         </div>
       </div>
     );

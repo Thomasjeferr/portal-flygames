@@ -36,7 +36,11 @@ export default function EditTeamPage() {
     payoutPixKey: '',
     payoutName: '',
     payoutDocument: '',
+    responsibleName: '',
+    responsibleEmail: '',
   });
+  const [sendingReset, setSendingReset] = useState(false);
+  const [resetMessage, setResetMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     fetch(`/api/admin/teams/${id}`)
@@ -61,6 +65,8 @@ export default function EditTeamPage() {
           payoutPixKey: data.payoutPixKey ?? '',
           payoutName: data.payoutName ?? '',
           payoutDocument: data.payoutDocument ?? '',
+          responsibleName: data.responsibleName ?? '',
+          responsibleEmail: data.responsibleEmail ?? '',
         });
         setMembers(Array.isArray(data.members) ? data.members : []);
       })
@@ -112,6 +118,8 @@ export default function EditTeamPage() {
           payoutPixKey: form.payoutPixKey.trim() || null,
           payoutName: form.payoutName.trim() || null,
           payoutDocument: form.payoutDocument.trim() || null,
+          responsibleName: form.responsibleName.trim() || null,
+          responsibleEmail: form.responsibleEmail.trim() || null,
         }),
       });
       const data = await res.json();
@@ -219,6 +227,74 @@ export default function EditTeamPage() {
         {error && (
           <p className="text-netflix-red text-sm bg-red-500/10 border border-red-500/30 rounded px-3 py-2">{error}</p>
         )}
+        {resetMessage && (
+          <p
+            className={`text-sm rounded px-3 py-2 ${
+              resetMessage.type === 'success'
+                ? 'bg-green-500/10 border border-green-500/30 text-green-300'
+                : 'bg-red-500/10 border border-red-500/30 text-netflix-red'
+            }`}
+          >
+            {resetMessage.text}
+          </p>
+        )}
+        <div className="border-b border-white/10 pb-5">
+          <h3 className="text-sm font-medium text-netflix-light mb-3">Dados do responsável pelo time</h3>
+          <p className="text-xs text-netflix-light mb-3">
+            E-mail e nome informados no cadastro do time. Você pode corrigir aqui se foram preenchidos errado. Depois,
+            use o botão abaixo para enviar um link de redefinição de senha ao e-mail correto.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+            <div>
+              <label className="block text-sm font-medium text-netflix-light mb-1">Nome do responsável</label>
+              <input
+                type="text"
+                value={form.responsibleName}
+                onChange={(e) => setForm((f) => ({ ...f, responsibleName: e.target.value }))}
+                placeholder="Nome usado no cadastro"
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-netflix-light mb-1">E-mail do responsável</label>
+              <input
+                type="email"
+                value={form.responsibleEmail}
+                onChange={(e) => setForm((f) => ({ ...f, responsibleEmail: e.target.value }))}
+                placeholder="E-mail para login no painel do time"
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              />
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={sendingReset || !form.responsibleEmail?.trim()}
+            onClick={async () => {
+              setResetMessage(null);
+              setSendingReset(true);
+              try {
+                const res = await fetch(`/api/admin/teams/${id}/send-reset-password`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email: form.responsibleEmail.trim() || undefined }),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                  setResetMessage({ type: 'success', text: data.message ?? 'E-mail de redefinição enviado.' });
+                } else {
+                  setResetMessage({ type: 'error', text: data.error ?? 'Erro ao enviar.' });
+                }
+              } catch {
+                setResetMessage({ type: 'error', text: 'Erro de conexão ao enviar e-mail.' });
+              } finally {
+                setSendingReset(false);
+              }
+            }}
+            className="px-4 py-2 rounded bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {sendingReset ? 'Enviando...' : 'Enviar redefinição de senha ao e-mail acima'}
+          </button>
+        </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Nome *</label>
           <input
