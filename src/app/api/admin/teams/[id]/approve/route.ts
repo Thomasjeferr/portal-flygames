@@ -49,7 +49,7 @@ export async function POST(
       process.env.NEXT_PUBLIC_APP_URL ||
       (await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } }).then((s) => s?.appBaseUrl)) ||
       'http://localhost:3000';
-    const accessUrl = `${baseUrl.replace(/\/$/, '')}/painel-time/acesso?token=${panelAccessToken}`;
+    const accessUrl = `${baseUrl.replace(/\/$/, '')}/api/team-portal/access?token=${panelAccessToken}`;
 
     if (emails.length > 0) {
       const subject = 'Seu time foi aprovado – Fly Games';

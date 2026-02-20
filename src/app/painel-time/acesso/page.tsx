@@ -1,59 +1,37 @@
-import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { prisma } from '@/lib/db';
-import { TEAM_PANEL_COOKIE } from '@/lib/team-portal-auth';
-
-const COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 ano em segundos
-
+/**
+ * Página de acesso ao painel do time.
+ * O link do e-mail aponta para /api/team-portal/access?token=xxx (Route Handler que seta o cookie e redireciona).
+ * Esta página só exibe mensagens quando alguém abre /painel-time/acesso sem token ou com ?error=invalid.
+ */
 export default async function PainelTimeAcessoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; error?: string }>;
 }) {
-  const { token } = await searchParams;
-  if (!token?.trim()) {
-    return (
-      <div className="pt-20 sm:pt-24 pb-16 px-4 min-h-screen bg-futvar-darker flex items-center justify-center">
-        <div className="max-w-md text-center">
-          <h1 className="text-xl font-bold text-white mb-2">Link inválido</h1>
-          <p className="text-futvar-light">
-            O link de acesso ao painel do time não foi informado. Use o link que você recebeu por e-mail.
-          </p>
-        </div>
-      </div>
-    );
+  const params = await searchParams;
+  const error = params.error;
+  const hasToken = !!params.token?.trim();
+
+  if (hasToken) {
+    // Token na URL: redireciona para o Route Handler que seta o cookie e redireciona (evita cookies().set() em Server Component).
+    const { redirect } = await import('next/navigation');
+    redirect(`/api/team-portal/access?token=${encodeURIComponent(params.token!.trim())}`);
   }
 
-  const team = await prisma.team.findFirst({
-    where: {
-      panelAccessToken: token.trim(),
-      panelTokenExpiresAt: { gt: new Date() },
-      approvalStatus: 'approved',
-    },
-    select: { id: true, name: true },
-  });
+  const isInvalid = error === 'invalid' || error === 'missing';
 
-  if (!team) {
-    return (
-      <div className="pt-20 sm:pt-24 pb-16 px-4 min-h-screen bg-futvar-darker flex items-center justify-center">
-        <div className="max-w-md text-center">
-          <h1 className="text-xl font-bold text-white mb-2">Link inválido ou expirado</h1>
-          <p className="text-futvar-light">
-            Este link de acesso ao painel não é válido ou já expirou. Entre em contato conosco se precisar de um novo link.
-          </p>
-        </div>
+  return (
+    <div className="pt-20 sm:pt-24 pb-16 px-4 min-h-screen bg-futvar-darker flex items-center justify-center">
+      <div className="max-w-md text-center">
+        <h1 className="text-xl font-bold text-white mb-2">
+          {isInvalid ? 'Link inválido ou expirado' : 'Link inválido'}
+        </h1>
+        <p className="text-futvar-light">
+          {isInvalid
+            ? 'Este link de acesso ao painel não é válido ou já expirou. Entre em contato conosco se precisar de um novo link.'
+            : 'O link de acesso ao painel do time não foi informado. Use o link que você recebeu por e-mail.'}
+        </p>
       </div>
-    );
-  }
-
-  const cookieStore = await cookies();
-  cookieStore.set(TEAM_PANEL_COOKIE, token.trim(), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: COOKIE_MAX_AGE,
-    path: '/',
-  });
-
-  redirect('/painel-time');
+    </div>
+  );
 }
