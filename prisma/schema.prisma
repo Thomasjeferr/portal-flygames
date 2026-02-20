@@ -129,6 +129,7 @@ model TeamMember {
   role      String   @map("role") // PLAYER | COACH | STAFF | GOALKEEPER | etc
   number    Int?     @map("number")
   position  String?  @map("position")
+  photoUrl  String?  @map("photo_url") // foto opcional do jogador
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
