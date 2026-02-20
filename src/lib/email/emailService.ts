@@ -21,7 +21,7 @@ export type EmailTemplateKey =
 
 async function getEmailSettings() {
   const row = await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } });
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
   return {
     fromName: row?.fromName ?? 'Fly Games',
     fromEmail: row?.fromEmail ?? 'no-reply@flygames.app',

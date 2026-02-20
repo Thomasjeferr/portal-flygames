@@ -15,9 +15,9 @@ const KEYS = [
   'PRE_SALE_CREDENTIALS_NEW_PASSWORD',
 ] as const;
 const SAMPLE_VARS: Record<string, Record<string, string>> = {
-  WELCOME: { name: 'João', login_url: 'http://localhost:3000/entrar' },
+  WELCOME: { name: 'João', login_url: 'https://flygames.app/entrar' },
   VERIFY_EMAIL: { name: 'João', code: '123456', expires_in: '15' },
-  RESET_PASSWORD: { name: 'João', reset_url: 'http://localhost:3000/recuperar-senha?token=xxx', expires_in: '60' },
+  RESET_PASSWORD: { name: 'João', reset_url: 'https://flygames.app/recuperar-senha?token=xxx', expires_in: '60' },
   PASSWORD_CHANGED: { name: 'João', support_url: 'mailto:suporte@flygames.app' },
   PURCHASE_CONFIRMATION: { name: 'João', plan_name: 'Plano Mensal', amount: '29,90' },
   SPONSOR_CONFIRMATION: { company_name: 'Empresa XYZ', plan_name: 'Patrocínio Oficial', amount: '199,90' },

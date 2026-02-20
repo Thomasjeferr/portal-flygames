@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const { email: rawEmail, password } = parsed.data;
     const email = rawEmail.toLowerCase();
 
-    const adminEnvEmail = (process.env.ADMIN_EMAIL || 'admin@portal.com').toLowerCase();
+    const adminEnvEmail = (process.env.ADMIN_EMAIL || 'admin@flygames.app').toLowerCase();
     const adminEnvPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
 
     let user = await prisma.user.findUnique({ where: { email } });

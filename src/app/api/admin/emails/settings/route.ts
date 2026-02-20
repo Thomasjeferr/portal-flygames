@@ -23,7 +23,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
   try {
     const row = await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } });
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
     if (!row)
       return NextResponse.json({
         from_name: 'Fly Games',
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       supportEmail: d.support_email?.trim() || null,
       whatsappUrl: d.whatsapp_url?.trim() || null,
       footerText: d.footer_text?.trim() || null,
-      appBaseUrl: d.app_base_url?.trim() || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      appBaseUrl: d.app_base_url?.trim() || process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app',
     };
     if (existing) {
       await prisma.emailSettings.update({ where: { id: existing.id }, data });

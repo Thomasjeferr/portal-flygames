@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     });
 
     const settings = await prisma.emailSettings.findFirst();
-    const supportUrl = settings?.supportEmail ? `mailto:${settings.supportEmail}` : (settings?.appBaseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+    const supportUrl = settings?.supportEmail ? `mailto:${settings.supportEmail}` : (settings?.appBaseUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app');
 
     await sendTransactionalEmail({
       to: emailToken.user.email,

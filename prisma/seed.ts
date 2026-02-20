@@ -8,7 +8,7 @@ async function main() {
   console.log('--- Criando usuários de teste ---\n');
 
   // 1. Admin
-  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@portal.com').toLowerCase();
+  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@flygames.app').toLowerCase();
   const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
   const adminHash = await bcrypt.hash(adminPassword, 12);
 
@@ -176,28 +176,29 @@ async function main() {
     console.log('Time "SUCATAS NOGUEIRA" não encontrado. Cadastre o time e rode o seed de novo para vincular.');
   }
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
   console.log('========================================');
   console.log('  ADMIN');
   console.log('  E-mail: ' + adminEmail);
   console.log('  Senha:  ' + adminPassword);
-  console.log('  Acesso: http://localhost:3000/admin/entrar');
+  console.log('  Acesso: ' + appUrl + '/admin/entrar');
   console.log('========================================');
   console.log('  CLIENTE TESTE');
   console.log('  E-mail: ' + clientEmail);
   console.log('  Senha:  ' + clientPassword);
-  console.log('  Acesso: http://localhost:3000/entrar');
+  console.log('  Acesso: ' + appUrl + '/entrar');
   console.log('  (Já com assinatura ativa para assistir vídeos)');
   console.log('========================================');
   console.log('  ÁREA DO TIME (responsável de time)');
   console.log('  E-mail: ' + timeEmail);
   console.log('  Senha:  ' + timePassword);
-  console.log('  Acesso: http://localhost:3000/entrar → depois "Área do time"');
-  console.log('  Ou: http://localhost:3000/painel-time');
+  console.log('  Acesso: ' + appUrl + '/entrar → depois "Área do time"');
+  console.log('  Ou: ' + appUrl + '/painel-time');
   console.log('========================================');
   console.log('  SUCATAS NOGUEIRA (time aprovado – ver painel desse time)');
   console.log('  E-mail: ' + sucatasEmail);
   console.log('  Senha:  ' + sucatasPassword);
-  console.log('  Acesso: http://localhost:3000/entrar → "Área do time"');
+  console.log('  Acesso: ' + appUrl + '/entrar → "Área do time"');
   console.log('========================================\n');
 }
 

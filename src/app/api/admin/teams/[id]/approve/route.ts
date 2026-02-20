@@ -50,7 +50,7 @@ export async function POST(
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
       (await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } }).then((s) => s?.appBaseUrl)) ||
-      'http://localhost:3000';
+      'https://flygames.app';
     const loginUrl = `${baseUrl.replace(/\/$/, '')}/entrar`;
     const accessLinkUrl = `${baseUrl.replace(/\/$/, '')}/api/team-portal/access?token=${panelAccessToken}`;
 

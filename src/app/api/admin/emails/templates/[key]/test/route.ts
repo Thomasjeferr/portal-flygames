@@ -17,9 +17,9 @@ const KEYS = [
 const schema = z.object({ to: z.string().email() });
 
 const SAMPLE_VARS: Record<string, Record<string, string>> = {
-  WELCOME: { name: 'Teste', login_url: 'http://localhost:3000/entrar' },
+  WELCOME: { name: 'Teste', login_url: 'https://flygames.app/entrar' },
   VERIFY_EMAIL: { name: 'Teste', code: '123456', expires_in: '15' },
-  RESET_PASSWORD: { name: 'Teste', reset_url: 'http://localhost:3000/recuperar-senha?token=test', expires_in: '60' },
+  RESET_PASSWORD: { name: 'Teste', reset_url: 'https://flygames.app/recuperar-senha?token=test', expires_in: '60' },
   PASSWORD_CHANGED: { name: 'Teste', support_url: 'mailto:suporte@flygames.app' },
   PURCHASE_CONFIRMATION: { name: 'Teste', plan_name: 'Plano Mensal', amount: '29,90' },
   SPONSOR_CONFIRMATION: { company_name: 'Empresa XYZ', plan_name: 'Patrocínio Oficial', amount: '199,90' },
