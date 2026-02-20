@@ -40,7 +40,7 @@ export default async function PainelTimeTeamLayout({
 
   const base = `/painel-time/times/${teamId}`;
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
+    <div className="max-w-4xl mx-auto px-6 pt-20 sm:pt-24 pb-8">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
         <TeamCrestLogo
           name={team.name}
