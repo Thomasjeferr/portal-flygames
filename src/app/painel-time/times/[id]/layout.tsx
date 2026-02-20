@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getTeamAccess } from '@/lib/team-portal-auth';
 import { prisma } from '@/lib/db';
+import { TeamCrestLogo } from '@/components/painel-time/TeamCrestLogo';
 
 export default async function PainelTimeTeamLayout({
   children,
@@ -41,13 +42,12 @@ export default async function PainelTimeTeamLayout({
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
-        {team.crestUrl ? (
-          <img
-            src={team.crestUrl.startsWith('http') ? team.crestUrl : team.crestUrl}
-            alt=""
-            className="h-16 w-16 object-contain rounded"
-          />
-        ) : null}
+        <TeamCrestLogo
+          name={team.name}
+          shortName={team.shortName}
+          crestUrl={team.crestUrl}
+          className="h-16 w-16 object-contain rounded shrink-0"
+        />
         <div>
           <h1 className="text-xl font-bold text-white">
             {team.name}
