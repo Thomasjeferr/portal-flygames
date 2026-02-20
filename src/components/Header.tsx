@@ -173,8 +173,8 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-futvar-darker/95 backdrop-blur-md border-b border-futvar-green/10 animate-slide-down">
-        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 py-3 sm:py-4 max-w-[1920px] mx-auto">
-        <Link href="/" className="flex items-center gap-2 group min-w-0 shrink-0">
+        <div className="flex items-center justify-between gap-4 sm:gap-6 px-4 sm:px-6 lg:px-12 py-3 sm:py-4 max-w-[1920px] mx-auto">
+        <Link href="/" className="flex items-center gap-2 group shrink-0 min-w-[100px] sm:min-w-[120px]">
           <img
             src="/uploads/logo-home-fly.png"
             alt="FLY GAMES"
@@ -186,7 +186,7 @@ export function Header() {
 
         {!isAuthPage && (
           <>
-            <nav className="hidden md:flex items-center gap-4 lg:gap-6">
+            <nav className="hidden md:flex items-center gap-4 lg:gap-6 ml-0 flex-1 justify-end min-w-0">
             <Link
               href="/"
               className={`text-sm font-semibold ${pathname === '/' ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
