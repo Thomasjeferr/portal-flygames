@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     const claimedExt = path.extname(file.name).toLowerCase();
-    if (!ALLOWED_EXT.includes(claimedExt)) {
+    if (claimedExt && !ALLOWED_EXT.includes(claimedExt)) {
       return NextResponse.json({ error: 'Tipo não permitido. Use: jpg, png ou webp.' }, { status: 400 });
     }
 
@@ -48,11 +48,9 @@ export async function POST(request: NextRequest) {
     if (!detectedExt || !ALLOWED_EXT.includes(detectedExt)) {
       return NextResponse.json({ error: 'Conteúdo do arquivo não corresponde à imagem.' }, { status: 400 });
     }
-    if (claimedExt !== detectedExt) {
-      return NextResponse.json({ error: 'Extensão do arquivo não confere com o conteúdo.' }, { status: 400 });
-    }
-
-    const safeName = `member-photo-${Date.now()}-${Math.random().toString(36).slice(2)}${claimedExt}`;
+    // Usa a extensão real do conteúdo para salvar (evita rejeitar foto.jpg que é PNG, etc.)
+    const extToUse = detectedExt;
+    const safeName = `member-photo-${Date.now()}-${Math.random().toString(36).slice(2)}${extToUse}`;
 
     if (process.env.BLOB_READ_WRITE_TOKEN) {
       const blob = await put(`member-photos/${safeName}`, file, { access: 'public', addRandomSuffix: false });
