@@ -86,7 +86,7 @@ export function HeroBannerCarousel() {
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
     const set = () => setIsMobile(mq.matches);
-    set(mq.matches);
+    set();
     mq.addEventListener('change', set);
     return () => mq.removeEventListener('change', set);
   }, []);
