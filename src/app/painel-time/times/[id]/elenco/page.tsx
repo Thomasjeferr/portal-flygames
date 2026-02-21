@@ -14,10 +14,17 @@ type Member = {
 };
 
 const ROLE_LABEL: Record<string, string> = {
-  PLAYER: 'Jogador',
-  GOALKEEPER: 'Goleiro',
+  PRESIDENTE: 'Presidente',
+  VICE_PRESIDENTE: 'Vice Presidente',
+  TREINADOR: 'Treinador',
+  TESOUREIRO: 'Tesoureiro',
+  ATLETA: 'Atleta',
+  OUTROS: 'Outros',
+  // legado (membros já cadastrados)
+  PLAYER: 'Atleta',
+  GOALKEEPER: 'Atleta',
   COACH: 'Treinador',
-  STAFF: 'Staff',
+  STAFF: 'Outros',
 };
 
 export default function ElencoPage() {
@@ -32,7 +39,7 @@ export default function ElencoPage() {
   const [form, setForm] = useState({
     id: '',
     name: '',
-    role: 'PLAYER',
+    role: 'PRESIDENTE',
     number: '',
     position: '',
     photoUrl: '',
@@ -57,7 +64,7 @@ export default function ElencoPage() {
   }, [teamId]);
 
   const resetForm = () =>
-    setForm({ id: '', name: '', role: 'PLAYER', number: '', position: '', photoUrl: '', isActive: true });
+    setForm({ id: '', name: '', role: 'PRESIDENTE', number: '', position: '', photoUrl: '', isActive: true });
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -202,10 +209,12 @@ export default function ElencoPage() {
               onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
               className="w-full px-3 py-2 rounded bg-futvar-darker border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-futvar-green"
             >
-              <option value="PLAYER">Jogador</option>
-              <option value="GOALKEEPER">Goleiro</option>
-              <option value="COACH">Treinador</option>
-              <option value="STAFF">Staff</option>
+              <option value="PRESIDENTE">Presidente</option>
+              <option value="VICE_PRESIDENTE">Vice Presidente</option>
+              <option value="TREINADOR">Treinador</option>
+              <option value="TESOUREIRO">Tesoureiro</option>
+              <option value="ATLETA">Atleta</option>
+              <option value="OUTROS">Outros</option>
             </select>
           </div>
         </div>
