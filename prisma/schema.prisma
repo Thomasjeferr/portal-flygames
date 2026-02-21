@@ -98,11 +98,13 @@ model Team {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  homeGames     Game[]         @relation("HomeTeam")
-  awayGames     Game[]         @relation("AwayTeam")
-  lives         Live[]
-  preSaleGames  PreSaleGame[]
-  sponsors      Sponsor[]
+  homeGames        Game[]         @relation("HomeTeam")
+  awayGames        Game[]         @relation("AwayTeam")
+  homeLives        Live[]         @relation("HomeLive")
+  awayLives        Live[]         @relation("AwayLive")
+  homePreSaleGames PreSaleGame[]  @relation("HomePreSaleGame")
+  awayPreSaleGames PreSaleGame[]  @relation("AwayPreSaleGame")
+  sponsors         Sponsor[]
   sponsorOrders SponsorOrder[]
   sponsorshipEarnings TeamSponsorshipEarning[]
   planEarnings        TeamPlanEarning[]
@@ -297,11 +299,13 @@ model PreSaleGame {
   clubBPrice            Float     @map("club_b_price")
   fundedClubsCount      Int       @default(0) @map("funded_clubs_count")
   slug                  String    @unique @map("slug")
-  teamId                String?   @map("team_id")
+  homeTeamId            String?   @map("home_team_id")
+  awayTeamId            String?   @map("away_team_id")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
-  team              Team?                 @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  homeTeam          Team?                 @relation("HomePreSaleGame", fields: [homeTeamId], references: [id], onDelete: SetNull)
+  awayTeam          Team?                 @relation("AwayPreSaleGame", fields: [awayTeamId], references: [id], onDelete: SetNull)
   specialCategory   PreSaleCategory       @relation("SpecialCategory", fields: [specialCategoryId], references: [id], onDelete: Restrict)
   gradeCategory     Category?             @relation(fields: [gradeCategoryId], references: [id], onDelete: SetNull)
   normalCategories  PreSaleGameCategory[]
@@ -694,11 +698,13 @@ model Live {
   requireSubscription     Boolean   @default(true) @map("require_subscription")
   allowOneTimePurchase    Boolean   @default(false) @map("allow_one_time_purchase")
   allowChat               Boolean   @default(false) @map("allow_chat")
-  teamId                  String?   @map("team_id")
+  homeTeamId              String?   @map("home_team_id")
+  awayTeamId              String?   @map("away_team_id")
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @updatedAt @map("updated_at")
 
-  team        Team?         @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  homeTeam    Team?         @relation("HomeLive", fields: [homeTeamId], references: [id], onDelete: SetNull)
+  awayTeam    Team?         @relation("AwayLive", fields: [awayTeamId], references: [id], onDelete: SetNull)
   purchases   LivePurchase[]
   homeBanners HomeBanner[]
 }

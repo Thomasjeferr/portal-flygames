@@ -22,7 +22,8 @@ const updateSchema = z.object({
   requireSubscription: z.boolean().optional(),
   allowOneTimePurchase: z.boolean().optional(),
   allowChat: z.boolean().optional(),
-  teamId: z.string().optional().nullable(),
+  homeTeamId: z.string().optional().nullable(),
+  awayTeamId: z.string().optional().nullable(),
 });
 
 export async function GET(
@@ -36,7 +37,10 @@ export async function GET(
   const id = (await params).id;
   const live = await prisma.live.findUnique({
     where: { id },
-    include: { team: { select: { id: true, name: true, slug: true } } },
+    include: {
+      homeTeam: { select: { id: true, name: true, slug: true } },
+      awayTeam: { select: { id: true, name: true, slug: true } },
+    },
   });
   if (!live) return NextResponse.json({ error: 'Live não encontrada' }, { status: 404 });
   return NextResponse.json(live);
@@ -87,7 +91,8 @@ export async function PATCH(
     if (data.requireSubscription !== undefined) update.requireSubscription = data.requireSubscription;
     if (data.allowOneTimePurchase !== undefined) update.allowOneTimePurchase = data.allowOneTimePurchase;
     if (data.allowChat !== undefined) update.allowChat = data.allowChat;
-    if (data.teamId !== undefined) update.teamId = data.teamId?.trim() || null;
+    if (data.homeTeamId !== undefined) update.homeTeamId = data.homeTeamId?.trim() || null;
+    if (data.awayTeamId !== undefined) update.awayTeamId = data.awayTeamId?.trim() || null;
 
     const live = await prisma.live.update({
       where: { id },

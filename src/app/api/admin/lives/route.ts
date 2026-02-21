@@ -25,7 +25,8 @@ const createSchema = z.object({
   createLiveInput: z.boolean().optional(),
   /** ID da entrada ao vivo já criada no dashboard do Cloudflare (cole o "ID de entrada ao vivo"). */
   cloudflareLiveInputId: z.string().optional(),
-  teamId: z.string().optional().nullable(),
+  homeTeamId: z.string().optional().nullable(),
+  awayTeamId: z.string().optional().nullable(),
 });
 
 export async function GET() {
@@ -35,7 +36,10 @@ export async function GET() {
   }
   const lives = await prisma.live.findMany({
     orderBy: { createdAt: 'desc' },
-    include: { team: { select: { id: true, name: true, slug: true } } },
+    include: {
+      homeTeam: { select: { id: true, name: true, slug: true } },
+      awayTeam: { select: { id: true, name: true, slug: true } },
+    },
   });
   return NextResponse.json(lives);
 }
@@ -89,7 +93,8 @@ export async function POST(request: NextRequest) {
         requireSubscription: data.requireSubscription ?? true,
         allowOneTimePurchase: data.allowOneTimePurchase ?? false,
         allowChat: data.allowChat ?? false,
-        teamId: data.teamId?.trim() || null,
+        homeTeamId: data.homeTeamId?.trim() || null,
+        awayTeamId: data.awayTeamId?.trim() || null,
       },
     });
 

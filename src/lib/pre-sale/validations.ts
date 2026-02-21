@@ -12,7 +12,8 @@ export const createPreSaleGameSchema = z.object({
   clubBPrice: z.number().positive('Preço B deve ser > 0'),
   maxSimultaneousPerClub: z.number().int().positive('Simultâneos deve ser > 0'),
   featured: z.boolean().optional().default(false),
-  teamId: z.string().optional().nullable(),
+  homeTeamId: z.string().optional().nullable(),
+  awayTeamId: z.string().optional().nullable(),
 });
 
 export const updatePreSaleGameSchema = createPreSaleGameSchema.partial().extend({

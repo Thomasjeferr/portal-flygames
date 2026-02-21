@@ -33,7 +33,8 @@ export default function NewLivePage() {
     allowOneTimePurchase: false,
     allowChat: false,
     cloudflareLiveInputId: '',
-    teamId: '' as string,
+    homeTeamId: '' as string,
+    awayTeamId: '' as string,
   });
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,7 +76,8 @@ export default function NewLivePage() {
           allowChat: form.allowChat,
           createLiveInput,
           cloudflareLiveInputId: form.cloudflareLiveInputId.trim() || undefined,
-          teamId: form.teamId || null,
+          homeTeamId: form.homeTeamId || null,
+          awayTeamId: form.awayTeamId || null,
         }),
       });
       const data = await res.json();
@@ -211,19 +213,36 @@ export default function NewLivePage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-netflix-light mb-2">Time (opcional)</label>
-          <select
-            value={form.teamId}
-            onChange={(e) => setForm((f) => ({ ...f, teamId: e.target.value }))}
-            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
-          >
-            <option value="">Nenhum</option>
-            {teams.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.shortName || t.name}
-              </option>
-            ))}
-          </select>
+          <label className="block text-sm font-medium text-netflix-light mb-2">Times (opcional)</label>
+          <p className="text-xs text-netflix-light mb-2">Mandante x Visitante — ex.: Time A x Time B</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-netflix-light mb-1">Mandante</label>
+              <select
+                value={form.homeTeamId}
+                onChange={(e) => setForm((f) => ({ ...f, homeTeamId: e.target.value }))}
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              >
+                <option value="">— Selecionar —</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>{t.shortName || t.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-netflix-light mb-1">Visitante</label>
+              <select
+                value={form.awayTeamId}
+                onChange={(e) => setForm((f) => ({ ...f, awayTeamId: e.target.value }))}
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              >
+                <option value="">— Selecionar —</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>{t.shortName || t.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Descrição</label>
