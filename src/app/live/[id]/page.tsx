@@ -111,7 +111,7 @@ export default async function LivePage({ params }: Props) {
                           href="/planos"
                           className="inline-block px-8 py-4 bg-futvar-green text-futvar-darker font-bold rounded-lg hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
                         >
-                          Ver planos e assinar
+                          Ver planos e patrocinar
                         </Link>
                       ) : (
                         <Link

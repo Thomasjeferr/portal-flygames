@@ -132,7 +132,7 @@ export default function PlanosPage() {
                     href={`/checkout?planId=${plan.id}${plan.type === 'unitario' ? '&gameId=' : ''}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}`}
                     className="block w-full py-3 rounded-lg bg-futvar-green text-futvar-darker font-bold text-center hover:bg-futvar-green-light transition-colors"
                   >
-                    {plan.type === 'unitario' ? 'Comprar este jogo' : 'Assinar agora'}
+                    {plan.type === 'unitario' ? 'Comprar este jogo' : 'Patrocinar'}
                   </Link>
                 </div>
               </div>
