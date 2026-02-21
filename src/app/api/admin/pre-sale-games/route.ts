@@ -13,6 +13,7 @@ export async function GET() {
     const games = await prisma.preSaleGame.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
+        team: { select: { id: true, name: true, slug: true } },
         specialCategory: true,
         normalCategories: { include: { category: true } },
         clubSlots: { orderBy: { slotIndex: 'asc' } },
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
         maxSimultaneousPerClub: data.maxSimultaneousPerClub,
         featured: data.featured ?? false,
         slug,
+        teamId: data.teamId?.trim() || null,
         normalCategories: normalCatIds.length > 0
           ? { create: normalCatIds.map((categoryId: string) => ({ categoryId })) }
           : undefined,

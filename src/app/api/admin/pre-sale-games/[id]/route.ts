@@ -15,6 +15,7 @@ export async function GET(
   const game = await prisma.preSaleGame.findUnique({
     where: { id },
     include: {
+      team: { select: { id: true, name: true, slug: true } },
       specialCategory: true,
       normalCategories: { include: { category: true } },
       clubSlots: {
@@ -76,6 +77,7 @@ export async function PATCH(
     }
     if (data.maxSimultaneousPerClub !== undefined) updateData.maxSimultaneousPerClub = data.maxSimultaneousPerClub;
     if (data.featured !== undefined) updateData.featured = data.featured;
+    if (data.teamId !== undefined) updateData.teamId = data.teamId?.trim() || null;
 
     if (data.normalCategoryIds !== undefined) {
       await prisma.preSaleGameCategory.deleteMany({ where: { preSaleGameId: id } });
@@ -91,6 +93,7 @@ export async function PATCH(
       where: { id },
       data: updateData as any,
       include: {
+        team: { select: { id: true, name: true, slug: true } },
         specialCategory: true,
         normalCategories: { include: { category: true } },
         clubSlots: {

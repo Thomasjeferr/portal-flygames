@@ -2,12 +2,18 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export default function NewLivePage() {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    fetch('/api/admin/teams')
+      .then((r) => r.json())
+      .then((data) => setTeams(Array.isArray(data) ? data : []))
+      .catch(() => setTeams([]));
+  }, []);
   const [error, setError] = useState('');
   const [createLiveInput, setCreateLiveInput] = useState(true);
   const [showStreamKey, setShowStreamKey] = useState(false);
@@ -15,6 +21,7 @@ export default function NewLivePage() {
     ingestUrl: string;
     streamKey: string;
   } | null>(null);
+  const [teams, setTeams] = useState<Array<{ id: string; name: string; shortName: string | null }>>([]);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -26,6 +33,7 @@ export default function NewLivePage() {
     allowOneTimePurchase: false,
     allowChat: false,
     cloudflareLiveInputId: '',
+    teamId: '' as string,
   });
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,6 +75,7 @@ export default function NewLivePage() {
           allowChat: form.allowChat,
           createLiveInput,
           cloudflareLiveInputId: form.cloudflareLiveInputId.trim() || undefined,
+          teamId: form.teamId || null,
         }),
       });
       const data = await res.json();
@@ -200,6 +209,21 @@ export default function NewLivePage() {
             placeholder="Ex: Live do jogo X"
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">Time (opcional)</label>
+          <select
+            value={form.teamId}
+            onChange={(e) => setForm((f) => ({ ...f, teamId: e.target.value }))}
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          >
+            <option value="">Nenhum</option>
+            {teams.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.shortName || t.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Descrição</label>

@@ -28,6 +28,7 @@ export default function AdminPreEstreiaNovoPage() {
   const [specialCategories, setSpecialCategories] = useState<PreSaleCategory[]>([]);
   const [normalCategories, setNormalCategories] = useState<PreSaleCategory[]>([]);
   const [gradeCategories, setGradeCategories] = useState<GradeCategory[]>([]);
+  const [teams, setTeams] = useState<Array<{ id: string; name: string; shortName: string | null }>>([]);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -40,6 +41,7 @@ export default function AdminPreEstreiaNovoPage() {
     clubBPrice: '',
     maxSimultaneousPerClub: '10',
     featured: false,
+    teamId: '' as string,
   });
 
   const loadCategories = () => {
@@ -48,7 +50,8 @@ export default function AdminPreEstreiaNovoPage() {
       fetch('/api/admin/pre-sale-categories?type=SPECIAL'),
       fetch('/api/admin/pre-sale-categories?type=NORMAL'),
       fetch('/api/admin/categories?active=true'),
-    ]).then(async ([resSpecial, resNormal, resGrade]) => {
+      fetch('/api/admin/teams'),
+    ]).then(async ([resSpecial, resNormal, resGrade, resTeams]) => {
       const specialData = await resSpecial.json();
       const normalData = await resNormal.json();
       const gradeData = await resGrade.json();
@@ -65,11 +68,14 @@ export default function AdminPreEstreiaNovoPage() {
         setNormalCategories(Array.isArray(normalData) ? normalData : []);
       }
       setGradeCategories(resGrade.ok && Array.isArray(gradeData) ? gradeData : []);
+      const teamsData = await resTeams.json();
+      setTeams(resTeams.ok && Array.isArray(teamsData) ? teamsData : []);
     }).catch(() => {
       setCategoriesError('Erro de conexao ao carregar categorias');
       setSpecialCategories([]);
       setNormalCategories([]);
       setGradeCategories([]);
+      setTeams([]);
     });
   };
 
@@ -116,6 +122,7 @@ export default function AdminPreEstreiaNovoPage() {
           clubBPrice: parseFloat(form.clubBPrice) || 0,
           maxSimultaneousPerClub: parseInt(form.maxSimultaneousPerClub, 10) || 10,
           featured: form.featured,
+          teamId: form.teamId || null,
         }),
       });
       const data = await res.json();
@@ -149,6 +156,21 @@ export default function AdminPreEstreiaNovoPage() {
             required
             className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Time (opcional)</label>
+          <select
+            value={form.teamId}
+            onChange={(e) => setForm((f) => ({ ...f, teamId: e.target.value }))}
+            className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
+          >
+            <option value="">Nenhum</option>
+            {teams.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.shortName || t.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-white mb-2">Descrição *</label>
