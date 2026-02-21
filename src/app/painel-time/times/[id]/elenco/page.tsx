@@ -303,7 +303,7 @@ export default function ElencoPage() {
             Nenhum membro cadastrado ainda.
           </div>
         ) : (
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm min-w-[500px]">
             <thead className="bg-white/5 text-futvar-light">
               <tr>
                 <th className="px-4 py-3 font-medium w-14">Foto</th>
@@ -312,12 +312,12 @@ export default function ElencoPage() {
                 <th className="px-4 py-3 font-medium">Número</th>
                 <th className="px-4 py-3 font-medium">Posição</th>
                 <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium text-right">Ações</th>
+                <th className="px-4 py-3 font-medium text-right sticky right-0 bg-white/5 shadow-[-4px_0_8px_rgba(0,0,0,0.3)] min-w-[120px]">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {members.map((m) => (
-                <tr key={m.id} className="hover:bg-white/5">
+                <tr key={m.id} className="group hover:bg-white/5">
                   <td className="px-4 py-3">
                     {m.photoUrl ? (
                       <img
@@ -344,17 +344,17 @@ export default function ElencoPage() {
                       {m.isActive ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-4 py-3 text-right sticky right-0 bg-futvar-dark group-hover:bg-white/5 shadow-[-4px_0_8px_rgba(0,0,0,0.3)]">
+                    <div className="flex items-center justify-end gap-2 flex-nowrap">
                       <button
                         onClick={() => handleEdit(m)}
-                        className="px-3 py-1.5 rounded bg-white/5 text-white text-xs hover:bg-white/10"
+                        className="px-3 py-1.5 rounded bg-white/5 text-white text-xs hover:bg-white/10 whitespace-nowrap"
                       >
                         Editar
                       </button>
                       <button
                         onClick={() => handleDelete(m)}
-                        className="px-3 py-1.5 rounded bg-red-900/30 text-red-300 text-xs hover:bg-red-900/50"
+                        className="px-3 py-1.5 rounded bg-red-900/30 text-red-300 text-xs hover:bg-red-900/50 whitespace-nowrap"
                       >
                         Remover
                       </button>

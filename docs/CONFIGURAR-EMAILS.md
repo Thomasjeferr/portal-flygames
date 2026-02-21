@@ -159,3 +159,38 @@ Nos templates do admin (**E-mails** → **Templates**), você pode editar o **as
 3. **Render**: nos templates, usar `{{nome}}`, `{{code}}`, `{{reset_url}}`, etc.; o sistema substitui automaticamente ao enviar.
 
 Se quiser, na próxima a gente pode ajustar um template específico ou as variáveis de um fluxo (ex.: só verificação de e-mail ou só recuperação de senha).
+
+---
+
+## 5. E-mail indo para spam (Hotmail/Outlook e outros)
+
+### Por que vai para spam?
+
+Provedores como **Hotmail, Outlook, Live** (Microsoft) e Gmail avaliam cada e-mail com base em:
+
+1. **Autenticação do domínio** – SPF, DKIM e (opcionalmente) DMARC. Se o domínio não estiver corretamente configurado, o provedor desconfia e pode mandar para spam.
+2. **Reputação do domínio e do IP** – Domínios novos ou com pouco histórico têm reputação baixa; Microsoft e outros são mais rigorosos no início.
+3. **Conteúdo** – Palavras típicas de spam, muitos links, imagens demais, assunto em CAPS ou com muitos pontos de exclamação podem aumentar a pontuação de spam.
+4. **Comportamento dos usuários** – Se muitos marcarem como spam ou não abrirem, a reputação cai.
+
+No seu caso, o envio é feito pelo **Resend** (que usa infraestrutura séria), então o que mais influencia é: **domínio verificado (SPF + DKIM)** e **reputação do domínio flygames.app** ao longo do tempo.
+
+### O que fazer na prática
+
+| Ação | Onde | Por quê |
+|------|------|--------|
+| **1. Verificar domínio no Resend** | Resend → Domains → `flygames.app` → status **Verified** | Sem SPF/DKIM corretos no DNS, Hotmail/Outlook tratam o e-mail como não autenticado e mandam para spam. |
+| **2. Adicionar DMARC (recomendado)** | DNS do flygames.app | Registro TXT em `_dmarc.flygames.app` com política (ex.: `v=DMARC1; p=none; rua=mailto:admin@flygames.app`). Ajuda provedores a confiar no domínio. |
+| **3. Usar sempre o mesmo remetente** | Admin → E-mails → Configurações | Manter **E-mail do remetente** como `no-reply@flygames.app` (domínio verificado). Não alternar entre domínios ou endereços. |
+| **4. Evitar “spam words” nos templates** | Admin → E-mails → Templates | Assunto e corpo sem exagero em “grátis”, “urgente”, muitos “!!!”, “clique aqui”, etc. Manter tom profissional. |
+| **5. Incluir link de descadastro só se for newsletter** | - | E-mails transacionais (verificação, recuperação de senha, confirmação de compra) **não** precisam de “descadastre-se”; isso é para marketing. Não adicionar em e-mails de verificação. |
+| **6. Pedir ao usuário marcar como “Não é spam”** | Suporte / FAQ | Para quem já recebeu na pasta spam (ex.: Hotmail): abrir o e-mail, clicar em “Não é spam” / “Não é lixo eletrônico”. Isso melhora a reputação para futuros envios. |
+| **7. Tempo e volume** | - | Com domínio verificado e envios consistentes (sem spam), a reputação do `flygames.app` tende a melhorar em algumas semanas; Hotmail/Outlook costumam ser os mais lentos a “confiar”. |
+
+### Resumo
+
+- **Imediato:** Confirme no Resend que o domínio `flygames.app` está **Verified** (SPF + DKIM no DNS). Se não estiver, siga o [passo 1.4](#14-adicionar-e-verificar-o-domínio-flygamesapp).
+- **Recomendado:** Adicione o registro **DMARC** no DNS do domínio.
+- **Comportamento:** Mantenha remetente fixo, textos sóbrios nos templates e oriente usuários (ex.: Hotmail) a marcar o primeiro e-mail como “Não é spam” se cair na pasta errada.
+
+Assim você reduz ao máximo a ida para spam, principalmente no Hotmail/Outlook.
