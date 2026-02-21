@@ -2,21 +2,30 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type PartnerType = 'revendedor' | 'influencer' | 'lojista' | 'outro';
 
 export default function ParceirosPage() {
+  const router = useRouter();
   const [user, setUser] = useState<{ email: string; name: string | null } | null | undefined>(undefined);
+  const [redirectingPartner, setRedirectingPartner] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         const u = data?.user;
+        const isPartner = !!data?.isPartner;
+        if (isPartner && u?.email) {
+          setRedirectingPartner(true);
+          router.replace('/parceiro');
+          return;
+        }
         setUser(u?.email ? { email: u.email, name: u.name ?? null } : null);
       })
       .catch(() => setUser(null));
-  }, []);
+  }, [router]);
 
   const [form, setForm] = useState<{
     name: string;
@@ -86,6 +95,14 @@ export default function ParceirosPage() {
       setSubmitting(false);
     }
   };
+
+  if (redirectingPartner) {
+    return (
+      <div className="min-h-screen pt-24 pb-16 px-4 lg:px-12 bg-futvar-darker flex items-center justify-center">
+        <p className="text-futvar-light">Redirecionando para sua área de parceiro...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 lg:px-12 bg-futvar-darker">

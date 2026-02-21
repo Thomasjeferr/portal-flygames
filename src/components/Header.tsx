@@ -271,7 +271,7 @@ export function Header() {
                           className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
                           onClick={() => setUserMenuOpen(false)}
                         >
-                          Área do parceiro
+                          Dashboard Parceiro
                         </Link>
                       )}
                       <Link
@@ -418,7 +418,7 @@ export function Header() {
                   </Link>
                   {isPartner && (
                     <Link href="/parceiro" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
-                      Área do parceiro
+                      Dashboard Parceiro
                     </Link>
                   )}
                   <Link href="/conta" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
