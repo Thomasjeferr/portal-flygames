@@ -18,7 +18,11 @@ export async function GET() {
       fbPixelId: null as string | null,
       tiktokPixelId: null as string | null,
     };
-    if (!row) return NextResponse.json(defaults);
+    if (!row) {
+      return NextResponse.json(defaults, {
+        headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
+      });
+    }
     return NextResponse.json({
       supportEmail: row.supportEmail ?? defaults.supportEmail,
       whatsappNumber: row.whatsappNumber ?? defaults.whatsappNumber,
@@ -30,6 +34,8 @@ export async function GET() {
       gaMeasurementId: row.gaMeasurementId ?? defaults.gaMeasurementId,
       fbPixelId: row.fbPixelId ?? defaults.fbPixelId,
       tiktokPixelId: row.tiktokPixelId ?? defaults.tiktokPixelId,
+    }, {
+      headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
     });
   } catch (e) {
     console.error(e);

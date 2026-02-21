@@ -18,9 +18,10 @@ export async function GET() {
     });
 
     if (liveNow) {
-      return NextResponse.json({
-        mode: 'LIVE',
-        live: {
+      return NextResponse.json(
+        {
+          mode: 'LIVE',
+          live: {
           id: liveNow.id,
           title: liveNow.title,
           thumbnailUrl: liveNow.thumbnailUrl,
@@ -29,7 +30,9 @@ export async function GET() {
           requireSubscription: liveNow.requireSubscription,
           allowOneTimePurchase: liveNow.allowOneTimePurchase,
         },
-      });
+      },
+        { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
+      );
     }
 
     const nextScheduled = await prisma.live.findFirst({
@@ -41,9 +44,10 @@ export async function GET() {
     });
 
     if (nextScheduled) {
-      return NextResponse.json({
-        mode: 'SCHEDULED',
-        live: {
+      return NextResponse.json(
+        {
+          mode: 'SCHEDULED',
+          live: {
           id: nextScheduled.id,
           title: nextScheduled.title,
           thumbnailUrl: nextScheduled.thumbnailUrl,
@@ -52,10 +56,15 @@ export async function GET() {
           requireSubscription: nextScheduled.requireSubscription,
           allowOneTimePurchase: nextScheduled.allowOneTimePurchase,
         },
-      });
+      },
+        { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
+      );
     }
 
-    return NextResponse.json({ mode: 'NONE', live: null });
+    return NextResponse.json(
+      { mode: 'NONE', live: null },
+      { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
+    );
   } catch (e) {
     console.error('GET /api/public/live-highlight', e);
     return NextResponse.json({ error: 'Erro ao carregar destaque de live' }, { status: 500 });

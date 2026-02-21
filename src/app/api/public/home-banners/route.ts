@@ -11,17 +11,20 @@ export async function GET() {
     const banners = await getVisibleBanners(userId);
 
     if (banners.length === 0) {
-      return NextResponse.json({
-        banners: [],
-        fallback: {
-          badgeText: 'FILMAGEM COM DRONES',
-          headline: 'Futebol de várzea',
-          subheadline: 'visão aérea',
-          description: 'Assista às melhores partidas filmadas com drones.',
-          primaryCta: { text: 'Começar a assistir', url: '/cadastro' },
-          secondaryCta: { text: 'Já tenho conta', url: '/entrar' },
+      return NextResponse.json(
+        {
+          banners: [],
+          fallback: {
+            badgeText: 'FILMAGEM COM DRONES',
+            headline: 'Futebol de várzea',
+            subheadline: 'visão aérea',
+            description: 'Assista às melhores partidas filmadas com drones.',
+            primaryCta: { text: 'Começar a assistir', url: '/cadastro' },
+            secondaryCta: { text: 'Já tenho conta', url: '/entrar' },
+          },
         },
-      });
+        { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' } }
+      );
     }
 
     const payload = banners.map((b) => ({
@@ -51,8 +54,7 @@ export async function GET() {
       { banners: payload },
       {
         headers: {
-          'Cache-Control': 'no-store, max-age=0',
-          Pragma: 'no-cache',
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
         },
       }
     );

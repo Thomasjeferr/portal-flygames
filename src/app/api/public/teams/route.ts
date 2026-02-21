@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       },
     });
     const res = NextResponse.json(teams);
-    res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
     return res;
   } catch (e) {
     console.error('GET /api/public/teams', e);
