@@ -144,16 +144,16 @@ export default async function PainelTimePage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <Link
-                  href={`/painel-time/times/${t.id}/comissoes`}
+                  href={`/painel-time/times/${t.id}/elenco`}
                   className="px-4 py-2 rounded-lg bg-futvar-green text-futvar-darker text-sm font-semibold hover:bg-futvar-green-light"
                 >
-                  Ver comissões
+                  Gerenciar elenco
                 </Link>
                 <Link
-                  href={`/painel-time/times/${t.id}/elenco`}
+                  href={`/painel-time/times/${t.id}/comissoes`}
                   className="px-4 py-2 rounded-lg bg-white/5 text-white text-sm font-semibold hover:bg-white/10"
                 >
-                  Gerenciar elenco
+                  Ver comissões
                 </Link>
               </div>
             </div>
