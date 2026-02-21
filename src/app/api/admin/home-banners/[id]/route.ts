@@ -18,6 +18,7 @@ function sanitize(body: Record<string, unknown>): Record<string, unknown> {
   if (b.primaryCtaUrl === '') b.primaryCtaUrl = null;
   if (b.secondaryCtaUrl === '') b.secondaryCtaUrl = null;
   if (b.mediaUrl === '') b.mediaUrl = null;
+  if (b.mobileMediaUrl === '') b.mobileMediaUrl = null;
   if (b.secondaryMediaUrl === '') b.secondaryMediaUrl = null;
   if (b.startAt === '') b.startAt = null;
   if (b.endAt === '') b.endAt = null;
@@ -110,6 +111,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         updateData.secondaryMediaUrl = val;
       } else {
         updateData.secondaryMediaUrl = current.secondaryMediaUrl;
+      }
+    }
+
+    if (d.mobileMediaType !== undefined) updateData.mobileMediaType = d.mobileMediaType;
+    if (d.mobileMediaUrl !== undefined) {
+      const val = typeof d.mobileMediaUrl === 'string' ? d.mobileMediaUrl.trim() || null : d.mobileMediaUrl;
+      const type = d.mobileMediaType ?? (current as { mobileMediaType?: string }).mobileMediaType ?? 'NONE';
+      if (type === 'NONE') {
+        updateData.mobileMediaUrl = null;
+      } else {
+        updateData.mobileMediaUrl = val ?? (current as { mobileMediaUrl?: string | null }).mobileMediaUrl;
       }
     }
 

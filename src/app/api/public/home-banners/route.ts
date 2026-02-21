@@ -34,6 +34,8 @@ export async function GET() {
       secondaryCta: b.secondaryCtaResolved ?? null,
       mediaType: b.mediaType,
       mediaUrl: b.mediaUrl,
+      mobileMediaType: b.mobileMediaType ?? 'NONE',
+      mobileMediaUrl: b.mobileMediaUrl ?? null,
       videoStartSeconds: b.videoStartSeconds,
       videoEndSeconds: b.videoEndSeconds,
       loop: b.loop,

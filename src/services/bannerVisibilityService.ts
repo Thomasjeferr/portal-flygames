@@ -19,6 +19,8 @@ export type ResolvedBanner = {
   videoEndSeconds: number | null;
   loop: boolean;
   mute: boolean;
+  mobileMediaType?: string;
+  mobileMediaUrl?: string | null;
   overlayColorHex: string;
   overlayOpacity: number;
   heightPreset?: string;
@@ -91,6 +93,8 @@ export async function getVisibleBanners(userId?: string | null): Promise<Resolve
         secondaryCtaUrl: b.secondaryCtaUrl,
         mediaType: mediaResolved.mediaType,
         mediaUrl: mediaResolved.mediaUrl,
+        mobileMediaType: (b as { mobileMediaType?: string }).mobileMediaType ?? 'NONE',
+        mobileMediaUrl: (b as { mobileMediaUrl?: string | null }).mobileMediaUrl?.trim() || null,
         videoStartSeconds: b.videoStartSeconds,
         videoEndSeconds: b.videoEndSeconds,
         loop: b.loop,

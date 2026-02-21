@@ -61,6 +61,8 @@ export default function AdminBannerEditarPage() {
     overlayColorHex: string;
     overlayOpacity: number;
     heightPreset: string;
+    mobileMediaType: string;
+    mobileMediaUrl: string;
     secondaryMediaType: string;
     secondaryMediaUrl: string;
     gameId: string;
@@ -90,6 +92,8 @@ export default function AdminBannerEditarPage() {
     overlayColorHex: String(banner.overlayColorHex ?? '#000000'),
     overlayOpacity: Number(banner.overlayOpacity ?? 75),
     heightPreset: String(banner.heightPreset ?? 'md'),
+    mobileMediaType: String((banner as { mobileMediaType?: string }).mobileMediaType ?? 'NONE'),
+    mobileMediaUrl: String((banner as { mobileMediaUrl?: string }).mobileMediaUrl ?? ''),
     secondaryMediaType: String(banner.secondaryMediaType ?? 'NONE'),
     secondaryMediaUrl: String((banner.secondaryMediaUrl ?? (banner as { secondary_media_url?: string }).secondary_media_url) ?? ''),
     gameId: String((banner.game as { id?: string })?.id ?? ''),

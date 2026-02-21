@@ -15,6 +15,8 @@ type Banner = {
   secondaryCta: { text: string; url: string } | null;
   mediaType: string;
   mediaUrl: string | null;
+  mobileMediaType?: string;
+  mobileMediaUrl?: string | null;
   videoStartSeconds: number;
   videoEndSeconds: number | null;
   loop: boolean;
@@ -72,11 +74,22 @@ const HEIGHT_CLASSES: Record<string, string> = {
   full: 'min-h-[100vh]',
 };
 
+const MOBILE_BREAKPOINT = 768;
+
 export function HeroBannerCarousel() {
   const [data, setData] = useState<Response | null>(null);
   const [index, setIndex] = useState(0);
   const [hovering, setHovering] = useState(false);
   const [imgError, setImgError] = useState<Record<string, boolean>>({});
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+    const set = () => setIsMobile(mq.matches);
+    set(mq.matches);
+    mq.addEventListener('change', set);
+    return () => mq.removeEventListener('change', set);
+  }, []);
 
   useEffect(() => {
     fetch('/api/public/home-banners', { cache: 'no-store' })
@@ -116,23 +129,32 @@ export function HeroBannerCarousel() {
     opacity: banner.overlayOpacity / 100,
   };
 
+  const useMobileMedia =
+    isMobile &&
+    banner.mobileMediaType &&
+    banner.mobileMediaType !== 'NONE' &&
+    banner.mobileMediaUrl?.trim();
+  const effectiveMediaType = useMobileMedia ? banner.mobileMediaType! : banner.mediaType;
+  const effectiveMediaUrl = useMobileMedia ? banner.mobileMediaUrl! : banner.mediaUrl;
+  const imgErrorKey = useMobileMedia ? `${banner.id}-mobile` : banner.id;
+
   let mediaEl: React.ReactNode = null;
-  if (banner.mediaType === 'IMAGE' && banner.mediaUrl && !imgError[banner.id]) {
+  if (effectiveMediaType === 'IMAGE' && effectiveMediaUrl && !imgError[imgErrorKey]) {
     mediaEl = (
       <div className="absolute inset-0">
         <Image
-          src={banner.mediaUrl}
+          src={effectiveMediaUrl}
           alt=""
           fill
           className="object-cover"
           sizes="100vw"
           priority
-          onError={() => setImgError((e) => ({ ...e, [banner.id]: true }))}
+          onError={() => setImgError((e) => ({ ...e, [imgErrorKey]: true }))}
         />
       </div>
     );
-  } else if (banner.mediaType === 'YOUTUBE_VIDEO' && banner.mediaUrl) {
-    const ytId = extractYouTubeVideoId(banner.mediaUrl);
+  } else if (effectiveMediaType === 'YOUTUBE_VIDEO' && effectiveMediaUrl) {
+    const ytId = extractYouTubeVideoId(effectiveMediaUrl);
     if (ytId) {
       const params = buildYouTubeEmbedParams(ytId, {
         mute: banner.mute,
@@ -152,11 +174,11 @@ export function HeroBannerCarousel() {
         </div>
       );
     }
-  } else if (banner.mediaType === 'MP4_VIDEO' && banner.mediaUrl) {
+  } else if (effectiveMediaType === 'MP4_VIDEO' && effectiveMediaUrl) {
     mediaEl = (
       <div className="absolute inset-0 pointer-events-none">
         <video
-          src={banner.mediaUrl}
+          src={effectiveMediaUrl}
           autoPlay
           muted={banner.mute}
           loop={banner.loop}

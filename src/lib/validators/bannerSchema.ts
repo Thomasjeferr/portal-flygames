@@ -25,6 +25,15 @@ const baseSchema = {
   videoEndSeconds: z.number().int().min(0).nullable().optional(),
   loop: z.boolean().optional().default(true),
   mute: z.boolean().optional().default(true),
+  mobileMediaType: z.enum(['NONE', 'IMAGE', 'YOUTUBE_VIDEO', 'MP4_VIDEO']).optional().default('NONE'),
+  mobileMediaUrl: z
+    .union([
+      z.string().url(),
+      z.string().regex(/^\/[a-zA-Z0-9/_.-]+$/),
+      z.literal(''),
+    ])
+    .nullable()
+    .optional(),
   overlayColorHex: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().default('#000000'),
   overlayOpacity: z.number().int().min(0).max(100).optional().default(75),
   heightPreset: z.enum(['sm', 'md', 'lg', 'xl', 'full']).optional().default('md'),

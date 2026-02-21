@@ -27,6 +27,8 @@ type FormData = {
   overlayColorHex: string;
   overlayOpacity: number;
   heightPreset: string;
+  mobileMediaType: string;
+  mobileMediaUrl: string;
   secondaryMediaType: string;
   secondaryMediaUrl: string;
   gameId: string;
@@ -58,6 +60,8 @@ const defaultForm: FormData = {
   overlayColorHex: '#000000',
   overlayOpacity: 75,
   heightPreset: 'md',
+  mobileMediaType: 'NONE',
+  mobileMediaUrl: '',
   secondaryMediaType: 'NONE',
   secondaryMediaUrl: '',
   gameId: '',
@@ -87,8 +91,10 @@ export function BannerForm({ games, preSales, lives, initialData, onSubmit }: Ba
   }, []);
   const [error, setError] = useState('');
   const [uploadingBg, setUploadingBg] = useState(false);
+  const [uploadingMobile, setUploadingMobile] = useState(false);
   const [uploadingJanelinha, setUploadingJanelinha] = useState(false);
   const bgFileInputRef = useRef<HTMLInputElement>(null);
+  const mobileFileInputRef = useRef<HTMLInputElement>(null);
   const janelinhaFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadBgImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,6 +115,28 @@ export function BannerForm({ games, preSales, lives, initialData, onSubmit }: Ba
       setError(err instanceof Error ? err.message : 'Erro ao carregar imagem');
     } finally {
       setUploadingBg(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleUploadMobileImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingMobile(true);
+    setError('');
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Erro no upload');
+      if (data?.url) {
+        setForm((f) => ({ ...f, mobileMediaUrl: data.url }));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar imagem');
+    } finally {
+      setUploadingMobile(false);
       e.target.value = '';
     }
   };
@@ -163,6 +191,8 @@ export function BannerForm({ games, preSales, lives, initialData, onSubmit }: Ba
         overlayColorHex: form.overlayColorHex,
         overlayOpacity: form.overlayOpacity,
         heightPreset: form.heightPreset,
+        mobileMediaType: form.mobileMediaType,
+        mobileMediaUrl: form.mobileMediaUrl.trim() || null,
         secondaryMediaType: form.secondaryMediaType,
         secondaryMediaUrl: secondaryMediaUrlVal || null,
         gameId: form.type === 'FEATURED_GAME' ? form.gameId || null : null,
@@ -303,6 +333,60 @@ export function BannerForm({ games, preSales, lives, initialData, onSubmit }: Ba
             </div>
           )}
         </div>
+
+      <div className="border border-white/20 rounded-lg p-4">
+        <h3 className="text-white font-medium mb-3">Fundo para mobile (opcional)</h3>
+        <p className="text-netflix-light text-sm mb-3">Em telas pequenas, use uma mídia com formato adequado (ex.: imagem em pé, vídeo vertical). Se não preencher, será usada a mesma mídia do desktop.</p>
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Tipo de mídia no mobile</label>
+          <select
+            value={form.mobileMediaType}
+            onChange={(e) => setForm((f) => ({ ...f, mobileMediaType: e.target.value }))}
+            className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
+          >
+            <option value="NONE">Usar mesmo do desktop</option>
+            <option value="IMAGE">Imagem</option>
+            <option value="YOUTUBE_VIDEO">Vídeo YouTube</option>
+            <option value="MP4_VIDEO">Vídeo MP4</option>
+          </select>
+        </div>
+        {form.mobileMediaType !== 'NONE' && (
+          <div className="mt-3 space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">
+                {form.mobileMediaType === 'IMAGE' ? 'URL da imagem (ou use o botão abaixo)' : 'URL da mídia *'}
+              </label>
+              <input
+                type="text"
+                value={form.mobileMediaUrl}
+                onChange={(e) => setForm((f) => ({ ...f, mobileMediaUrl: e.target.value }))}
+                required={form.mobileMediaType !== 'NONE'}
+                placeholder={form.mobileMediaType === 'IMAGE' ? 'URL ou use o botão Carregar imagem' : 'Cole a URL do vídeo'}
+                className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
+              />
+            </div>
+            {form.mobileMediaType === 'IMAGE' && (
+              <>
+                <input
+                  type="file"
+                  ref={mobileFileInputRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleUploadMobileImage}
+                />
+                <button
+                  type="button"
+                  onClick={() => mobileFileInputRef.current?.click()}
+                  disabled={uploadingMobile}
+                  className="px-4 py-2 rounded bg-white/10 text-white border border-white/30 hover:bg-white/20 disabled:opacity-50 text-sm font-medium"
+                >
+                  {uploadingMobile ? 'Carregando...' : 'Carregar imagem para mobile'}
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       <div>
         <label className="block text-sm font-medium text-white mb-2">Badge (opcional)</label>

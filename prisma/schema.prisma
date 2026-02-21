@@ -246,6 +246,9 @@ model HomeBanner {
   loop                Boolean   @default(true) @map("loop")
   mute                Boolean   @default(true) @map("mute")
 
+  mobileMediaType     String    @default("NONE") @map("mobile_media_type") // NONE = usa desktop | IMAGE | YOUTUBE_VIDEO | MP4_VIDEO
+  mobileMediaUrl      String?   @map("mobile_media_url")
+
   overlayColorHex     String    @default("#000000") @map("overlay_color_hex")
   overlayOpacity      Int       @default(75) @map("overlay_opacity") // 0-100
 

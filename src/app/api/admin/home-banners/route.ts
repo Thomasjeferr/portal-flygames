@@ -9,6 +9,7 @@ function sanitize(body: Record<string, unknown>) {
   if (b.primaryCtaUrl === '') b.primaryCtaUrl = null;
   if (b.secondaryCtaUrl === '') b.secondaryCtaUrl = null;
   if (b.mediaUrl === '') b.mediaUrl = null;
+  if (b.mobileMediaUrl === '') b.mobileMediaUrl = null;
   if (b.startAt === '') b.startAt = null;
   if (b.endAt === '') b.endAt = null;
   if (b.gameId === '') b.gameId = null;
@@ -60,6 +61,8 @@ export async function POST(request: NextRequest) {
         videoEndSeconds: d.videoEndSeconds ?? null,
         loop: d.loop ?? true,
         mute: d.mute ?? true,
+        mobileMediaType: d.mobileMediaType ?? 'NONE',
+        mobileMediaUrl: d.mobileMediaUrl?.trim() || null,
         overlayColorHex: d.overlayColorHex ?? '#000000',
         overlayOpacity: d.overlayOpacity ?? 75,
         heightPreset: d.heightPreset ?? 'md',
