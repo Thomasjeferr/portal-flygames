@@ -25,6 +25,11 @@ const createSchema = z.object({
   categoryId: z.string().optional().nullable(),
   homeTeamId: z.string().optional().nullable(),
   awayTeamId: z.string().optional().nullable(),
+  displayMode: z.enum(['internal', 'public_no_media', 'public_with_media']).optional(),
+  homeScore: z.number().int().min(0).optional().nullable(),
+  awayScore: z.number().int().min(0).optional().nullable(),
+  venue: z.string().optional().nullable(),
+  referee: z.string().optional().nullable(),
 });
 
 export async function GET() {
@@ -82,6 +87,11 @@ export async function POST(request: NextRequest) {
         homeTeamId: data.homeTeamId || null,
         awayTeamId: data.awayTeamId || null,
         order: maxOrder + 1,
+        displayMode: data.displayMode ?? 'internal',
+        homeScore: data.homeScore ?? null,
+        awayScore: data.awayScore ?? null,
+        venue: data.venue?.trim() || null,
+        referee: data.referee?.trim() || null,
       },
     });
 

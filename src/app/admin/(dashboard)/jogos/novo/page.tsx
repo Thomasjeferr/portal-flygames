@@ -24,6 +24,11 @@ export default function NewGamePage() {
     featured: false,
     homeTeamId: '' as string,
     awayTeamId: '' as string,
+    displayMode: 'internal' as 'internal' | 'public_no_media' | 'public_with_media',
+    homeScore: '' as string,
+    awayScore: '' as string,
+    venue: '',
+    referee: '',
   });
 
   useEffect(() => {
@@ -66,6 +71,8 @@ export default function NewGamePage() {
           categoryId: form.categoryId || null,
           homeTeamId: form.homeTeamId || null,
           awayTeamId: form.awayTeamId || null,
+          homeScore: form.homeScore === '' ? null : Number(form.homeScore),
+          awayScore: form.awayScore === '' ? null : Number(form.awayScore),
         }),
       });
       const data = await res.json();
@@ -193,6 +200,62 @@ export default function NewGamePage() {
             value={form.gameDate}
             onChange={(e) => setForm((f) => ({ ...f, gameDate: e.target.value }))}
             required
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">Modo de exibição</label>
+          <select
+            value={form.displayMode}
+            onChange={(e) => setForm((f) => ({ ...f, displayMode: e.target.value as typeof form.displayMode }))}
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          >
+            <option value="internal">Somente interno (painel do time, não aparece na home)</option>
+            <option value="public_no_media">Público sem vídeo (aparece na home como publicação)</option>
+            <option value="public_with_media">Público com vídeo/live</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-netflix-light mb-2">Placar – Mandante</label>
+            <input
+              type="number"
+              min={0}
+              value={form.homeScore}
+              onChange={(e) => setForm((f) => ({ ...f, homeScore: e.target.value }))}
+              placeholder="—"
+              className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-netflix-light mb-2">Placar – Visitante</label>
+            <input
+              type="number"
+              min={0}
+              value={form.awayScore}
+              onChange={(e) => setForm((f) => ({ ...f, awayScore: e.target.value }))}
+              placeholder="—"
+              className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">Local da partida</label>
+          <input
+            type="text"
+            value={form.venue}
+            onChange={(e) => setForm((f) => ({ ...f, venue: e.target.value }))}
+            placeholder="Ex: Campo do Bairro"
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">Árbitro</label>
+          <input
+            type="text"
+            value={form.referee}
+            onChange={(e) => setForm((f) => ({ ...f, referee: e.target.value }))}
+            placeholder="Nome do árbitro"
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
         </div>

@@ -21,6 +21,11 @@ const updateSchema = z.object({
   categoryId: z.string().optional().nullable(),
   homeTeamId: z.string().optional().nullable(),
   awayTeamId: z.string().optional().nullable(),
+  displayMode: z.enum(['internal', 'public_no_media', 'public_with_media']).optional(),
+  homeScore: z.number().int().min(0).optional().nullable(),
+  awayScore: z.number().int().min(0).optional().nullable(),
+  venue: z.string().optional().nullable(),
+  referee: z.string().optional().nullable(),
 });
 
 export async function GET(
@@ -78,6 +83,11 @@ export async function PATCH(
     if (data.categoryId !== undefined) update.categoryId = data.categoryId || null;
     if (data.homeTeamId !== undefined) update.homeTeamId = data.homeTeamId || null;
     if (data.awayTeamId !== undefined) update.awayTeamId = data.awayTeamId || null;
+    if (data.displayMode !== undefined) update.displayMode = data.displayMode;
+    if (data.homeScore !== undefined) update.homeScore = data.homeScore;
+    if (data.awayScore !== undefined) update.awayScore = data.awayScore;
+    if (data.venue !== undefined) update.venue = data.venue?.trim() || null;
+    if (data.referee !== undefined) update.referee = data.referee?.trim() || null;
     if (data.title && data.title !== existing.title) {
       const existingSlugs = (await prisma.game.findMany({ where: { id: { not: id } }, select: { slug: true } })).map((g) => g.slug);
       update.slug = uniqueSlug(data.title, existingSlugs);

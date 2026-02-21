@@ -157,6 +157,11 @@ model Game {
   homeTeamId   String?   @map("home_team_id")
   awayTeamId   String?   @map("away_team_id")
   order        Int       @default(0) @map("order")
+  displayMode  String    @default("internal") @map("display_mode") // internal | public_no_media | public_with_media
+  homeScore    Int?      @map("home_score")
+  awayScore    Int?      @map("away_score")
+  venue        String?   @map("venue")
+  referee      String?   @map("referee")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
