@@ -50,6 +50,21 @@ function PatrocinarComprarContent() {
   });
 
   useEffect(() => {
+    const redirect = encodeURIComponent(`/patrocinar/comprar?planId=${planId || ''}`);
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data?.user) {
+          window.location.href = `/entrar?redirect=${redirect}`;
+          return;
+        }
+      })
+      .catch(() => {
+        window.location.href = `/entrar?redirect=${redirect}`;
+      });
+  }, [planId]);
+
+  useEffect(() => {
     if (!planId) {
       setError('Plano não informado');
       setLoading(false);

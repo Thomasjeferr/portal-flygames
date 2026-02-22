@@ -14,6 +14,20 @@ export async function hasFullAccess(userId: string): Promise<boolean> {
 }
 
 /**
+ * Pode ver a página de Resultados aprovados (súmulas oficiais)?
+ * Sim se: assinatura ativa com acesso total OU tem pelo menos um SponsorOrder pago vinculado à conta (patrocinador empresa).
+ */
+export async function canAccessApprovedResults(userId: string): Promise<boolean> {
+  if (await hasFullAccess(userId)) return true;
+
+  const paidOrder = await prisma.sponsorOrder.findFirst({
+    where: { userId, paymentStatus: 'paid' },
+    select: { id: true },
+  });
+  return !!paidOrder;
+}
+
+/**
  * Verifica se o usuário pode assistir a um jogo específico.
  * Retorna true se: tem assinatura ativa com acesso total OU comprou o jogo (plano unitário pago e não expirado).
  */

@@ -222,6 +222,12 @@ export function Header() {
             >
               Área do time
             </Link>
+            <Link
+              href="/resultados"
+              className={`text-sm font-semibold ${pathname.startsWith('/resultados') ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
+            >
+              Resultados
+            </Link>
             {user ? (
               <div className="relative">
                 <button
@@ -264,6 +270,13 @@ export function Header() {
                         onClick={() => setUserMenuOpen(false)}
                       >
                         Área do time
+                      </Link>
+                      <Link
+                        href="/resultados"
+                        className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        Resultados
                       </Link>
                       {isPartner && (
                         <Link
@@ -393,6 +406,13 @@ export function Header() {
                 className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname.startsWith('/painel-time') ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
               >
                 Área do time
+              </Link>
+              <Link
+                href="/resultados"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname.startsWith('/resultados') ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
+              >
+                Resultados
               </Link>
               {user ? (
                 <>

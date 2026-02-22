@@ -151,12 +151,6 @@ export default function SumulaDetailPage() {
       </div>
 
       <div className="rounded-xl border border-white/10 bg-futvar-dark overflow-hidden">
-        {game.thumbnailUrl && (
-          <div className="aspect-video bg-black/40">
-            <img src={game.thumbnailUrl} alt="" className="w-full h-full object-cover" />
-          </div>
-        )}
-
         <div className="p-5 space-y-4">
           <h2 className="text-xl font-bold text-white">{game.title}</h2>
           <p className="text-futvar-light text-sm">{formatDate(game.gameDate)}</p>
@@ -272,9 +266,9 @@ export default function SumulaDetailPage() {
                           <th className="py-1 pr-2">Jogador</th>
                           <th className="py-1 w-10 text-center">G</th>
                           <th className="py-1 w-10 text-center">A</th>
-                          <th className="py-1 w-10 text-center">F</th>
                           <th className="py-1 w-10 text-center" title="Cartão amarelo">Amarelo</th>
                           <th className="py-1 w-10 text-center" title="Cartão vermelho">Vermelho</th>
+                          <th className="py-1 w-12 text-center">Destaque</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -283,9 +277,9 @@ export default function SumulaDetailPage() {
                             <td className="py-1 pr-2 text-white">{s.number != null ? `${s.number} · ` : ''}{s.name}</td>
                             <td className="text-center">{s.goals}</td>
                             <td className="text-center">{s.assists}</td>
-                            <td className="text-center">{s.fouls}</td>
                             <td className="text-center">{s.yellowCard ? '✓' : '—'}</td>
                             <td className="text-center">{s.redCard ? '✓' : '—'}</td>
+                            <td className="text-center">{s.highlight ? '★' : '—'}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -303,9 +297,9 @@ export default function SumulaDetailPage() {
                           <th className="py-1 pr-2">Jogador</th>
                           <th className="py-1 w-10 text-center">G</th>
                           <th className="py-1 w-10 text-center">A</th>
-                          <th className="py-1 w-10 text-center">F</th>
                           <th className="py-1 w-10 text-center" title="Cartão amarelo">Amarelo</th>
                           <th className="py-1 w-10 text-center" title="Cartão vermelho">Vermelho</th>
+                          <th className="py-1 w-12 text-center">Destaque</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -314,9 +308,9 @@ export default function SumulaDetailPage() {
                             <td className="py-1 pr-2 text-white">{s.number != null ? `${s.number} · ` : ''}{s.name}</td>
                             <td className="text-center">{s.goals}</td>
                             <td className="text-center">{s.assists}</td>
-                            <td className="text-center">{s.fouls}</td>
                             <td className="text-center">{s.yellowCard ? '✓' : '—'}</td>
                             <td className="text-center">{s.redCard ? '✓' : '—'}</td>
+                            <td className="text-center">{s.highlight ? '★' : '—'}</td>
                           </tr>
                         ))}
                       </tbody>

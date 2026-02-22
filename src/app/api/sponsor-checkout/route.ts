@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { createStripePaymentIntent } from '@/lib/payments/stripe';
 import { sponsorOrderCheckoutSchema } from '@/lib/validators/sponsorOrderSchema';
 
 /**
  * Cria pedido de patrocínio (SponsorOrder) e retorna clientSecret do Stripe para pagamento com cartão.
- * Não exige login.
+ * Se o usuário estiver logado, vincula o pedido à conta (para liberar acesso a Resultados aprovados).
  */
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
     const body = await request.json();
     const parsed = sponsorOrderCheckoutSchema.safeParse(body);
     if (!parsed.success) {
@@ -48,6 +50,7 @@ export async function POST(request: NextRequest) {
       data: {
         sponsorPlanId: plan.id,
         teamId: d.teamId || null,
+        userId: session?.userId ?? null,
         companyName: d.companyName.trim(),
         email: d.email.trim().toLowerCase(),
         websiteUrl: d.websiteUrl?.trim() || null,

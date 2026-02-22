@@ -32,6 +32,7 @@ model User {
   teamManagers      TeamManager[]
   partners          Partner[]
   favoriteTeam      Team?     @relation("UserFavoriteTeam", fields: [favoriteTeamId], references: [id], onDelete: SetNull)
+  sponsorOrders     SponsorOrder[]
 }
 
 model Session {
@@ -451,6 +452,7 @@ model SponsorOrder {
   sponsorPlanId    String    @map("sponsor_plan_id")
   teamId           String?   @map("team_id")
   partnerId        String?   @map("partner_id")
+  userId           String?   @map("user_id") // preenchido quando o usuário está logado ao patrocinar (para liberar acesso a resultados)
   companyName      String    @map("company_name")
   email            String    @map("email")
   websiteUrl       String?   @map("website_url")
@@ -472,6 +474,7 @@ model SponsorOrder {
   sponsorPlan SponsorPlan @relation(fields: [sponsorPlanId], references: [id], onDelete: Restrict)
   team        Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
   partner     Partner?    @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   earnings    TeamSponsorshipEarning[]
 }
 
