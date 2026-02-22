@@ -14,6 +14,8 @@ interface GameCardProps {
   href?: string;
   /** Texto do badge (padrao: ASSISTIR) */
   badgeText?: string;
+  /** Se false, não exibe badge "ASSISTIR" nem botão de play (card só publicação) */
+  showAssistir?: boolean;
   /** Times do jogo: quando presentes, exibe logos e nomes lado a lado no card */
   homeTeam?: TeamInfo | null;
   awayTeam?: TeamInfo | null;
@@ -43,7 +45,7 @@ function TeamCrest({ team, size = 10 }: { team: TeamInfo; size?: number }) {
   );
 }
 
-export function GameCard({ slug, title, championship, thumbnailUrl, gameDate, featured, href, badgeText = 'ASSISTIR', homeTeam, awayTeam }: GameCardProps) {
+export function GameCard({ slug, title, championship, thumbnailUrl, gameDate, featured, href, badgeText = 'ASSISTIR', showAssistir = true, homeTeam, awayTeam }: GameCardProps) {
   const linkHref = href ?? `/jogo/${slug}`;
   const date = new Date(gameDate).toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -74,14 +76,18 @@ export function GameCard({ slug, title, championship, thumbnailUrl, gameDate, fe
             DESTAQUE
           </span>
         )}
-        <span className="absolute top-3 right-3 px-2 py-1 bg-futvar-green/90 text-white text-xs font-semibold rounded">
-          {badgeText}
-        </span>
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/30">
-          <span className="w-16 h-16 rounded-full bg-futvar-green flex items-center justify-center text-white text-2xl pl-1 shadow-xl shadow-futvar-green/40 animate-pulse">
-            ▶
+        {showAssistir && (
+          <span className="absolute top-3 right-3 px-2 py-1 bg-futvar-green/90 text-white text-xs font-semibold rounded">
+            {badgeText}
           </span>
-        </div>
+        )}
+        {showAssistir && (
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/30">
+            <span className="w-16 h-16 rounded-full bg-futvar-green flex items-center justify-center text-white text-2xl pl-1 shadow-xl shadow-futvar-green/40 animate-pulse">
+              ▶
+            </span>
+          </div>
+        )}
       </div>
       <div className="p-4">
         {showTeams ? (

@@ -207,8 +207,8 @@ export default function AdminSumulaGamePage() {
                     <th className="py-2 px-1 w-14 text-center">G</th>
                     <th className="py-2 px-1 w-14 text-center">A</th>
                     <th className="py-2 px-1 w-14 text-center">F</th>
-                    <th className="py-2 px-1 w-10 text-center">Am</th>
-                    <th className="py-2 px-1 w-10 text-center">Vm</th>
+                    <th className="py-2 px-1 w-14 text-center" title="Cartão amarelo">Amarelo</th>
+                    <th className="py-2 px-1 w-14 text-center" title="Cartão vermelho">Vermelho</th>
                     <th className="py-2 px-1 text-center">Destaque</th>
                   </tr>
                 </thead>
@@ -241,8 +241,8 @@ export default function AdminSumulaGamePage() {
                     <th className="py-2 px-1 w-14 text-center">G</th>
                     <th className="py-2 px-1 w-14 text-center">A</th>
                     <th className="py-2 px-1 w-14 text-center">F</th>
-                    <th className="py-2 px-1 w-10 text-center">Am</th>
-                    <th className="py-2 px-1 w-10 text-center">Vm</th>
+                    <th className="py-2 px-1 w-14 text-center" title="Cartão amarelo">Amarelo</th>
+                    <th className="py-2 px-1 w-14 text-center" title="Cartão vermelho">Vermelho</th>
                     <th className="py-2 px-1 text-center">Destaque</th>
                   </tr>
                 </thead>

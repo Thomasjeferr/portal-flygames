@@ -273,8 +273,8 @@ export default function SumulaDetailPage() {
                           <th className="py-1 w-10 text-center">G</th>
                           <th className="py-1 w-10 text-center">A</th>
                           <th className="py-1 w-10 text-center">F</th>
-                          <th className="py-1 w-8 text-center">Am</th>
-                          <th className="py-1 w-8 text-center">Vm</th>
+                          <th className="py-1 w-10 text-center" title="Cartão amarelo">Amarelo</th>
+                          <th className="py-1 w-10 text-center" title="Cartão vermelho">Vermelho</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -304,8 +304,8 @@ export default function SumulaDetailPage() {
                           <th className="py-1 w-10 text-center">G</th>
                           <th className="py-1 w-10 text-center">A</th>
                           <th className="py-1 w-10 text-center">F</th>
-                          <th className="py-1 w-8 text-center">Am</th>
-                          <th className="py-1 w-8 text-center">Vm</th>
+                          <th className="py-1 w-10 text-center" title="Cartão amarelo">Amarelo</th>
+                          <th className="py-1 w-10 text-center" title="Cartão vermelho">Vermelho</th>
                         </tr>
                       </thead>
                       <tbody>

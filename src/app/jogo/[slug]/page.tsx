@@ -40,6 +40,8 @@ export default async function GamePage({ params }: Props) {
       awayTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
     },
   });
+  const displayMode = game?.displayMode ?? 'internal';
+  const showPlayer = displayMode === 'public_with_media' && !!game?.videoUrl;
   if (!game) notFound();
 
   const session = await getSession();
@@ -133,7 +135,7 @@ export default async function GamePage({ params }: Props) {
               <p className="text-futvar-light text-left max-w-2xl mx-auto">{game.description}</p>
             )}
           </div>
-        ) : (
+        ) : showPlayer ? (
           <>
             <GamePlayTracker gameId={game.id} />
             <div className="rounded-2xl overflow-hidden bg-black mb-8 border border-futvar-green/20 shadow-xl">
@@ -173,6 +175,30 @@ export default async function GamePage({ params }: Props) {
               <p className="text-futvar-light leading-relaxed max-w-3xl mb-6">{game.description}</p>
             )}
           </>
+        ) : (
+          <div className="bg-futvar-dark border border-futvar-green/20 rounded-2xl p-8 md:p-12 text-center">
+            <div className="mb-6">
+              <PlayerMatchInfo
+                title={game.title}
+                homeTeam={game.homeTeam ?? undefined}
+                awayTeam={game.awayTeam ?? undefined}
+                subtitle={`${game.championship} • ${gameDateFormatted}`}
+              />
+            </div>
+            {game.thumbnailUrl && (
+              <div className="relative aspect-video max-w-2xl mx-auto rounded-lg overflow-hidden mb-8">
+                <Image
+                  src={game.thumbnailUrl.startsWith('http') ? game.thumbnailUrl : game.thumbnailUrl}
+                  alt={game.title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            )}
+            {game.description && (
+              <p className="text-futvar-light text-left max-w-2xl mx-auto">{game.description}</p>
+            )}
+          </div>
         )}
 
         {suggested.length > 0 && (

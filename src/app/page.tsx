@@ -14,6 +14,7 @@ type GameWithCategory = {
   gameDate: string;
   thumbnailUrl: string | null;
   featured: boolean;
+  displayMode?: string;
   category: { id: string; name: string; slug: string; order: number } | null;
   homeTeam?: { id: string; name: string; shortName: string | null; crestUrl: string | null } | null;
   awayTeam?: { id: string; name: string; shortName: string | null; crestUrl: string | null } | null;
@@ -44,6 +45,7 @@ async function getGames(): Promise<GameWithCategory[]> {
   try {
     const [games, preSaleGames] = await Promise.all([
       prisma.game.findMany({
+        where: { displayMode: { in: ['public_no_media', 'public_with_media'] } },
         orderBy: [{ order: 'asc' }, { featured: 'desc' }, { gameDate: 'desc' }],
         select: {
           id: true,
@@ -53,6 +55,7 @@ async function getGames(): Promise<GameWithCategory[]> {
           gameDate: true,
           thumbnailUrl: true,
           featured: true,
+          displayMode: true,
           category: { select: { id: true, name: true, slug: true, order: true } },
           homeTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
           awayTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
@@ -246,7 +249,7 @@ export default async function HomePage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
                 {featured.map((game, i) => (
                   <div key={game.id + game.slug} className="animate-scale-in opacity-0" style={{ animationDelay: `${0.2 + i * 0.06}s` }}>
-                    <GameCard slug={game.slug} title={game.title} championship={game.championship} thumbnailUrl={game.thumbnailUrl} gameDate={game.gameDate} featured={game.featured} href={game.href} homeTeam={game.homeTeam ?? undefined} awayTeam={game.awayTeam ?? undefined} />
+                    <GameCard slug={game.slug} title={game.title} championship={game.championship} thumbnailUrl={game.thumbnailUrl} gameDate={game.gameDate} featured={game.featured} href={game.href} homeTeam={game.homeTeam ?? undefined} awayTeam={game.awayTeam ?? undefined} showAssistir={game.displayMode === 'public_with_media'} />
                   </div>
                 ))}
               </div>
@@ -279,7 +282,7 @@ export default async function HomePage() {
                         className="animate-scale-in opacity-0"
                         style={{ animationDelay: `${0.25 + catIndex * 0.08 + i * 0.05}s` }}
                       >
-                        <GameCard slug={game.slug} title={game.title} championship={game.championship} thumbnailUrl={game.thumbnailUrl} gameDate={game.gameDate} featured={game.featured} href={game.href} homeTeam={game.homeTeam ?? undefined} awayTeam={game.awayTeam ?? undefined} />
+                        <GameCard slug={game.slug} title={game.title} championship={game.championship} thumbnailUrl={game.thumbnailUrl} gameDate={game.gameDate} featured={game.featured} href={game.href} homeTeam={game.homeTeam ?? undefined} awayTeam={game.awayTeam ?? undefined} showAssistir={game.displayMode === 'public_with_media'} />
                       </div>
                     ))}
                   </div>
