@@ -29,6 +29,7 @@ export default function NewSponsorPlanPage() {
     benefits: [''] as string[],
     featuresFlags: Object.fromEntries(DEFAULT_FEATURE_FLAGS.map((f) => [f.key, true])),
     teamPayoutPercent: 0,
+    partnerCommissionPercent: 0,
     sortOrder: 0,
     isActive: true,
   });
@@ -55,6 +56,7 @@ export default function NewSponsorPlanPage() {
           benefits,
           featuresFlags: form.featuresFlags,
           teamPayoutPercent: Number(form.teamPayoutPercent) || 0,
+          partnerCommissionPercent: Number(form.partnerCommissionPercent) ?? 0,
           sortOrder: Number(form.sortOrder) || 0,
           isActive: form.isActive,
         }),
@@ -134,6 +136,18 @@ export default function NewSponsorPlanPage() {
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
           <p className="mt-1 text-xs text-netflix-light">Quando o patrocinador escolher um time, este percentual do valor vai para o time (0 = não repassa).</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">% comissão para o parceiro</label>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={form.partnerCommissionPercent}
+            onChange={(e) => setForm((f) => ({ ...f, partnerCommissionPercent: Number(e.target.value) ?? 0 }))}
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          />
+          <p className="mt-1 text-xs text-netflix-light">Quando alguém patrocinar por indicação de parceiro, este % será a comissão do parceiro (0 = usa o % do cadastro do parceiro).</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Ordem de exibição</label>

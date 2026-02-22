@@ -68,9 +68,12 @@ export async function POST(request: NextRequest) {
 
     if (purchase.partnerId && purchase.partner && purchase.partner.status === 'approved') {
       const planPriceCents = Math.round((purchase.plan.price ?? 0) * 100);
-      let commissionPercent = purchase.plan.type === 'unitario'
-        ? purchase.partner.gameCommissionPercent
-        : purchase.partner.planCommissionPercent;
+      const planPartnerPercent = purchase.plan.partnerCommissionPercent ?? 0;
+      let commissionPercent = planPartnerPercent > 0
+        ? planPartnerPercent
+        : (purchase.plan.type === 'unitario'
+          ? purchase.partner.gameCommissionPercent
+          : purchase.partner.planCommissionPercent);
       if (commissionPercent < 0) commissionPercent = 0;
       if (commissionPercent > 100) commissionPercent = 100;
       const partnerAmountCents = Math.round((planPriceCents * commissionPercent) / 100);

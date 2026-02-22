@@ -37,6 +37,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       price: raw.price !== undefined ? (typeof raw.price === 'number' ? raw.price : Number(raw.price)) : undefined,
       sortOrder: raw.sortOrder !== undefined ? (typeof raw.sortOrder === 'number' ? raw.sortOrder : Number(raw.sortOrder)) : undefined,
       teamPayoutPercent: raw.teamPayoutPercent !== undefined ? (typeof raw.teamPayoutPercent === 'number' ? raw.teamPayoutPercent : Number(raw.teamPayoutPercent)) : undefined,
+      partnerCommissionPercent: raw.partnerCommissionPercent !== undefined ? (typeof raw.partnerCommissionPercent === 'number' ? raw.partnerCommissionPercent : Number(raw.partnerCommissionPercent)) : undefined,
     });
     if (!parsed.success)
       return NextResponse.json({ error: parsed.error.errors[0]?.message ?? 'Dados inválidos' }, { status: 400 });
@@ -49,6 +50,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (d.benefits !== undefined) update.benefits = JSON.stringify(Array.isArray(d.benefits) ? d.benefits : []);
     if (d.featuresFlags !== undefined) update.featuresFlags = JSON.stringify(typeof d.featuresFlags === 'object' ? d.featuresFlags : {});
     if (d.teamPayoutPercent !== undefined) update.teamPayoutPercent = d.teamPayoutPercent;
+    if (d.partnerCommissionPercent !== undefined) update.partnerCommissionPercent = d.partnerCommissionPercent;
     if (d.sortOrder !== undefined) update.sortOrder = d.sortOrder;
     if (d.isActive !== undefined) update.isActive = d.isActive;
 

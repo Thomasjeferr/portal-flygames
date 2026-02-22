@@ -11,6 +11,7 @@ export const sponsorPlanCreateSchema = z.object({
   benefits: z.array(z.string()).default([]),
   featuresFlags: featuresFlagsSchema,
   teamPayoutPercent: z.number().int().min(0).max(100).default(0),
+  partnerCommissionPercent: z.number().int().min(0).max(100).default(0),
   sortOrder: z.number().int().min(0).default(0),
   isActive: z.boolean().default(true),
 });

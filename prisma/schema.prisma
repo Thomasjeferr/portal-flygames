@@ -237,7 +237,8 @@ model Plan {
   acessoTotal       Boolean  @default(true) @map("acesso_total")
   duracaoDias       Int?     @map("duracao_dias") // null = ilimitado para unitário
   renovacaoAuto     Boolean  @default(false) @map("renovacao_auto")
-  teamPayoutPercent Int      @default(0) @map("team_payout_percent") // 0-100: % que vai para o time (time de coração)
+  teamPayoutPercent       Int      @default(0) @map("team_payout_percent") // 0-100: % que vai para o time (time de coração)
+  partnerCommissionPercent Int     @default(0) @map("partner_commission_percent") // 0-100: % comissão para parceiro que indicar (0 = usa % do cadastro do parceiro)
   maxConcurrentStreams Int?  @map("max_concurrent_streams") // null = sem limite explícito
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
@@ -436,7 +437,8 @@ model SponsorPlan {
   billingPeriod     String   @default("monthly") @map("billing_period") // monthly | quarterly | yearly
   benefits          String   @default("[]") @map("benefits") // JSON array de strings
   featuresFlags     String   @default("{}") @map("features_flags") // JSON ex: { show_in_footer, show_in_player, ... }
-  teamPayoutPercent Int      @default(0) @map("team_payout_percent") // 0-100: % do valor que vai para o time
+  teamPayoutPercent        Int      @default(0) @map("team_payout_percent") // 0-100: % do valor que vai para o time
+  partnerCommissionPercent Int      @default(0) @map("partner_commission_percent") // 0-100: % comissão para parceiro que indicar (0 = usa % do cadastro do parceiro)
   sortOrder         Int      @default(0) @map("sort_order")
   isActive          Boolean  @default(true) @map("is_active")
   createdAt         DateTime @default(now()) @map("created_at")

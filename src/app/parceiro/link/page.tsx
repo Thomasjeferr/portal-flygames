@@ -90,9 +90,9 @@ export default function ParceiroLinkPage() {
       </div>
 
       <div className="mt-6 p-4 rounded-lg bg-white/5 border border-white/10 text-sm text-futvar-light">
-        <p className="font-medium text-white mb-1">Suas comissões</p>
-        <p>Planos/assinaturas: {partner.planCommissionPercent}% · Jogos avulsos: {partner.gameCommissionPercent}% · Patrocínio: {partner.sponsorCommissionPercent}%</p>
-        <p className="mt-2 text-futvar-light/90">Você recebe apenas o valor líquido da sua comissão em cada venda indicada. Acompanhe em Comissões.</p>
+        <p className="font-medium text-white mb-1">Seus percentuais</p>
+        <p>Planos e assinaturas: {partner.planCommissionPercent}% · Jogos avulsos: {partner.gameCommissionPercent}% · Patrocínio: {partner.sponsorCommissionPercent}%</p>
+        <p className="mt-2 text-futvar-light/90">Quando um plano ou patrocínio tiver percentual próprio definido, aquele valor é usado naquela venda. Você recebe o valor líquido da comissão. Acompanhe em Comissões.</p>
       </div>
     </div>
   );

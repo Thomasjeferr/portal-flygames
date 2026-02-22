@@ -14,6 +14,7 @@ const createSchema = z.object({
   duracaoDias: z.number().int().min(0).nullable().optional(),
   renovacaoAuto: z.boolean().optional(),
   teamPayoutPercent: z.number().int().min(0).max(100).optional(),
+  partnerCommissionPercent: z.number().int().min(0).max(100).optional(),
   maxConcurrentStreams: z.number().int().min(1).nullable().optional(),
 });
 
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest) {
       duracaoDias: body.duracaoDias != null ? Number(body.duracaoDias) : null,
       renovacaoAuto: body.renovacaoAuto ?? false,
       teamPayoutPercent: body.teamPayoutPercent != null ? Number(body.teamPayoutPercent) : 0,
+      partnerCommissionPercent: body.partnerCommissionPercent != null ? Number(body.partnerCommissionPercent) : 0,
       maxConcurrentStreams: body.maxConcurrentStreams != null ? Number(body.maxConcurrentStreams) : null,
     });
     if (!parsed.success) {
@@ -71,6 +73,7 @@ export async function POST(request: NextRequest) {
         duracaoDias: parsed.data.duracaoDias ?? null,
         renovacaoAuto: parsed.data.renovacaoAuto ?? false,
         teamPayoutPercent: parsed.data.teamPayoutPercent ?? 0,
+        partnerCommissionPercent: parsed.data.partnerCommissionPercent ?? 0,
         maxConcurrentStreams: parsed.data.maxConcurrentStreams ?? null,
       },
     });

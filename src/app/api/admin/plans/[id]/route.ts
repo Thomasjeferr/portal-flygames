@@ -14,6 +14,7 @@ const updateSchema = z.object({
   duracaoDias: z.number().int().min(0).nullable().optional(),
   renovacaoAuto: z.boolean().optional(),
   teamPayoutPercent: z.number().int().min(0).max(100).optional(),
+  partnerCommissionPercent: z.number().int().min(0).max(100).optional(),
   maxConcurrentStreams: z.number().int().min(1).nullable().optional(),
 });
 
@@ -47,6 +48,7 @@ export async function PATCH(
       price: body.price != null ? Number(body.price) : undefined,
       duracaoDias: body.duracaoDias != null ? Number(body.duracaoDias) : undefined,
       teamPayoutPercent: body.teamPayoutPercent != null ? Number(body.teamPayoutPercent) : undefined,
+      partnerCommissionPercent: body.partnerCommissionPercent != null ? Number(body.partnerCommissionPercent) : undefined,
       maxConcurrentStreams: body.maxConcurrentStreams != null ? Number(body.maxConcurrentStreams) : undefined,
     });
     if (!parsed.success) {
@@ -68,6 +70,7 @@ export async function PATCH(
     if (data.duracaoDias !== undefined) update.duracaoDias = data.duracaoDias;
     if (data.renovacaoAuto !== undefined) update.renovacaoAuto = data.renovacaoAuto;
     if (data.teamPayoutPercent !== undefined) update.teamPayoutPercent = data.teamPayoutPercent;
+    if (data.partnerCommissionPercent !== undefined) update.partnerCommissionPercent = data.partnerCommissionPercent;
     if (data.maxConcurrentStreams !== undefined) update.maxConcurrentStreams = data.maxConcurrentStreams;
 
     const plan = await prisma.plan.update({

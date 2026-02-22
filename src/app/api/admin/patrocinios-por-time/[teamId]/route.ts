@@ -27,19 +27,20 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ teamId: string }> }
 ) {
-  const session = await getSession();
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
-  }
+  try {
+    const session = await getSession();
+    if (!session || session.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
+    }
 
-  const { teamId } = await params;
-  const team = await prisma.team.findUnique({
-    where: { id: teamId },
-    select: { id: true, name: true },
-  });
-  if (!team) return NextResponse.json({ error: 'Time não encontrado' }, { status: 404 });
+    const { teamId } = await params;
+    const team = await prisma.team.findUnique({
+      where: { id: teamId },
+      select: { id: true, name: true },
+    });
+    if (!team) return NextResponse.json({ error: 'Time não encontrado' }, { status: 404 });
 
-  const [sponsorEarnings, planEarnings] = await Promise.all([
+    const [sponsorEarnings, planEarnings] = await Promise.all([
     prisma.teamSponsorshipEarning.findMany({
       where: { teamId },
       include: {
@@ -55,7 +56,6 @@ export async function GET(
       where: { teamId },
       include: {
         purchase: {
-          select: { createdAt: true },
           include: {
             user: { select: { name: true, email: true } },
             plan: { select: { name: true, type: true } },
@@ -114,4 +114,9 @@ export async function GET(
     },
     items,
   });
+  } catch (err) {
+    console.error('[GET /api/admin/patrocinios-por-time/[teamId]]', err);
+    const message = err instanceof Error ? err.message : 'Erro ao carregar detalhes';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

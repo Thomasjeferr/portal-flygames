@@ -9,6 +9,7 @@ type Resumo = {
     id: string;
     type: string;
     commissionCents: number;
+    commissionPercent?: number;
     status: string;
     date: string;
     paidAt: string | null;
@@ -77,6 +78,7 @@ export default function ParceiroComissoesPage() {
               <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wider text-futvar-light">
                 <th className="px-4 py-3">Tipo</th>
                 <th className="px-4 py-3">Data</th>
+                <th className="px-4 py-3 text-right">% aplicado</th>
                 <th className="px-4 py-3 text-right">Sua comissão</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Pago em</th>
@@ -90,6 +92,9 @@ export default function ParceiroComissoesPage() {
                   </td>
                   <td className="px-4 py-3 text-futvar-light">
                     {new Date(row.date).toLocaleDateString('pt-BR')}
+                  </td>
+                  <td className="px-4 py-3 text-right text-futvar-light">
+                    {typeof row.commissionPercent === 'number' ? `${row.commissionPercent}%` : '—'}
                   </td>
                   <td className="px-4 py-3 text-right font-medium text-futvar-green">
                     {formatMoney(row.commissionCents)}

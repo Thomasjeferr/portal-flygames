@@ -20,6 +20,7 @@ export async function GET() {
       sourceType: true,
       sourceId: true,
       amountCents: true,
+      commissionPercent: true,
       status: true,
       createdAt: true,
     },
@@ -71,6 +72,7 @@ export async function GET() {
       clientLabel,
       date: e.createdAt.toISOString(),
       commissionCents: e.amountCents,
+      commissionPercent: e.commissionPercent,
       status: e.status,
     };
   });

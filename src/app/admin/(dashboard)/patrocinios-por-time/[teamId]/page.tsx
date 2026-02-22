@@ -49,9 +49,16 @@ export default function AdminPatrociniosPorTimeDetailPage() {
           router.replace('/admin/entrar');
           return;
         }
-        const d = await r.json();
+        let d: { error?: string; team?: unknown; items?: unknown } = {};
+        try {
+          d = await r.json();
+        } catch {
+          setError(r.ok ? 'Erro ao carregar.' : `Erro ${r.status}: resposta inválida`);
+          return;
+        }
         if (d.error) setError(d.error);
-        else if (d.team && Array.isArray(d.items)) setData(d);
+        else if (d.team && Array.isArray(d.items)) setData(d as Data);
+        else if (!r.ok) setError(d.error || `Erro ${r.status} ao carregar`);
       })
       .catch(() => setError('Erro ao carregar.'))
       .finally(() => setLoading(false));

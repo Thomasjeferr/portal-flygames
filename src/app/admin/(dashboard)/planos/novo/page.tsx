@@ -19,6 +19,7 @@ export default function NewPlanPage() {
     duracaoDias: '' as string | number,
     renovacaoAuto: false,
     teamPayoutPercent: 0,
+    partnerCommissionPercent: 0,
     maxConcurrentStreams: '' as string | number,
   });
 
@@ -41,6 +42,7 @@ export default function NewPlanPage() {
           duracaoDias: form.duracaoDias === '' ? null : Number(form.duracaoDias),
           renovacaoAuto: form.renovacaoAuto,
           teamPayoutPercent: Number(form.teamPayoutPercent) || 0,
+          partnerCommissionPercent: Number(form.partnerCommissionPercent) ?? 0,
           maxConcurrentStreams: form.maxConcurrentStreams === '' ? null : Number(form.maxConcurrentStreams),
         }),
       });
@@ -153,6 +155,18 @@ export default function NewPlanPage() {
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
           <p className="text-xs text-netflix-light mt-1">Quando o usuário escolher um &quot;time de coração&quot; no checkout, este percentual do valor vai para o time.</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">% comissão para o parceiro</label>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={form.partnerCommissionPercent}
+            onChange={(e) => setForm((f) => ({ ...f, partnerCommissionPercent: Number(e.target.value) ?? 0 }))}
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          />
+          <p className="text-xs text-netflix-light mt-1">Quando alguém comprar por indicação de um parceiro, este percentual será a comissão do parceiro (0 = usa o % do cadastro do parceiro).</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Telas simultâneas</label>

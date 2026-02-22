@@ -42,7 +42,6 @@ export async function GET(
       where: { teamId },
       include: {
         purchase: {
-          select: { createdAt: true },
           include: {
             user: { select: { name: true, email: true } },
             plan: { select: { name: true, type: true } },

@@ -53,6 +53,7 @@ export default function ParceiroIndicacoesPage() {
                 <th className="px-4 py-3">Cliente / Empresa</th>
                 <th className="px-4 py-3">Tipo</th>
                 <th className="px-4 py-3">Data</th>
+                <th className="px-4 py-3 text-right">% aplicado</th>
                 <th className="px-4 py-3 text-right">Sua comissão</th>
                 <th className="px-4 py-3">Status</th>
               </tr>
@@ -66,6 +67,9 @@ export default function ParceiroIndicacoesPage() {
                   </td>
                   <td className="px-4 py-3 text-futvar-light">
                     {new Date(row.date).toLocaleDateString('pt-BR')}
+                  </td>
+                  <td className="px-4 py-3 text-right text-futvar-light">
+                    {typeof row.commissionPercent === 'number' ? `${row.commissionPercent}%` : '—'}
                   </td>
                   <td className="px-4 py-3 text-right font-medium text-futvar-green">
                     {formatMoney(row.commissionCents)}
