@@ -9,6 +9,7 @@ type Item = {
   clientLabel: string;
   date: string;
   commissionCents: number;
+  commissionPercent?: number;
   status: string;
 };
 
