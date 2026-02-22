@@ -17,6 +17,8 @@ type Game = {
   referee: string | null;
   homeTeamId: string | null;
   awayTeamId: string | null;
+  sumulaPublishedAt: string | null;
+  myApprovalStatus: string | null;
   homeTeam: { id: string; name: string; shortName: string | null; crestUrl: string | null } | null;
   awayTeam: { id: string; name: string; shortName: string | null; crestUrl: string | null } | null;
 };
@@ -120,6 +122,15 @@ export default function SumulasListPage() {
                 <p className="text-futvar-light text-sm mt-2">
                   {g.championship} · {formatDate(g.gameDate)}
                 </p>
+                {g.sumulaPublishedAt && (
+                  <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded ${
+                    g.myApprovalStatus === 'APROVADA' ? 'bg-green-900/40 text-green-300' :
+                    g.myApprovalStatus === 'REJEITADA' ? 'bg-red-900/40 text-red-300' :
+                    'bg-yellow-900/40 text-yellow-300'
+                  }`}>
+                    {g.myApprovalStatus === 'APROVADA' ? 'Aprovado' : g.myApprovalStatus === 'REJEITADA' ? 'Rejeitado' : 'Aguardando sua aprovação'}
+                  </span>
+                )}
               </Link>
             );
           })}

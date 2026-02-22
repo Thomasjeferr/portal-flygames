@@ -35,15 +35,34 @@ export async function GET(
       referee: true,
       homeTeamId: true,
       awayTeamId: true,
+      sumulaPublishedAt: true,
       homeTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
       awayTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
+      sumulaApprovals: { select: { teamId: true, status: true } },
     },
   });
 
   return NextResponse.json(
-    games.map((g) => ({
-      ...g,
-      gameDate: g.gameDate.toISOString(),
-    }))
+    games.map((g) => {
+      const myApproval = g.sumulaApprovals.find((a) => a.teamId === teamId);
+      return {
+        id: g.id,
+        title: g.title,
+        slug: g.slug,
+        championship: g.championship,
+        gameDate: g.gameDate.toISOString(),
+        thumbnailUrl: g.thumbnailUrl,
+        homeScore: g.homeScore,
+        awayScore: g.awayScore,
+        venue: g.venue,
+        referee: g.referee,
+        homeTeamId: g.homeTeamId,
+        awayTeamId: g.awayTeamId,
+        sumulaPublishedAt: g.sumulaPublishedAt?.toISOString() ?? null,
+        homeTeam: g.homeTeam,
+        awayTeam: g.awayTeam,
+        myApprovalStatus: myApproval?.status ?? null,
+      };
+    })
   );
 }

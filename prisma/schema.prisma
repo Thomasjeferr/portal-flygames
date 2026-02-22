@@ -112,6 +112,8 @@ model Team {
   managers            TeamManager[]
   members             TeamMember[]
   favoritedByUsers    User[]         @relation("UserFavoriteTeam")
+  sumulaApprovals     GameSumulaApproval[]
+  playerMatchStats    PlayerMatchStats[]
 }
 
 // Responsáveis pelo time (usuários que gerenciam o time no painel do clube)
@@ -143,6 +145,7 @@ model TeamMember {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  playerMatchStats PlayerMatchStats[]
 
   @@map("team_members")
 }
@@ -166,6 +169,7 @@ model Game {
   awayScore    Int?      @map("away_score")
   venue        String?   @map("venue")
   referee      String?   @map("referee")
+  sumulaPublishedAt DateTime? @map("sumula_published_at") // quando o admin publicou a súmula para os times
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
@@ -175,6 +179,50 @@ model Game {
   purchases   Purchase[]
   homeBanners HomeBanner[]
   playEvents  PlayEvent[]
+  sumulaApprovals GameSumulaApproval[]
+  playerMatchStats PlayerMatchStats[]
+}
+
+// Aprovação da súmula por time (mandante e visitante aprovam ou rejeitam)
+model GameSumulaApproval {
+  id              String    @id @default(cuid())
+  gameId          String    @map("game_id")
+  teamId          String    @map("team_id")
+  status          String    @map("status") // PENDENTE | APROVADA | REJEITADA
+  rejectionReason String?   @map("rejection_reason")
+  rejectedAt      DateTime? @map("rejected_at")
+  approvedAt      DateTime? @map("approved_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, teamId])
+  @@map("game_sumula_approvals")
+}
+
+// Estatísticas do jogador na partida (preenchidas pelo admin na súmula)
+model PlayerMatchStats {
+  id          String   @id @default(cuid())
+  gameId      String   @map("game_id")
+  teamId      String   @map("team_id")
+  teamMemberId String  @map("team_member_id")
+  goals       Int      @default(0) @map("goals")
+  assists     Int      @default(0) @map("assists")
+  fouls       Int      @default(0) @map("fouls")
+  yellowCard  Boolean  @default(false) @map("yellow_card")
+  redCard     Boolean  @default(false) @map("red_card")
+  highlight   Boolean  @default(false) @map("highlight") // destaque
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  game       Game       @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  team       Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamMember TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, teamMemberId])
+  @@map("player_match_stats")
 }
 
 model Plan {

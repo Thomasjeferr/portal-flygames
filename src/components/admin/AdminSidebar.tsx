@@ -8,6 +8,7 @@ const menuItems = [
   { href: '/admin', label: 'Dashboard', icon: 'chart' },
   { href: '/admin/analytics', label: 'Analytics', icon: 'pin' },
   { href: '/admin/jogos', label: 'Jogos', icon: 'play' },
+  { href: '/admin/sumulas', label: 'Súmula', icon: 'clipboard' },
   { href: '/admin/times', label: 'Times', icon: 'team' },
   { href: '/admin/lives', label: 'Lives', icon: 'broadcast' },
   { href: '/admin/pre-estreia', label: 'Pré-estreia', icon: 'film' },
