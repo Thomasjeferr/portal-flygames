@@ -16,6 +16,7 @@ const menuItems = [
   { href: '/admin/banner', label: 'Hero Banners', icon: 'image' },
   { href: '/admin/sponsors', label: 'Patrocinadores', icon: 'trophy' },
   { href: '/admin/sponsor-orders', label: 'Pedidos de patrocínio', icon: 'receipt' },
+  { href: '/admin/patrocinios-por-time', label: 'Patrocínios por time', icon: 'chart' },
   { href: '/admin/partners', label: 'Parceiros', icon: 'users' },
   { href: '/admin/usuarios', label: 'Usuários', icon: 'users' },
   { href: '/admin/planos', label: 'Planos', icon: 'clipboard' },

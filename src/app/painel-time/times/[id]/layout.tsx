@@ -82,6 +82,13 @@ export default async function PainelTimeTeamLayout({
             >
               Dados do time
             </Link>
+            <span className="text-white/30">·</span>
+            <Link
+              href={`${base}/patrocinadores`}
+              className="text-sm text-futvar-light hover:text-white"
+            >
+              Patrocinadores
+            </Link>
           </nav>
         </div>
       </div>

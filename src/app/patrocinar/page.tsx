@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 
 export const metadata = {
-  title: 'Seja um Patrocinador.',
-  description: 'Conheça nossos planos de patrocínio e apoie seu time de coração. Ganhe visibilidade para sua marca.',
+  title: 'Apoie o Futebol da Sua Cidade',
+  description: 'Dê visibilidade para a sua marca e fortaleça o clube local. Conheça nossos planos de patrocínio.',
 };
 
 const BILLING_LABEL: Record<string, string> = {
@@ -63,15 +63,14 @@ export default async function PatrocinarPage() {
           </Link>
         </div>
 
-        <div className="flex items-center gap-3 mb-10 animate-fade-in-up opacity-0 [animation-delay:0.1s]">
-          <span className="w-1 h-8 rounded-full bg-futvar-gold" />
-          <h1 className="text-3xl lg:text-4xl font-bold text-white">Seja um Patrocinador</h1>
+        <div className="text-center mb-12">
+          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-3">
+            Apoie o Futebol da Sua Cidade
+          </h1>
+          <p className="text-futvar-light text-lg max-w-2xl mx-auto">
+            Dê visibilidade para a sua marca e fortaleça o clube local.
+          </p>
         </div>
-
-        <p className="text-futvar-light text-lg mb-12 max-w-2xl">
-          Apoie seu time de coração e ganhe visibilidade para sua marca. Conheça nossos planos de patrocínio e escolha o que
-          melhor se encaixa para você.
-        </p>
 
         {plans.length === 0 ? (
           <div className="bg-futvar-dark border border-futvar-green/20 rounded-2xl p-12 text-center">
@@ -98,36 +97,53 @@ export default async function PatrocinarPage() {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className="bg-futvar-dark border border-futvar-green/20 rounded-2xl p-6 flex flex-col"
-              >
-                <h2 className="text-xl font-bold text-white mb-1">{plan.name}</h2>
-                <p className="text-2xl font-bold text-futvar-green mb-4">
-                  {formatPrice(plan.price)}
-                  <span className="text-sm font-normal text-futvar-light ml-1">
-                    /{BILLING_LABEL[plan.billingPeriod] ?? plan.billingPeriod}
-                  </span>
-                </p>
-                {Array.isArray(plan.benefits) && plan.benefits.length > 0 && (
-                  <ul className="space-y-2 mb-6 flex-1">
-                    {plan.benefits.map((b, i) => (
-                      <li key={i} className="text-futvar-light text-sm flex items-start gap-2">
-                        <span className="text-futvar-green mt-0.5">✓</span>
-                        {b}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <Link
-                  href={`/patrocinar/comprar?planId=${plan.id}`}
-                  className="block w-full text-center px-6 py-3 bg-futvar-green text-futvar-darker font-bold rounded-lg hover:bg-futvar-green-light transition-colors"
+            {plans.map((plan, index) => {
+              const isDestaque = index === Math.floor(plans.length / 2);
+              const teamPercent = plan.teamPayoutPercent ?? 0;
+              return (
+                <div
+                  key={plan.id}
+                  className={`rounded-2xl p-6 flex flex-col transition-all ${
+                    isDestaque
+                      ? 'bg-futvar-dark/90 border-2 border-futvar-green shadow-[0_0_35px_rgba(34,197,94,0.35)] scale-[1.02]'
+                      : 'bg-futvar-dark border border-futvar-green/20 hover:border-futvar-green/40 hover:shadow-[0_0_20px_rgba(34,197,94,0.25)]'
+                  }`}
                 >
-                  Quero patrocinar
-                </Link>
-              </div>
-            ))}
+                  <h2 className="text-xl font-bold text-white mb-1">{plan.name}</h2>
+                  <p className="text-2xl font-bold text-futvar-green mb-2">
+                    {formatPrice(plan.price)}
+                    <span className="text-sm font-normal text-futvar-light ml-1">
+                      /{BILLING_LABEL[plan.billingPeriod] ?? plan.billingPeriod}
+                    </span>
+                  </p>
+                  {isDestaque && teamPercent > 0 && (
+                    <p className="text-futvar-green/90 text-sm font-medium mb-3">
+                      {teamPercent}% do valor repassado ao clube
+                    </p>
+                  )}
+                  {Array.isArray(plan.benefits) && plan.benefits.length > 0 && (
+                    <ul className="space-y-2 mb-6 flex-1">
+                      {plan.benefits.map((b, i) => (
+                        <li key={i} className="text-futvar-light text-sm flex items-start gap-2">
+                          <span className="text-futvar-green mt-0.5">✓</span>
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <Link
+                    href={`/patrocinar/comprar?planId=${plan.id}`}
+                    className={`block w-full text-center px-6 py-3 font-bold rounded-lg transition-colors ${
+                      isDestaque
+                        ? 'bg-futvar-green text-futvar-darker hover:bg-futvar-green-light'
+                        : 'border border-futvar-green/60 text-futvar-green hover:bg-futvar-green/10'
+                    }`}
+                  >
+                    Patrocinar Time
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         )}
 
