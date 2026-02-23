@@ -41,6 +41,8 @@ export default function AdminPreEstreiaNovoPage() {
     clubBPrice: '',
     maxSimultaneousPerClub: '10',
     featured: false,
+    // mode: 'club' = clubes financiam, 'meta' = meta de assinantes por time
+    mode: 'club' as 'club' | 'meta',
     metaEnabled: false,
     metaExtraPerTeam: '10',
     homeTeamId: '' as string,
@@ -121,12 +123,12 @@ export default function AdminPreEstreiaNovoPage() {
           specialCategoryId: form.specialCategoryId || undefined,
           normalCategoryIds: form.normalCategoryIds,
           gradeCategoryId: form.gradeCategoryId.trim() || undefined,
-          clubAPrice: parseFloat(form.clubAPrice) || 0,
-          clubBPrice: parseFloat(form.clubBPrice) || 0,
+          clubAPrice: form.mode === 'club' ? (parseFloat(form.clubAPrice) || 0) : 0,
+          clubBPrice: form.mode === 'club' ? (parseFloat(form.clubBPrice) || 0) : 0,
           maxSimultaneousPerClub: parseInt(form.maxSimultaneousPerClub, 10) || 10,
           featured: form.featured,
-          metaEnabled: form.metaEnabled,
-          metaExtraPerTeam: form.metaEnabled ? parseInt(form.metaExtraPerTeam, 10) || 0 : 0,
+          metaEnabled: form.mode === 'meta',
+          metaExtraPerTeam: form.mode === 'meta' ? parseInt(form.metaExtraPerTeam, 10) || 0 : 0,
           homeTeamId: form.homeTeamId || null,
           awayTeamId: form.awayTeamId || null,
         }),
@@ -175,9 +177,13 @@ export default function AdminPreEstreiaNovoPage() {
                 className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
               >
                 <option value="">— Selecionar —</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>{t.shortName || t.name}</option>
-                ))}
+                {teams.map((t) => {
+                  const sigla = t.shortName || '';
+                  const label = sigla ? `${t.name} — ${sigla}` : t.name;
+                  return (
+                    <option key={t.id} value={t.id}>{label}</option>
+                  );
+                })}
               </select>
             </div>
             <div>
@@ -188,9 +194,13 @@ export default function AdminPreEstreiaNovoPage() {
                 className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
               >
                 <option value="">— Selecionar —</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>{t.shortName || t.name}</option>
-                ))}
+                {teams.map((t) => {
+                  const sigla = t.shortName || '';
+                  const label = sigla ? `${t.name} — ${sigla}` : t.name;
+                  return (
+                    <option key={t.id} value={t.id}>{label}</option>
+                  );
+                })}
               </select>
             </div>
           </div>
@@ -287,24 +297,37 @@ export default function AdminPreEstreiaNovoPage() {
           <p className="text-netflix-light text-xs mt-1">Ao publicar na grade, o jogo aparecerá nesta categoria para usuários comprarem.</p>
         </div>
         <div className="border border-white/10 rounded-lg p-4 space-y-3">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <label className="block text-sm font-medium text-white mb-1">Pré-estreia com meta de assinantes</label>
+              <label className="block text-sm font-medium text-white mb-1">Tipo de pré-estreia</label>
               <p className="text-xs text-netflix-light">
-                Quando ativado, o jogo só libera quando <span className="font-semibold">os dois times</span> atingirem a meta de novos assinantes. O conteúdo normal do portal libera na hora.
+                Escolha se o jogo será financiado diretamente pelos clubes (modelo atual) ou se terá meta de novos assinantes por time.
               </p>
             </div>
-            <label className="inline-flex items-center gap-2 text-sm text-white">
-              <input
-                type="checkbox"
-                checked={form.metaEnabled}
-                onChange={(e) => setForm((f) => ({ ...f, metaEnabled: e.target.checked }))}
-                className="w-4 h-4 rounded border-white/40 bg-netflix-dark"
-              />
-              <span>Ativar meta</span>
-            </label>
+            <div className="flex gap-3 text-sm text-white">
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="preSaleMode"
+                  checked={form.mode === 'club'}
+                  onChange={() => setForm((f) => ({ ...f, mode: 'club', metaEnabled: false }))}
+                  className="w-4 h-4 rounded border-white/40 bg-netflix-dark"
+                />
+                <span>Clubes financiam (slots)</span>
+              </label>
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="preSaleMode"
+                  checked={form.mode === 'meta'}
+                  onChange={() => setForm((f) => ({ ...f, mode: 'meta', metaEnabled: true }))}
+                  className="w-4 h-4 rounded border-white/40 bg-netflix-dark"
+                />
+                <span>Meta de assinantes</span>
+              </label>
+            </div>
           </div>
-          {form.metaEnabled && (
+          {form.mode === 'meta' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-white mb-1">Meta extra por time (novos assinantes)</label>
@@ -327,27 +350,33 @@ export default function AdminPreEstreiaNovoPage() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-white mb-2">Preço Clube A (R$) *</label>
+            <label className="block text-sm font-medium text-white mb-2">
+              Preço Clube A (R$){form.mode === 'club' ? ' *' : ''}
+            </label>
             <input
               type="number"
               step="0.01"
               min="0"
               value={form.clubAPrice}
               onChange={(e) => setForm((f) => ({ ...f, clubAPrice: e.target.value }))}
-              required
-              className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
+              required={form.mode === 'club'}
+              disabled={form.mode === 'meta'}
+              className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white disabled:opacity-60"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-white mb-2">Preço Clube B (R$) *</label>
+            <label className="block text-sm font-medium text-white mb-2">
+              Preço Clube B (R$){form.mode === 'club' ? ' *' : ''}
+            </label>
             <input
               type="number"
               step="0.01"
               min="0"
               value={form.clubBPrice}
               onChange={(e) => setForm((f) => ({ ...f, clubBPrice: e.target.value }))}
-              required
-              className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
+              required={form.mode === 'club'}
+              disabled={form.mode === 'meta'}
+              className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white disabled:opacity-60"
             />
           </div>
         </div>
