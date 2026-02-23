@@ -86,7 +86,8 @@ export function StreamCustomPlayer({ hlsUrl, title, initialTimeSeconds = 0, game
         if (!gid) return;
         const pos = Math.floor(Number(player.currentTime()) || 0);
         const dur = player.duration();
-        const durationSeconds = Number.isFinite(dur) && dur > 0 ? Math.floor(dur) : undefined;
+        const durationSeconds =
+          typeof dur === 'number' && Number.isFinite(dur) && dur > 0 ? Math.floor(dur) : undefined;
         fetch('/api/me/watch-progress', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
