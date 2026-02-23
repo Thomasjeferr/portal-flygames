@@ -344,6 +344,7 @@ model PreSaleGame {
   thumbnailUrl          String    @map("thumbnail_url")
   videoUrl              String?   @map("video_url")
   status                String    @default("PRE_SALE") @map("status") // PRE_SALE | FUNDED | PUBLISHED
+  // Modelo atual: clubes financiam slots
   specialCategoryId     String    @map("special_category_id")
   gradeCategoryId       String?   @map("grade_category_id")  // categoria da grade convencional (quando publicado)
   featured              Boolean   @default(false) @map("featured")
@@ -351,6 +352,13 @@ model PreSaleGame {
   clubAPrice            Float     @map("club_a_price")
   clubBPrice            Float     @map("club_b_price")
   fundedClubsCount      Int       @default(0) @map("funded_clubs_count")
+  // Novo modo: pré-estreia com meta de assinantes por time
+  metaEnabled           Boolean   @default(false) @map("meta_enabled")
+  metaExtraPerTeam      Int?      @map("meta_extra_per_team")     // quantos novos assinantes além do baseline cada time precisa
+  baselineHomeSubs      Int?      @map("baseline_home_subs")      // assinantes ativos do mandante no momento da criação
+  baselineAwaySubs      Int?      @map("baseline_away_subs")      // assinantes ativos do visitante no momento da criação
+  metaHomeTotal         Int?      @map("meta_home_total")         // baselineHomeSubs + metaExtraPerTeam
+  metaAwayTotal         Int?      @map("meta_away_total")         // baselineAwaySubs + metaExtraPerTeam
   slug                  String    @unique @map("slug")
   homeTeamId            String?   @map("home_team_id")
   awayTeamId            String?   @map("away_team_id")

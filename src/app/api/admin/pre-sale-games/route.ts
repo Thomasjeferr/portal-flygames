@@ -48,6 +48,35 @@ export async function POST(request: NextRequest) {
 
     const normalCatIds = Array.isArray(data.normalCategoryIds) ? data.normalCategoryIds.filter(Boolean) : [];
     const gradeCategoryId = data.gradeCategoryId?.trim() || null;
+
+    // Se pré-estreia com meta estiver ativada e os dois times definidos, calcula baseline de assinantes e metas.
+    let baselineHomeSubs: number | null = null;
+    let baselineAwaySubs: number | null = null;
+    let metaHomeTotal: number | null = null;
+    let metaAwayTotal: number | null = null;
+    const metaExtra = data.metaEnabled ? data.metaExtraPerTeam ?? 0 : 0;
+
+    if (data.metaEnabled && metaExtra > 0 && data.homeTeamId && data.awayTeamId) {
+      const [homeCount, awayCount] = await Promise.all([
+        prisma.subscription.count({
+          where: {
+            active: true,
+            user: { favoriteTeamId: data.homeTeamId },
+          },
+        }),
+        prisma.subscription.count({
+          where: {
+            active: true,
+            user: { favoriteTeamId: data.awayTeamId },
+          },
+        }),
+      ]);
+      baselineHomeSubs = homeCount;
+      baselineAwaySubs = awayCount;
+      metaHomeTotal = homeCount + metaExtra;
+      metaAwayTotal = awayCount + metaExtra;
+    }
+
     const game = await prisma.preSaleGame.create({
       data: {
         title: data.title,
@@ -63,6 +92,12 @@ export async function POST(request: NextRequest) {
         slug,
         homeTeamId: data.homeTeamId?.trim() || null,
         awayTeamId: data.awayTeamId?.trim() || null,
+        metaEnabled: data.metaEnabled ?? false,
+        metaExtraPerTeam: data.metaEnabled ? metaExtra : null,
+        baselineHomeSubs,
+        baselineAwaySubs,
+        metaHomeTotal,
+        metaAwayTotal,
         normalCategories: normalCatIds.length > 0
           ? { create: normalCatIds.map((categoryId: string) => ({ categoryId })) }
           : undefined,

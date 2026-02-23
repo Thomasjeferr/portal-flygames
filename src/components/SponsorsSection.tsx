@@ -1,6 +1,11 @@
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { getPublicSponsors } from '@/services/sponsorsService';
-import { SponsorsCarousel } from '@/components/SponsorsCarousel';
+
+const SponsorsCarousel = dynamic(
+  () => import('@/components/SponsorsCarousel').then((m) => m.SponsorsCarousel),
+  { ssr: false }
+);
 
 const TIER_ORDER = ['MASTER', 'OFICIAL', 'APOIO'] as const;
 const TIER_LABEL: Record<string, string> = {
@@ -27,7 +32,7 @@ export async function SponsorsSection() {
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8 animate-fade-in-up opacity-0 [animation-delay:0.3s]">
           <div className="flex items-center gap-3">
             <span className="w-1 h-8 rounded-full bg-futvar-gold" />
-            <h2 className="text-2xl lg:text-3xl font-bold text-white">Quem nos patrocina</h2>
+            <h2 className="text-2xl lg:text-3xl font-bold text-white uppercase tracking-wide">Patrocinadores</h2>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
@@ -53,6 +58,8 @@ export async function SponsorsSection() {
               name: s.name,
               logoUrl: s.logoUrl,
               websiteUrl: s.websiteUrl,
+              whatsapp: s.whatsapp ?? null,
+              instagram: s.instagram ?? null,
             }));
             return (
               <div key={tier}>

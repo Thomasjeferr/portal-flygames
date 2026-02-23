@@ -76,7 +76,7 @@ export function AdminSidebar() {
         {open ? '✕' : '☰'}
       </button>
       <aside
-        className={`fixed left-0 top-0 bottom-0 w-64 bg-netflix-dark border-r border-white/10 flex flex-col z-40 transition-transform duration-200 ease-out lg:translate-x-0 ${
+        className={`fixed left-0 top-0 bottom-0 w-64 bg-netflix-dark border-r border-white/10 flex flex-col z-40 overflow-y-auto transition-transform duration-200 ease-out lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

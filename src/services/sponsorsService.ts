@@ -7,6 +7,19 @@ export async function getPublicSponsors() {
   const now = new Date();
   const all = await prisma.sponsor.findMany({
     where: { isActive: true },
+    select: {
+      id: true,
+      name: true,
+      logoUrl: true,
+      websiteUrl: true,
+      whatsapp: true,
+      instagram: true,
+      tier: true,
+      priority: true,
+      startAt: true,
+      endAt: true,
+      isActive: true,
+    },
   });
 
   const filtered = all.filter((s) => {

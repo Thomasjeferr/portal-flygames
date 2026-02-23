@@ -14,6 +14,9 @@ export const createPreSaleGameSchema = z.object({
   featured: z.boolean().optional().default(false),
   homeTeamId: z.string().optional().nullable(),
   awayTeamId: z.string().optional().nullable(),
+  // Novo modo: pré-estreia com meta de assinantes
+  metaEnabled: z.boolean().optional().default(false),
+  metaExtraPerTeam: z.number().int().min(1, 'Meta extra deve ser >= 1').optional().default(0),
 });
 
 export const updatePreSaleGameSchema = createPreSaleGameSchema.partial().extend({

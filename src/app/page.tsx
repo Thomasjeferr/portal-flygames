@@ -29,6 +29,19 @@ type LiveReplayCard = {
   endedAt: string;
 };
 
+type PreSaleMetaCard = {
+  id: string;
+  title: string;
+  thumbnailUrl: string | null;
+  createdAt: string;
+  homeTeamName: string | null;
+  awayTeamName: string | null;
+  homeCurrent: number | null;
+  homeTarget: number | null;
+  awayCurrent: number | null;
+  awayTarget: number | null;
+};
+
 async function getPreSaleForClubs() {
   try {
     return prisma.preSaleGame.findMany({
@@ -36,6 +49,66 @@ async function getPreSaleForClubs() {
       orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
       select: { id: true, title: true, slug: true, thumbnailUrl: true, fundedClubsCount: true, createdAt: true },
     });
+  } catch {
+    return [];
+  }
+}
+
+async function getPreSaleWithMeta(): Promise<PreSaleMetaCard[]> {
+  try {
+    const games = await prisma.preSaleGame.findMany({
+      where: {
+        status: { in: ['PRE_SALE', 'FUNDED'] },
+      },
+      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+      take: 6,
+    }) as Array<
+      typeof prisma.preSaleGame extends { findMany: (...args: any) => Promise<(infer T)[]> }
+        ? T & {
+            metaEnabled?: boolean;
+            metaExtraPerTeam?: number | null;
+            metaHomeTotal?: number | null;
+            metaAwayTotal?: number | null;
+          }
+        : any
+    >;
+
+    const cards: PreSaleMetaCard[] = [];
+    for (const g of games) {
+      if (!g.homeTeamId || !g.awayTeamId || !g.metaEnabled || !g.metaExtraPerTeam) continue;
+
+      const [homeCount, awayCount] = await Promise.all([
+        prisma.subscription.count({
+          where: { active: true, user: { favoriteTeamId: g.homeTeamId } },
+        }),
+        prisma.subscription.count({
+          where: { active: true, user: { favoriteTeamId: g.awayTeamId } },
+        }),
+      ]);
+
+      const [homeTeam, awayTeam] = await Promise.all([
+        prisma.team.findUnique({ where: { id: g.homeTeamId }, select: { name: true, shortName: true } }),
+        prisma.team.findUnique({ where: { id: g.awayTeamId }, select: { name: true, shortName: true } }),
+      ]);
+
+      const homeTarget = (g.metaHomeTotal ?? null) ?? (homeCount + (g.metaExtraPerTeam ?? 0));
+      const awayTarget = (g.metaAwayTotal ?? null) ?? (awayCount + (g.metaExtraPerTeam ?? 0));
+
+      cards.push({
+        id: g.id,
+        title: g.title,
+        thumbnailUrl: g.thumbnailUrl,
+        createdAt: g.createdAt.toISOString(),
+        homeTeamName: homeTeam?.shortName || homeTeam?.name || null,
+        awayTeamName: awayTeam?.shortName || awayTeam?.name || null,
+        homeCurrent: homeCount,
+        homeTarget,
+        awayCurrent: awayCount,
+        awayTarget,
+      });
+    }
+
+    return cards;
   } catch {
     return [];
   }
@@ -158,9 +231,10 @@ function groupByCategory(games: GameWithCategory[]): { name: string; id: string;
 }
 
 export default async function HomePage() {
-  const [games, preSaleForClubs, liveReplays] = await Promise.all([
+  const [games, preSaleForClubs, preSaleWithMeta, liveReplays] = await Promise.all([
     getGames(),
     getPreSaleForClubs(),
+    getPreSaleWithMeta(),
     getLiveReplays(),
   ]);
   const featured = games.filter((g) => g.featured);
@@ -173,6 +247,99 @@ export default async function HomePage() {
       {/* Conteúdo */}
       <section id="jogos" className="py-12 lg:py-16 px-4 lg:px-12">
         <div className="max-w-[1920px] mx-auto">
+          {preSaleWithMeta.length > 0 && (
+            <div id="pre-estreias-meta" className="mb-14">
+              <div className="flex items-center gap-3 mb-4 animate-fade-in-up opacity-0 [animation-delay:0.08s]">
+                <span className="w-1 h-8 rounded-full bg-futvar-green" />
+                <h2 className="text-2xl lg:text-3xl font-bold text-white">
+                  Pré-estreias com Meta
+                </h2>
+              </div>
+              <p className="text-futvar-light mb-6 max-w-2xl">
+                Quando as torcidas batem a meta de novos assinantes, o jogo de pré-estreia libera para todo mundo. Ao assinar, você já libera todo o conteúdo normal do portal na hora.
+              </p>
+              <div className="space-y-4">
+                {preSaleWithMeta.map((g, idx) => {
+                  const homePct = g.homeCurrent != null && g.homeTarget ? Math.min(100, Math.round((g.homeCurrent / g.homeTarget) * 100)) : 0;
+                  const awayPct = g.awayCurrent != null && g.awayTarget ? Math.min(100, Math.round((g.awayCurrent / g.awayTarget) * 100)) : 0;
+                  return (
+                    <div
+                      key={g.id}
+                      className="bg-futvar-dark/80 border border-white/10 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row gap-4 lg:gap-6 animate-fade-in-up opacity-0"
+                      style={{ animationDelay: `${0.1 + idx * 0.04}s` }}
+                    >
+                      <div className="w-full lg:w-64 flex-shrink-0">
+                        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black/40 border border-white/10 flex items-center justify-center">
+                          {g.thumbnailUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={g.thumbnailUrl} alt={g.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="text-futvar-light text-xs">Pré-estreia</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1 flex flex-col gap-3">
+                        <div>
+                          <h3 className="text-lg sm:text-xl font-bold text-white">
+                            {g.title}
+                            {g.homeTeamName && g.awayTeamName && (
+                              <span className="block text-sm text-futvar-light font-normal">
+                                {g.homeTeamName} x {g.awayTeamName}
+                              </span>
+                            )}
+                          </h3>
+                          <p className="text-xs text-futvar-light mt-1">
+                            Criado em {new Date(g.createdAt).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                        <div className="space-y-2 mt-1">
+                          <div>
+                            <div className="flex justify-between text-xs text-futvar-light mb-1">
+                              <span>Time mandante</span>
+                              {g.homeCurrent != null && g.homeTarget != null && (
+                                <span>{g.homeCurrent} / {g.homeTarget}</span>
+                              )}
+                            </div>
+                            <div className="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
+                              <div
+                                className="h-2.5 rounded-full bg-futvar-green transition-all"
+                                style={{ width: `${homePct}%` }}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-xs text-futvar-light mb-1">
+                              <span>Time visitante</span>
+                              {g.awayCurrent != null && g.awayTarget != null && (
+                                <span>{g.awayCurrent} / {g.awayTarget}</span>
+                              )}
+                            </div>
+                            <div className="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
+                              <div
+                                className="h-2.5 rounded-full bg-futvar-green/70 transition-all"
+                                style={{ width: `${awayPct}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+                          <p className="text-xs text-futvar-light max-w-md">
+                            Ao assinar, você apoia o seu time, libera todo o conteúdo normal do portal e ajuda a bater a meta para liberar este jogo.
+                          </p>
+                          <Link
+                            href="/planos"
+                            className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-bold text-sm hover:bg-futvar-green-light transition-colors"
+                          >
+                            Assinar pelo seu time
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {preSaleForClubs.length > 0 && (
             <div id="pre-estreia" className="mb-14">
               <div className="flex items-center gap-3 mb-6 animate-fade-in-up opacity-0 [animation-delay:0.1s]">
