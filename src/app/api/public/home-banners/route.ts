@@ -16,7 +16,7 @@ export async function GET() {
           banners: [],
           fallback: {
             badgeText: 'FILMAGEM COM DRONES',
-            headline: 'Futebol de várzea',
+            headline: 'Futebol Amador',
             subheadline: 'visão aérea',
             description: 'Assista às melhores partidas filmadas com drones.',
             primaryCta: { text: 'Começar a assistir', url: '/cadastro' },

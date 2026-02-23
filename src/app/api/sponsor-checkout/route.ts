@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
         email: d.email.trim().toLowerCase(),
         websiteUrl: d.websiteUrl?.trim() || null,
         whatsapp: d.whatsapp?.replace(/\D/g, '') || null,
+        instagram: d.instagram?.trim() || null,
         logoUrl: d.logoUrl.trim(),
         amountCents,
         amountToTeamCents,

@@ -6,6 +6,7 @@ export const sponsorOrderCheckoutSchema = z.object({
   email: z.string().email('E-mail inválido'),
   websiteUrl: z.union([z.string().url(), z.literal('')]).optional().default(''),
   whatsapp: z.string().optional(),
+  instagram: z.string().optional(),
   logoUrl: z.string().min(1, 'Logo é obrigatória'),
   teamId: z.string().nullable().optional(),
   utmSource: z.string().optional(),

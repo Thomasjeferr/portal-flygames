@@ -5,6 +5,8 @@ export const SPONSOR_TIERS = ['MASTER', 'OFICIAL', 'APOIO'] as const;
 const baseSponsorSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   website_url: z.union([z.string().url(), z.literal('')]).optional().default(''),
+  whatsapp: z.string().optional(),
+  instagram: z.string().optional(),
   logo_url: z.string().min(1, 'Logo é obrigatório'),
   tier: z.enum(SPONSOR_TIERS).default('APOIO'),
   priority: z.number().int().min(0, 'Prioridade deve ser >= 0').default(0),

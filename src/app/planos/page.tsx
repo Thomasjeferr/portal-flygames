@@ -15,6 +15,7 @@ interface Plan {
   duracaoDias: number | null;
   renovacaoAuto: boolean;
   maxConcurrentStreams?: number | null;
+  teamPayoutPercent?: number | null;
 }
 
 const typeLabel: Record<string, string> = {
@@ -67,7 +68,7 @@ export default function PlanosPage() {
             Escolha como assistir aos seus jogos
           </h1>
           <p className="text-futvar-light text-lg max-w-2xl mx-auto">
-            Veja o futebol de várzea com filmagem em drone, replays e acesso fácil pelo celular, TV ou computador.
+            Veja o futebol amador com filmagem em drone, replays e acesso fácil pelo celular, TV ou computador.
           </p>
         </div>
 
@@ -110,6 +111,11 @@ export default function PlanosPage() {
                   {plan.periodicity === 'mensal' && <span className="text-sm font-normal text-futvar-light">/mês</span>}
                   {plan.periodicity === 'anual' && <span className="text-sm font-normal text-futvar-light">/ano</span>}
                 </p>
+                {(plan.teamPayoutPercent ?? 0) > 0 && (
+                  <p className="text-futvar-green/90 text-sm font-medium mb-2">
+                    {(plan.teamPayoutPercent ?? 0)}% do valor repassado ao clube
+                  </p>
+                )}
                 <p className="text-xs text-futvar-light mb-4">
                   {plan.type === 'unitario'
                     ? 'Ideal para testar o portal em um jogo específico.'

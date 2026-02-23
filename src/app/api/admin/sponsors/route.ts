@@ -8,6 +8,8 @@ function toBody(data: Record<string, unknown>) {
   return {
     name: data.name,
     website_url: data.website_url ?? '',
+    whatsapp: data.whatsapp ?? '',
+    instagram: data.instagram ?? '',
     logo_url: data.logo_url,
     tier: data.tier ?? 'APOIO',
     priority: typeof data.priority === 'number' ? data.priority : Number(data.priority) || 0,
@@ -44,6 +46,8 @@ export async function POST(request: NextRequest) {
       data: {
         name: d.name,
         websiteUrl: d.website_url?.trim() || null,
+        whatsapp: d.whatsapp?.trim() ? d.whatsapp.replace(/\D/g, '') : null,
+        instagram: d.instagram?.trim() || null,
         logoUrl: d.logo_url,
         tier: d.tier,
         priority: d.priority,

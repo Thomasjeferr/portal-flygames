@@ -25,7 +25,7 @@ type Plan = {
   benefits?: string[];
 };
 
-type Team = { id: string; name: string; city?: string | null; state?: string | null };
+type Team = { id: string; name: string; city?: string | null; state?: string | null; crestUrl?: string | null };
 
 function PatrocinarComprarContent() {
   const searchParams = useSearchParams();
@@ -45,6 +45,7 @@ function PatrocinarComprarContent() {
     email: '',
     websiteUrl: '',
     whatsapp: '',
+    instagram: '',
     teamId: '',
     logoUrl: '',
   });
@@ -124,6 +125,7 @@ function PatrocinarComprarContent() {
           email: form.email.trim(),
           websiteUrl: form.websiteUrl.trim() || undefined,
           whatsapp: form.whatsapp.trim() || undefined,
+          instagram: form.instagram.trim() || undefined,
           logoUrl: form.logoUrl.trim(),
           teamId: form.teamId || null,
           utmSource: searchParams.get('utm_source') || undefined,
@@ -241,20 +243,50 @@ function PatrocinarComprarContent() {
               />
             </div>
             <div>
+              <label className="block text-sm font-medium text-futvar-light mb-1">Instagram (opcional)</label>
+              <input
+                type="text"
+                value={form.instagram}
+                onChange={(e) => setForm((f) => ({ ...f, instagram: e.target.value }))}
+                className="w-full px-4 py-3 rounded bg-futvar-dark border border-white/20 text-white placeholder-futvar-light focus:outline-none focus:ring-2 focus:ring-futvar-green"
+                placeholder="@suaempresa ou instagram.com/suaempresa"
+              />
+            </div>
+            <div>
               <label className="block text-sm font-medium text-futvar-light mb-1">Time (opcional)</label>
-              <select
-                value={form.teamId}
-                onChange={(e) => setForm((f) => ({ ...f, teamId: e.target.value }))}
-                className="w-full px-4 py-3 rounded bg-futvar-dark border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-futvar-green"
-              >
-                <option value="">Nenhum</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                    {t.city || t.state ? ` — ${[t.city, t.state].filter(Boolean).join('/')}` : ''}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-3">
+                {form.teamId && (() => {
+                  const selected = teams.find((t) => t.id === form.teamId);
+                  const crest = selected?.crestUrl;
+                  const initial = selected?.name?.trim().charAt(0)?.toUpperCase() ?? '?';
+                  return (
+                    <div className="h-10 w-10 shrink-0 rounded-full bg-futvar-dark border border-white/20 flex items-center justify-center overflow-hidden">
+                      {crest ? (
+                        <img
+                          src={crest.startsWith('http') ? crest : crest}
+                          alt=""
+                          className="h-full w-full object-contain"
+                        />
+                      ) : (
+                        <span className="text-sm font-bold text-futvar-green">{initial}</span>
+                      )}
+                    </div>
+                  );
+                })()}
+                <select
+                  value={form.teamId}
+                  onChange={(e) => setForm((f) => ({ ...f, teamId: e.target.value }))}
+                  className="flex-1 min-w-0 px-4 py-3 rounded bg-futvar-dark border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-futvar-green"
+                >
+                  <option value="">Nenhum</option>
+                  {teams.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                      {t.city || t.state ? ` — ${[t.city, t.state].filter(Boolean).join('/')}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <p className="mt-1 text-xs text-futvar-light">Parte do valor pode ser repassada ao time.</p>
             </div>
             <div>

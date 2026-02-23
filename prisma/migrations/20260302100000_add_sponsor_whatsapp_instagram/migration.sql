@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Sponsor" ADD COLUMN IF NOT EXISTS "whatsapp" TEXT;
+ALTER TABLE "Sponsor" ADD COLUMN IF NOT EXISTS "instagram" TEXT;

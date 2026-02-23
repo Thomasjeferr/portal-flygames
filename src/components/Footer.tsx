@@ -33,7 +33,7 @@ export async function Footer() {
           <div>
             <h3 className="text-lg font-bold text-futvar-green mb-3">FLY GAMES</h3>
             <p className="text-sm text-futvar-light/90 mb-4 max-w-xs">
-              Jogos de várzea com visão aérea. Filmamos suas partidas com drones para você assistir de ângulos
+              Jogos de futebol amador com visão aérea. Filmamos suas partidas com drones para você assistir de ângulos
               incríveis.
             </p>
             <div className="space-y-2 text-sm text-futvar-light">

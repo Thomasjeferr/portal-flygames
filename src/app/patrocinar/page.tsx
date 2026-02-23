@@ -116,7 +116,7 @@ export default async function PatrocinarPage() {
                       /{BILLING_LABEL[plan.billingPeriod] ?? plan.billingPeriod}
                     </span>
                   </p>
-                  {isDestaque && teamPercent > 0 && (
+                  {teamPercent > 0 && (
                     <p className="text-futvar-green/90 text-sm font-medium mb-3">
                       {teamPercent}% do valor repassado ao clube
                     </p>

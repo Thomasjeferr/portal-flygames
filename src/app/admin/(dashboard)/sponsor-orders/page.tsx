@@ -7,6 +7,10 @@ interface SponsorOrder {
   id: string;
   companyName: string;
   email: string;
+  websiteUrl: string | null;
+  whatsapp: string | null;
+  instagram: string | null;
+  logoUrl: string;
   amountCents: number;
   createdAt: string;
   paymentStatus: string;
@@ -96,6 +100,7 @@ export default function AdminSponsorOrdersPage() {
                 <th className="px-4 py-2 text-left">Plano</th>
                 <th className="px-4 py-2 text-left">Valor</th>
                 <th className="px-4 py-2 text-left">Data</th>
+                <th className="px-4 py-2 text-left">Instagram / Site / WhatsApp</th>
                 <th className="px-4 py-2 text-left">Time</th>
                 <th className="px-4 py-2 text-left">Ação</th>
               </tr>
@@ -121,6 +126,26 @@ export default function AdminSponsorOrdersPage() {
                       month: 'short',
                       year: 'numeric',
                     })}
+                  </td>
+                  <td className="px-4 py-2 text-netflix-light text-xs max-w-[180px]">
+                    <div className="flex flex-col gap-0.5">
+                      {o.instagram && (
+                        <span title={o.instagram}>
+                          IG: {o.instagram.length > 25 ? o.instagram.slice(0, 22) + '…' : o.instagram}
+                        </span>
+                      )}
+                      {o.websiteUrl && (
+                        <a href={o.websiteUrl.startsWith('http') ? o.websiteUrl : `https://${o.websiteUrl}`} target="_blank" rel="noopener noreferrer" className="text-netflix-red hover:underline truncate block">
+                          Site
+                        </a>
+                      )}
+                      {o.whatsapp && (
+                        <a href={`https://wa.me/55${o.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-400 hover:underline">
+                          WA
+                        </a>
+                      )}
+                      {!o.instagram && !o.websiteUrl && !o.whatsapp && '—'}
+                    </div>
                   </td>
                   <td className="px-4 py-2 text-netflix-light">
                     {o.team?.name ?? '—'}

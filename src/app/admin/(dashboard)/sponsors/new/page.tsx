@@ -20,6 +20,8 @@ export default function NewSponsorPage() {
   const [form, setForm] = useState({
     name: '',
     website_url: '',
+    whatsapp: '',
+    instagram: '',
     logo_url: '',
     tier: 'APOIO',
     priority: 0,
@@ -79,6 +81,8 @@ export default function NewSponsorPage() {
         body: JSON.stringify({
           name: form.name,
           website_url: form.website_url.trim() || null,
+          whatsapp: form.whatsapp.trim() || null,
+          instagram: form.instagram.trim() || null,
           logo_url: form.logo_url,
           tier: form.tier,
           priority: Number(form.priority) || 0,
@@ -135,6 +139,26 @@ export default function NewSponsorPage() {
             value={form.website_url}
             onChange={(e) => setForm((f) => ({ ...f, website_url: e.target.value }))}
             placeholder="https://exemplo.com"
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">WhatsApp</label>
+          <input
+            type="text"
+            value={form.whatsapp}
+            onChange={(e) => setForm((f) => ({ ...f, whatsapp: e.target.value.replace(/\D/g, '') }))}
+            placeholder="11999999999"
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">Instagram</label>
+          <input
+            type="text"
+            value={form.instagram}
+            onChange={(e) => setForm((f) => ({ ...f, instagram: e.target.value }))}
+            placeholder="@empresa ou instagram.com/empresa"
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
         </div>

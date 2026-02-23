@@ -220,7 +220,7 @@ export default function CadastrarTimePage() {
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               required
               className="w-full px-4 py-3 rounded bg-futvar-darker border border-white/20 text-white placeholder-futvar-light focus:outline-none focus:ring-2 focus:ring-futvar-green"
-              placeholder="Ex: Esporte Clube Várzea"
+              placeholder="Ex: Esporte Clube Amador"
             />
           </div>
 

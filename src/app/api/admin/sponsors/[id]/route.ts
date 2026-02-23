@@ -8,6 +8,8 @@ function toBody(data: Record<string, unknown>) {
   const out: Record<string, unknown> = {};
   if (data.name !== undefined) out.name = data.name;
   if (data.website_url !== undefined) out.website_url = data.website_url ?? '';
+  if (data.whatsapp !== undefined) out.whatsapp = data.whatsapp ?? '';
+  if (data.instagram !== undefined) out.instagram = data.instagram ?? '';
   if (data.logo_url !== undefined) out.logo_url = data.logo_url;
   if (data.tier !== undefined) out.tier = data.tier;
   if (data.priority !== undefined) out.priority = typeof data.priority === 'number' ? data.priority : Number(data.priority) ?? 0;
@@ -50,6 +52,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       data: {
         ...(d.name !== undefined && { name: d.name }),
         ...(d.website_url !== undefined && { websiteUrl: d.website_url?.trim() || null }),
+        ...(d.whatsapp !== undefined && { whatsapp: d.whatsapp?.trim() ? d.whatsapp.replace(/\D/g, '') : null }),
+        ...(d.instagram !== undefined && { instagram: d.instagram?.trim() || null }),
         ...(d.logo_url !== undefined && { logoUrl: d.logo_url }),
         ...(d.tier !== undefined && { tier: d.tier }),
         ...(d.priority !== undefined && { priority: d.priority }),

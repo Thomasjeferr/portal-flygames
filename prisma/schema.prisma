@@ -459,6 +459,7 @@ model SponsorOrder {
   email            String    @map("email")
   websiteUrl       String?   @map("website_url")
   whatsapp         String?   @map("whatsapp")
+  instagram        String?   @map("instagram")
   logoUrl          String    @map("logo_url")
   amountCents      Int       @map("amount_cents")
   amountToTeamCents Int      @default(0) @map("amount_to_team_cents")
@@ -502,6 +503,8 @@ model Sponsor {
   id         String       @id @default(cuid())
   name       String       @map("name")
   websiteUrl String?      @map("website_url")
+  whatsapp   String?      @map("whatsapp")
+  instagram  String?      @map("instagram")
   logoUrl    String       @map("logo_url")
   tier       String       @default("APOIO") @map("tier") // MASTER | OFICIAL | APOIO
   priority   Int          @default(0) @map("priority")
