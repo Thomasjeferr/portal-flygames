@@ -2,11 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
+import { checkTrackPlayRateLimit, incrementTrackPlayRateLimit } from '@/lib/email/rateLimit';
 
 const bodySchema = z.object({ gameId: z.string().min(1, 'gameId obrigatório') });
 
+function getClientIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '0.0.0.0';
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const allowed = await checkTrackPlayRateLimit(ip);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Muitas requisições. Aguarde um momento.' }, { status: 429 });
+    }
+
     const body = await request.json();
     const parsed = bodySchema.safeParse(body);
     if (!parsed.success) {
@@ -16,6 +27,8 @@ export async function POST(request: NextRequest) {
 
     const game = await prisma.game.findUnique({ where: { id: gameId } });
     if (!game) return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
+
+    await incrementTrackPlayRateLimit(ip);
 
     const session = await getSession();
     await prisma.playEvent.create({

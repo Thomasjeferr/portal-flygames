@@ -37,14 +37,22 @@ export async function POST(request: NextRequest) {
     const { email: rawEmail, password } = parsed.data;
     const email = rawEmail.toLowerCase();
 
+    const isProduction = process.env.NODE_ENV === 'production';
     const adminEnvEmail = (process.env.ADMIN_EMAIL || 'admin@flygames.app').toLowerCase();
-    const adminEnvPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
+    const adminEnvPassword = process.env.ADMIN_PASSWORD;
+
+    // Em produção, não usar senha padrão: exige ADMIN_PASSWORD definido para login admin
+    if (isProduction && email === adminEnvEmail && !adminEnvPassword) {
+      return NextResponse.json({ error: 'E-mail ou senha incorretos' }, { status: 401 });
+    }
+
+    const adminPasswordToUse = adminEnvPassword || 'Admin@123';
 
     let user = await prisma.user.findUnique({ where: { email } });
 
-    // Auto-cria/atualiza admin no primeiro login se bater com ADMIN_EMAIL/ADMIN_PASSWORD
-    if (!user && email === adminEnvEmail && password === adminEnvPassword) {
-      const adminHash = await bcrypt.hash(adminEnvPassword, 12);
+    // Auto-cria/atualiza admin no primeiro login se bater com ADMIN_EMAIL/ADMIN_PASSWORD (em prod exige env)
+    if (!user && email === adminEnvEmail && password === adminPasswordToUse) {
+      const adminHash = await bcrypt.hash(adminPasswordToUse, 12);
       user = await prisma.user.upsert({
         where: { email },
         update: { role: 'admin', passwordHash: adminHash, name: 'Administrador' },

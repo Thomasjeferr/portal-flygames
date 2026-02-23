@@ -190,8 +190,11 @@ export default function NewPlanPage() {
               onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
               className="rounded border-white/30 text-netflix-red focus:ring-netflix-red"
             />
-            <span className="text-sm text-netflix-light">Plano ativo</span>
+            <span className="text-sm text-netflix-light">Plano ativo (exibir na página Planos para clientes)</span>
           </label>
+          {form.type === 'unitario' && !form.active && (
+            <p className="text-amber-300 text-sm w-full">Marque &quot;Plano ativo&quot; para que o jogo avulso apareça na página de planos.</p>
+          )}
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"

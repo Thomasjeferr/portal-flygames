@@ -37,7 +37,7 @@ export default function PlanosPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/plans').then((r) => r.json()),
+      fetch('/api/plans', { cache: 'no-store' }).then((r) => r.json()),
       fetch('/api/auth/me', { credentials: 'include' }).then((r) => r.json()),
     ])
       .then(([plansData, authData]) => {

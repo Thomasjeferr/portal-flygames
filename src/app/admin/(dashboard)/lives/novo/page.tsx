@@ -225,7 +225,7 @@ export default function NewLivePage() {
               >
                 <option value="">— Selecionar —</option>
                 {teams.map((t) => (
-                  <option key={t.id} value={t.id}>{t.shortName || t.name}</option>
+                  <option key={t.id} value={t.id}>{t.name}{t.shortName ? ` (${t.shortName})` : ''}</option>
                 ))}
               </select>
             </div>
@@ -238,7 +238,7 @@ export default function NewLivePage() {
               >
                 <option value="">— Selecionar —</option>
                 {teams.map((t) => (
-                  <option key={t.id} value={t.id}>{t.shortName || t.name}</option>
+                  <option key={t.id} value={t.id}>{t.name}{t.shortName ? ` (${t.shortName})` : ''}</option>
                 ))}
               </select>
             </div>

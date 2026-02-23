@@ -24,6 +24,14 @@ const VERIFY_EMAIL_WINDOW_MS = 15 * 60 * 1000; // 15 min
 const RESET_PASSWORD_LIMIT = 10;
 const RESET_PASSWORD_WINDOW_MS = 60 * 60 * 1000; // 1 hora
 
+// Checkout de patrocínio (evita spam de pedidos)
+const SPONSOR_CHECKOUT_LIMIT = 15;
+const SPONSOR_CHECKOUT_WINDOW_MS = 60 * 60 * 1000; // 1 hora
+
+// Track-play (evita inflar analytics)
+const TRACK_PLAY_LIMIT = 120;
+const TRACK_PLAY_WINDOW_MS = 60 * 1000; // 1 minuto
+
 async function checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
   const now = new Date();
   const windowStart = new Date(now.getTime() - windowMs);
@@ -172,4 +180,20 @@ export async function checkResetPasswordRateLimit(ip: string): Promise<boolean> 
 
 export async function incrementResetPasswordRateLimit(ip: string): Promise<void> {
   return incrementRateLimit(`reset_password:ip:${ip}`, RESET_PASSWORD_LIMIT, RESET_PASSWORD_WINDOW_MS);
+}
+
+export async function checkSponsorCheckoutRateLimit(ip: string): Promise<boolean> {
+  return checkRateLimit(`sponsor_checkout:ip:${ip}`, SPONSOR_CHECKOUT_LIMIT, SPONSOR_CHECKOUT_WINDOW_MS);
+}
+
+export async function incrementSponsorCheckoutRateLimit(ip: string): Promise<void> {
+  return incrementRateLimit(`sponsor_checkout:ip:${ip}`, SPONSOR_CHECKOUT_LIMIT, SPONSOR_CHECKOUT_WINDOW_MS);
+}
+
+export async function checkTrackPlayRateLimit(ip: string): Promise<boolean> {
+  return checkRateLimit(`track_play:ip:${ip}`, TRACK_PLAY_LIMIT, TRACK_PLAY_WINDOW_MS);
+}
+
+export async function incrementTrackPlayRateLimit(ip: string): Promise<void> {
+  return incrementRateLimit(`track_play:ip:${ip}`, TRACK_PLAY_LIMIT, TRACK_PLAY_WINDOW_MS);
 }

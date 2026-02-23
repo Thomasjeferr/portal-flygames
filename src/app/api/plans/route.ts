@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
-/** Lista planos ativos para exibição pública (escolha de plano, checkout). */
+/** Lista todos os planos ativos (unitário e recorrente) para exibição pública em /planos e checkout. */
 export async function GET() {
   const plans = await prisma.plan.findMany({
     where: { active: true },

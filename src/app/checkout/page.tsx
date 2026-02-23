@@ -238,18 +238,41 @@ function CheckoutContent() {
 
           {plan.type === 'unitario' && (
             <div>
-              <label className="block text-sm font-medium text-futvar-light mb-2">Selecione o jogo</label>
-              <select
-                value={selectedGameId ?? ''}
-                onChange={(e) => setSelectedGameId(e.target.value || null)}
-                required={plan.type === 'unitario'}
-                className="w-full px-4 py-3 rounded-lg bg-futvar-darker border border-futvar-green/20 text-white focus:outline-none focus:ring-2 focus:ring-futvar-green"
-              >
-                <option value="">Escolha um jogo</option>
-                {games.map((g) => (
-                  <option key={g.id} value={g.id}>{g.title}</option>
-                ))}
-              </select>
+              {gameIdParam ? (
+                <>
+                  <p className="block text-sm font-medium text-futvar-light mb-2">Você está comprando acesso a:</p>
+                  {(() => {
+                    const lockedGame = games.find((g) => g.id === gameIdParam);
+                    return lockedGame ? (
+                      <div className="flex items-center gap-4 p-4 rounded-lg bg-futvar-darker border border-futvar-green/30">
+                        {lockedGame.thumbnailUrl ? (
+                          <div className="relative w-24 h-14 shrink-0 rounded overflow-hidden bg-black/40">
+                            <Image src={lockedGame.thumbnailUrl} alt="" fill className="object-cover" sizes="96px" />
+                          </div>
+                        ) : null}
+                        <p className="text-white font-semibold">{lockedGame.title}</p>
+                      </div>
+                    ) : (
+                      <p className="text-futvar-light py-2">Carregando jogo...</p>
+                    );
+                  })()}
+                </>
+              ) : (
+                <>
+                  <label className="block text-sm font-medium text-futvar-light mb-2">Selecione o jogo</label>
+                  <select
+                    value={selectedGameId ?? ''}
+                    onChange={(e) => setSelectedGameId(e.target.value || null)}
+                    required={plan.type === 'unitario'}
+                    className="w-full px-4 py-3 rounded-lg bg-futvar-darker border border-futvar-green/20 text-white focus:outline-none focus:ring-2 focus:ring-futvar-green"
+                  >
+                    <option value="">Escolha um jogo</option>
+                    {games.map((g) => (
+                      <option key={g.id} value={g.id}>{g.title}</option>
+                    ))}
+                  </select>
+                </>
+              )}
             </div>
           )}
 

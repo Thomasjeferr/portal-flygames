@@ -3,6 +3,11 @@ import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { createStripePaymentIntent } from '@/lib/payments/stripe';
 import { sponsorOrderCheckoutSchema } from '@/lib/validators/sponsorOrderSchema';
+import { checkSponsorCheckoutRateLimit, incrementSponsorCheckoutRateLimit } from '@/lib/email/rateLimit';
+
+function getClientIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '0.0.0.0';
+}
 
 /**
  * Cria pedido de patrocínio (SponsorOrder) e retorna clientSecret do Stripe para pagamento com cartão.
@@ -10,6 +15,15 @@ import { sponsorOrderCheckoutSchema } from '@/lib/validators/sponsorOrderSchema'
  */
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const allowed = await checkSponsorCheckoutRateLimit(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em 1 hora.' },
+        { status: 429 }
+      );
+    }
+
     const session = await getSession();
     const body = await request.json();
     const parsed = sponsorOrderCheckoutSchema.safeParse(body);
@@ -45,6 +59,8 @@ export async function POST(request: NextRequest) {
         partnerId = partner.id;
       }
     }
+
+    await incrementSponsorCheckoutRateLimit(ip);
 
     const order = await prisma.sponsorOrder.create({
       data: {
