@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { GameCard } from '@/components/GameCard';
 import { HeroBannerCarousel } from '@/components/HeroBannerCarousel';
+import { ContinueWatchingSection } from '@/components/ContinueWatchingSection';
 import { SponsorsSection } from '@/components/SponsorsSection';
 import { prisma } from '@/lib/db';
 
@@ -243,6 +244,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen">
       <HeroBannerCarousel />
+      <ContinueWatchingSection />
 
       {/* Conteúdo */}
       <section id="jogos" className="py-12 lg:py-16 px-4 lg:px-12">

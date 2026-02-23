@@ -145,6 +145,7 @@ export default async function GamePage({ params }: Props) {
                   title={game.title}
                   streamPlaybackUrl={streamPlaybackUrl}
                   streamHlsUrl={streamHlsUrl}
+                  gameId={game.id}
                 />
               ) : (
                 <div className="relative aspect-video bg-black flex items-center justify-center">

@@ -33,6 +33,7 @@ model User {
   partners          Partner[]
   favoriteTeam      Team?     @relation("UserFavoriteTeam", fields: [favoriteTeamId], references: [id], onDelete: SetNull)
   sponsorOrders     SponsorOrder[]
+  watchProgress     WatchProgress[]
 }
 
 model Session {
@@ -180,6 +181,7 @@ model Game {
   purchases   Purchase[]
   homeBanners HomeBanner[]
   playEvents  PlayEvent[]
+  watchProgress WatchProgress[]
   sumulaApprovals GameSumulaApproval[]
   playerMatchStats PlayerMatchStats[]
 }
@@ -738,6 +740,22 @@ model PlayEvent {
   createdAt DateTime  @default(now()) @map("created_at")
 
   game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+}
+
+// Progresso de visualização (Continuar assistindo) — posição em segundos por usuário/jogo
+model WatchProgress {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  gameId          String   @map("game_id")
+  positionSeconds Int      @map("position_seconds")
+  durationSeconds Int?     @map("duration_seconds") // opcional, para exibir % na barra
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@map("watch_progress")
 }
 
 model Payment {

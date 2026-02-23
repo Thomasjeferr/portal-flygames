@@ -2,19 +2,32 @@
 
 import { useEffect, useRef } from 'react';
 
+const SAVE_PROGRESS_INTERVAL_MS = 30000; // salvar a cada 30s
+
 interface StreamCustomPlayerProps {
   hlsUrl: string;
   title: string;
+  /** Posição inicial em segundos (Continuar assistindo). */
+  initialTimeSeconds?: number;
+  /** Se informado, salva progresso periodicamente em /api/me/watch-progress. */
+  gameId?: string;
 }
 
-export function StreamCustomPlayer({ hlsUrl }: StreamCustomPlayerProps) {
+export function StreamCustomPlayer({ hlsUrl, title, initialTimeSeconds = 0, gameId }: StreamCustomPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<{ dispose: () => void } | null>(null);
+  const playerRef = useRef<ReturnType<typeof import('video.js').default> | null>(null);
+  const saveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const removeVisibilityRef = useRef<(() => void) | null>(null);
+  const initialTimeRef = useRef(initialTimeSeconds);
+  const gameIdRef = useRef(gameId);
+  initialTimeRef.current = initialTimeSeconds;
+  gameIdRef.current = gameId;
 
   useEffect(() => {
     if (!hlsUrl || !containerRef.current) return;
 
     let mounted = true;
+
     const initPlayer = async () => {
       const videojs = (await import('video.js')).default;
       await import('videojs-contrib-quality-levels');
@@ -22,6 +35,11 @@ export function StreamCustomPlayer({ hlsUrl }: StreamCustomPlayerProps) {
       await import('videojs-contrib-quality-menu/dist/videojs-contrib-quality-menu.css');
       if (!mounted || !containerRef.current) return;
 
+      if (saveIntervalRef.current) {
+        clearInterval(saveIntervalRef.current);
+        saveIntervalRef.current = null;
+      }
+      removeVisibilityRef.current?.();
       if (playerRef.current) {
         playerRef.current.dispose();
         playerRef.current = null;
@@ -54,6 +72,47 @@ export function StreamCustomPlayer({ hlsUrl }: StreamCustomPlayerProps) {
 
       player.src({ src: hlsUrl, type: 'application/x-mpegURL' });
 
+      // Seek para Continuar assistindo
+      player.one('loadedmetadata', () => {
+        const t = initialTimeRef.current;
+        if (t > 0 && typeof player.currentTime === 'function') {
+          player.currentTime(t);
+        }
+      });
+
+      // Salvar progresso (gameId definido)
+      const saveProgress = () => {
+        const gid = gameIdRef.current;
+        if (!gid) return;
+        const pos = Math.floor(Number(player.currentTime()) || 0);
+        const dur = player.duration();
+        const durationSeconds = Number.isFinite(dur) && dur > 0 ? Math.floor(dur) : undefined;
+        fetch('/api/me/watch-progress', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            gameId: gid,
+            positionSeconds: pos,
+            ...(durationSeconds !== undefined && { durationSeconds }),
+          }),
+        }).catch(() => {});
+      };
+
+      player.on('timeupdate', () => {
+        if (!saveIntervalRef.current && gameIdRef.current) {
+          saveProgress();
+          saveIntervalRef.current = setInterval(saveProgress, SAVE_PROGRESS_INTERVAL_MS);
+        }
+      });
+      player.on('pause', saveProgress);
+
+      const onVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') saveProgress();
+      };
+      document.addEventListener('visibilitychange', onVisibilityChange);
+      removeVisibilityRef.current = () => document.removeEventListener('visibilitychange', onVisibilityChange);
+
       try {
         const p = player as typeof player & { qualityMenu?: () => void };
         if (typeof p.qualityMenu === 'function') {
@@ -67,8 +126,15 @@ export function StreamCustomPlayer({ hlsUrl }: StreamCustomPlayerProps) {
     };
 
     initPlayer();
+
     return () => {
       mounted = false;
+      if (saveIntervalRef.current) {
+        clearInterval(saveIntervalRef.current);
+        saveIntervalRef.current = null;
+      }
+      removeVisibilityRef.current?.();
+      removeVisibilityRef.current = null;
       if (playerRef.current) {
         playerRef.current.dispose();
         playerRef.current = null;

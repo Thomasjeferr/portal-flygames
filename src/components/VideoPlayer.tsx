@@ -14,13 +14,28 @@ interface VideoPlayerProps {
   streamHlsUrl?: string;
   /** Contexto para buscar URL assinada no cliente (gameSlug, preSaleSlug, sessionToken para pré-estreia) */
   streamContext?: { gameSlug?: string; preSaleSlug?: string; sessionToken?: string };
+  /** ID do jogo: habilita Continuar assistindo (seek inicial + salvar progresso) */
+  gameId?: string;
 }
 
-export function VideoPlayer({ videoUrl, title, streamPlaybackUrl, streamHlsUrl, streamContext }: VideoPlayerProps) {
+export function VideoPlayer({ videoUrl, title, streamPlaybackUrl, streamHlsUrl, streamContext, gameId }: VideoPlayerProps) {
   const [streamUrl, setStreamUrl] = useState<string | null>(streamPlaybackUrl ?? null);
   const [hlsUrl, setHlsUrl] = useState<string | null>(streamHlsUrl ?? null);
+  const [initialTimeSeconds, setInitialTimeSeconds] = useState(0);
   const isStream = isStreamVideo(videoUrl);
   const videoId = extractStreamVideoId(videoUrl);
+
+  useEffect(() => {
+    if (!gameId) return;
+    fetch(`/api/me/watch-progress?gameId=${encodeURIComponent(gameId)}`, { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => {
+        if (typeof d.positionSeconds === 'number' && d.positionSeconds > 0) {
+          setInitialTimeSeconds(d.positionSeconds);
+        }
+      })
+      .catch(() => {});
+  }, [gameId]);
 
   useEffect(() => {
     if (!isStream || !videoId || (streamPlaybackUrl && streamHlsUrl)) return;
@@ -45,7 +60,14 @@ export function VideoPlayer({ videoUrl, title, streamPlaybackUrl, streamHlsUrl, 
 
   if (isStream && (hlsUrl || streamHlsUrl)) {
     const hls = hlsUrl || streamHlsUrl || '';
-    return <StreamCustomPlayer hlsUrl={hls} title={title} />;
+    return (
+      <StreamCustomPlayer
+        hlsUrl={hls}
+        title={title}
+        initialTimeSeconds={initialTimeSeconds}
+        gameId={gameId}
+      />
+    );
   }
 
   if (isStream && (streamUrl || streamPlaybackUrl)) {
