@@ -26,6 +26,7 @@ type Banner = {
   heightPreset?: string;
   secondaryMediaType?: string;
   secondaryMediaUrl?: string | null;
+  customHeightPx?: number | null;
 };
 
 type Response = {
@@ -202,6 +203,10 @@ export function HeroBannerCarousel() {
 
   const heightPreset = banner.heightPreset ?? 'md';
   const heightClass = HEIGHT_CLASSES[heightPreset] ?? HEIGHT_CLASSES.md;
+  const inlineMinHeight =
+    typeof banner.customHeightPx === 'number' && banner.customHeightPx > 0
+      ? { minHeight: `${banner.customHeightPx}px` }
+      : undefined;
   const hasJanelinha =
     banner.secondaryMediaType &&
     banner.secondaryMediaType !== 'NONE' &&
@@ -249,14 +254,15 @@ export function HeroBannerCarousel() {
 
   return (
     <section
-      className={`relative flex items-center justify-center pt-20 pb-12 sm:pt-24 sm:pb-16 lg:pt-32 lg:pb-24 px-4 sm:px-6 lg:px-12 overflow-hidden ${heightClass}`}
+      className={`relative flex items-center justify-start pt-20 pb-12 sm:pt-24 sm:pb-16 lg:pt-32 lg:pb-24 px-4 sm:px-6 lg:px-12 overflow-hidden ${heightClass}`}
+      style={inlineMinHeight}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
       {mediaEl}
       <div className="absolute inset-0" style={overlayStyle} aria-hidden />
-      <div className="relative max-w-[1920px] mx-auto z-10 flex flex-col lg:flex-row items-center justify-center gap-6 sm:gap-8 w-full flex-1">
-        <div className={`${hasJanelinha ? 'lg:max-w-[55%]' : ''} w-full max-w-2xl flex flex-col items-center justify-center text-center gap-3 sm:gap-4`}>
+      <div className="relative max-w-[1920px] mx-auto z-10 flex flex-col lg:flex-row items-start lg:items-stretch justify-start lg:justify-between gap-6 sm:gap-8 w-full flex-1">
+        <div className={`${hasJanelinha ? 'lg:max-w-[55%]' : ''} w-full max-w-2xl flex flex-col items-center lg:items-start justify-center text-center lg:text-left gap-3 sm:gap-4`}>
           {banner.badgeText && (
             <span className="inline-block px-3 py-1 rounded-full bg-futvar-green/20 text-futvar-green text-xs font-semibold w-fit border border-futvar-green/30">
               {banner.badgeText}

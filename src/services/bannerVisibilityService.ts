@@ -24,6 +24,7 @@ export type ResolvedBanner = {
   overlayColorHex: string;
   overlayOpacity: number;
   heightPreset?: string;
+  customHeightPx?: number | null;
   secondaryMediaType?: string;
   secondaryMediaUrl?: string | null;
   primaryCtaResolved?: { text: string; url: string } | null;
@@ -102,6 +103,7 @@ export async function getVisibleBanners(userId?: string | null): Promise<Resolve
         overlayColorHex: b.overlayColorHex,
         overlayOpacity: b.overlayOpacity,
         heightPreset: (b as { heightPreset?: string }).heightPreset ?? 'md',
+        customHeightPx: (b as { customHeightPx?: number | null }).customHeightPx ?? null,
         secondaryMediaType: isLive && secMediaType === 'NONE' && liveThumb ? 'IMAGE' : secMediaType,
         secondaryMediaUrl: isLive && secMediaType === 'NONE' && liveThumb ? liveThumb : secMediaUrl,
         primaryCtaResolved: cta.primary,

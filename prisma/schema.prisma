@@ -305,6 +305,8 @@ model HomeBanner {
   overlayOpacity      Int       @default(75) @map("overlay_opacity") // 0-100
 
   heightPreset        String    @default("md") @map("height_preset") // sm | md | lg | xl | full
+  // Altura personalizada em pixels (se definido, sobrescreve o preset)
+  customHeightPx      Int?      @map("custom_height_px")
 
   secondaryMediaType  String    @default("NONE") @map("secondary_media_type") // NONE | IMAGE | YOUTUBE_VIDEO | MP4_VIDEO
   secondaryMediaUrl   String?   @map("secondary_media_url")

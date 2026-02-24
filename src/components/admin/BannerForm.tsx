@@ -27,6 +27,7 @@ type FormData = {
   overlayColorHex: string;
   overlayOpacity: number;
   heightPreset: string;
+  customHeightPx: number;
   mobileMediaType: string;
   mobileMediaUrl: string;
   secondaryMediaType: string;
@@ -60,6 +61,7 @@ const defaultForm: FormData = {
   overlayColorHex: '#000000',
   overlayOpacity: 75,
   heightPreset: 'md',
+  customHeightPx: 0,
   mobileMediaType: 'NONE',
   mobileMediaUrl: '',
   secondaryMediaType: 'NONE',
@@ -191,6 +193,7 @@ export function BannerForm({ games, preSales, lives, initialData, onSubmit }: Ba
         overlayColorHex: form.overlayColorHex,
         overlayOpacity: form.overlayOpacity,
         heightPreset: form.heightPreset,
+        customHeightPx: form.customHeightPx > 0 ? form.customHeightPx : null,
         mobileMediaType: form.mobileMediaType,
         mobileMediaUrl: form.mobileMediaUrl.trim() || null,
         secondaryMediaType: form.secondaryMediaType,
@@ -541,7 +544,28 @@ export function BannerForm({ games, preSales, lives, initialData, onSubmit }: Ba
           <option value="xl">Extra grande (44rem)</option>
           <option value="full">Tela cheia (100vh)</option>
         </select>
-        <p className="text-xs text-netflix-light mt-1">Define a altura minima do hero</p>
+        <p className="text-xs text-netflix-light mt-1">Define a altura mínima padrão do hero.</p>
+        <div className="mt-3">
+          <label className="block text-sm font-medium text-white mb-1">
+            Altura personalizada (px) <span className="text-xs text-netflix-light font-normal">(opcional)</span>
+          </label>
+          <input
+            type="number"
+            min={0}
+            value={form.customHeightPx}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                customHeightPx: Number.isNaN(parseInt(e.target.value, 10)) ? 0 : parseInt(e.target.value, 10),
+              }))
+            }
+            className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
+            placeholder="Ex: 520"
+          />
+          <p className="text-xs text-netflix-light mt-1">
+            Se maior que 0, esta altura em pixels sobrescreve o tamanho mínimo definido acima.
+          </p>
+        </div>
       </div>
 
       <div className="border border-white/20 rounded-lg p-4">

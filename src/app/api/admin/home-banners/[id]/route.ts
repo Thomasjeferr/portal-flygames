@@ -79,6 +79,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (d.overlayColorHex !== undefined) updateData.overlayColorHex = d.overlayColorHex;
     if (d.overlayOpacity !== undefined) updateData.overlayOpacity = d.overlayOpacity;
     if (d.heightPreset !== undefined) updateData.heightPreset = d.heightPreset;
+    if (d.customHeightPx !== undefined) updateData.customHeightPx = d.customHeightPx;
     if (d.gameId !== undefined) updateData.gameId = d.gameId?.trim() || null;
     if (d.preSaleId !== undefined) updateData.preSaleId = d.preSaleId?.trim() || null;
     if (d.liveId !== undefined) updateData.liveId = d.liveId?.trim() || null;

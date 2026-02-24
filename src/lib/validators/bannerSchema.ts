@@ -37,6 +37,7 @@ const baseSchema = {
   overlayColorHex: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().default('#000000'),
   overlayOpacity: z.number().int().min(0).max(100).optional().default(75),
   heightPreset: z.enum(['sm', 'md', 'lg', 'xl', 'full']).optional().default('md'),
+  customHeightPx: z.number().int().min(0).nullable().optional(),
   secondaryMediaType: z.enum(['NONE', 'IMAGE', 'YOUTUBE_VIDEO', 'MP4_VIDEO']).optional().default('NONE'),
   secondaryMediaUrl: z.union([
     z.string().url(),

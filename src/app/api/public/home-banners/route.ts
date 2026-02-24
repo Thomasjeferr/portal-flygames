@@ -48,6 +48,7 @@ export async function GET() {
       heightPreset: b.heightPreset ?? 'md',
       secondaryMediaType: b.secondaryMediaType ?? 'NONE',
       secondaryMediaUrl: b.secondaryMediaUrl ?? null,
+      customHeightPx: b.customHeightPx ?? null,
     }));
 
     return NextResponse.json(

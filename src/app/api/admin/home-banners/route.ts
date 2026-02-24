@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
         overlayColorHex: d.overlayColorHex ?? '#000000',
         overlayOpacity: d.overlayOpacity ?? 75,
         heightPreset: d.heightPreset ?? 'md',
+        customHeightPx: d.customHeightPx ?? null,
         secondaryMediaType: d.secondaryMediaType ?? 'NONE',
         secondaryMediaUrl: d.secondaryMediaUrl?.trim() || null,
         gameId: d.gameId?.trim() || null,
