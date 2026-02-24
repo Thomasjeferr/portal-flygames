@@ -5,9 +5,10 @@ import { ContinueWatchingSection } from '@/components/ContinueWatchingSection';
 import { LiveNowSection } from '@/components/LiveNowSection';
 import { FindGameSection } from '@/components/FindGameSection';
 import { SponsorsSection } from '@/components/SponsorsSection';
+import { PreSaleShareButton } from '@/components/PreSaleShareButton';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { getGamesAccessMap } from '@/lib/access';
+import { getGamesAccessMap, hasFullAccess } from '@/lib/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -293,6 +294,22 @@ export default async function HomePage() {
   ]);
   const byChampionship = groupByChampionship(games);
 
+  // Dados de acesso do usuário logado
+  let userHasFullAccess = false;
+  let userFavoriteTeamId: string | null = null;
+
+  if (session) {
+    const [full, user] = await Promise.all([
+      hasFullAccess(session.userId),
+      prisma.user.findUnique({
+        where: { id: session.userId },
+        select: { favoriteTeamId: true },
+      }),
+    ]);
+    userHasFullAccess = full;
+    userFavoriteTeamId = user?.favoriteTeamId ?? null;
+  }
+
   // Mapa de acesso por jogo (apenas para jogos principais, não pré-estreia).
   let gameAccessMap: Record<string, boolean> = {};
   if (session) {
@@ -323,122 +340,154 @@ export default async function HomePage() {
               <div className="flex items-center gap-3 mb-4 animate-fade-in-up opacity-0 [animation-delay:0.08s]">
                 <span className="w-1 h-8 rounded-full bg-futvar-green" />
                 <h2 className="text-2xl lg:text-3xl font-bold text-white">
-                  Pré-estreia
+                  Pré-estreias com Meta
                 </h2>
               </div>
               <p className="text-futvar-light mb-6 max-w-2xl">
                 Quando as torcidas batem a meta de novos <span className="font-semibold text-white">Patrocinadores Torcedores</span>, o jogo de pré-estreia libera para todo mundo.
                 Ao se tornar Patrocinador Torcedor, você <span className="font-semibold text-white">investe diretamente no seu time</span>, ajuda a bater a meta deste jogo e ainda libera todo o conteúdo normal do portal na hora.
               </p>
-              <div className="space-y-4">
+
+              <div className="-mx-2 flex flex-wrap gap-y-4">
                 {preSaleWithMeta.map((g, idx) => {
-                  const homePct = g.homeCurrent != null && g.homeTarget ? Math.min(100, Math.round((g.homeCurrent / g.homeTarget) * 100)) : 0;
-                  const awayPct = g.awayCurrent != null && g.awayTarget ? Math.min(100, Math.round((g.awayCurrent / g.awayTarget) * 100)) : 0;
+                  const homePct =
+                    g.homeCurrent != null && g.homeTarget
+                      ? Math.min(100, Math.round((g.homeCurrent / g.homeTarget) * 100))
+                      : 0;
+                  const awayPct =
+                    g.awayCurrent != null && g.awayTarget
+                      ? Math.min(100, Math.round((g.awayCurrent / g.awayTarget) * 100))
+                      : 0;
                   const metaBatida = homePct >= 100 && awayPct >= 100;
+
+                  const isLoggedIn = !!session;
+                  const isPatrocinador = isLoggedIn && userHasFullAccess;
+                  const hasFavoriteTeam = !!userFavoriteTeamId;
+
                   return (
-                    <div
-                      key={g.id}
-                      className="bg-futvar-dark/80 border border-white/10 rounded-2xl px-3 py-3 sm:px-4 sm:py-4 flex flex-col md:flex-row items-stretch gap-4 md:gap-6 animate-fade-in-up opacity-0"
-                      style={{ animationDelay: `${0.1 + idx * 0.04}s` }}
-                    >
-                      <div className="w-full md:w-64 lg:w-72 flex-shrink-0">
-                        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black/40 border border-white/10">
-                          {g.thumbnailUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={g.thumbnailUrl} alt={g.title} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="absolute inset-0 flex items-center justify-center text-futvar-light text-xs">
-                              Pré-estreia
-                            </div>
-                          )}
-                          {/* Overlay play */}
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-black/60 border border-white/30 flex items-center justify-center">
-                              <span className="text-white text-xl pl-0.5">▶</span>
-                            </div>
-                          </div>
-                          {metaBatida && (
-                            <span className="absolute top-2 left-2 right-2 text-center px-2 py-1 rounded bg-futvar-green/90 text-futvar-darker text-[10px] font-bold tracking-wide">
-                              Meta batida! Em breve o jogo estará no ar.
-                            </span>
-                          )}
-                          {/* Badge LIVE */}
-                          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-semibold tracking-wide">
-                            LIVE
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex-1 flex flex-col gap-3">
-                        <div>
-                          <h3 className="text-lg sm:text-xl font-bold text-white">
-                            {g.title}
-                            {g.homeTeamName && g.awayTeamName && (
-                              <span className="block text-sm text-futvar-light font-normal">
-                                {g.homeTeamName} x {g.awayTeamName}
-                              </span>
+                    <div key={g.id} className="w-full md:w-1/2 px-2 animate-fade-in-up opacity-0" style={{ animationDelay: `${0.1 + idx * 0.04}s` }}>
+                      <div className="h-full rounded-2xl border border-white/10 bg-futvar-dark/80 px-3 py-3 sm:px-4 sm:py-4 shadow-lg shadow-black/40 flex items-stretch gap-4">
+                        {/* Thumb */}
+                        <div className="w-32 sm:w-40 lg:w-44 flex-shrink-0">
+                          <div className="relative w-full aspect-video overflow-hidden rounded-xl bg-black/40 border border-white/10">
+                            {g.thumbnailUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={g.thumbnailUrl} alt={g.title} className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[11px] text-futvar-light">
+                                Pré-estreia
+                              </div>
                             )}
-                          </h3>
-                          <p className="text-xs text-futvar-light mt-1">
-                            Criado em {new Date(g.createdAt).toLocaleDateString('pt-BR')}
-                          </p>
-                        </div>
-                        <div className="space-y-2 mt-1">
-                          <div>
-                            <div className="flex justify-between text-xs text-futvar-light mb-1">
-                              <span>
-                                Time mandante
-                                {g.homeTeamName && (
-                                  <> ({g.homeTeamName})</>
-                                )}
-                              </span>
-                              {g.homeCurrent != null && g.homeTarget != null && (
-                                <span>{g.homeCurrent} / {g.homeTarget}</span>
-                              )}
+                            {/* Play overlay */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/70 border border-white/40">
+                                <span className="pl-0.5 text-lg text-white">▶</span>
+                              </div>
                             </div>
-                            <div className="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
-                              <div
-                                className="h-2.5 rounded-full bg-futvar-green transition-all"
-                                style={{ width: `${homePct}%` }}
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <div className="flex justify-between text-xs text-futvar-light mb-1">
-                              <span>
-                                Time visitante
-                                {g.awayTeamName && (
-                                  <> ({g.awayTeamName})</>
-                                )}
-                              </span>
-                              {g.awayCurrent != null && g.awayTarget != null && (
-                                <span>{g.awayCurrent} / {g.awayTarget}</span>
-                              )}
-                            </div>
-                            <div className="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
-                              <div
-                                className="h-2.5 rounded-full bg-futvar-green/70 transition-all"
-                                style={{ width: `${awayPct}%` }}
-                              />
-                            </div>
+                            {/* Badge pré-estreia */}
+                            <span className="absolute left-2 top-2 rounded bg-futvar-green px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-futvar-darker">
+                              Pré-estreia
+                            </span>
                           </div>
                         </div>
-                        <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-                          <div className="max-w-md">
-                            {metaBatida && (
-                              <p className="text-sm font-semibold text-futvar-green mb-1">
-                                Meta batida! Em breve o jogo estará no ar.
+
+                        {/* Conteúdo principal */}
+                        <div className="flex min-w-0 flex-1 flex-col gap-3">
+                          <div>
+                            <h3 className="text-sm sm:text-base font-bold text-white">
+                              Pré-estreias com Meta
+                            </h3>
+                            {g.homeTeamName && g.awayTeamName && (
+                              <p className="mt-0.5 text-xs text-futvar-light">
+                                {g.homeTeamName} x {g.awayTeamName}
                               </p>
                             )}
-                            <p className="text-xs text-futvar-light">
-                              Ao se tornar <span className="font-semibold text-white">Patrocinador Torcedor</span>, você apoia financeiramente o seu time, participa da meta desta pré-estreia e libera todo o conteúdo normal do portal para você.
+                            <p className="mt-0.5 text-[11px] text-futvar-light/80">
+                              Criado em {new Date(g.createdAt).toLocaleDateString('pt-BR')}
                             </p>
                           </div>
-                          <Link
-                            href="/planos"
-                            className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-bold text-sm hover:bg-futvar-green-light transition-colors shrink-0"
-                          >
-                            Ser Patrocinador Torcedor
-                          </Link>
+
+                          {/* Barras */}
+                          <div className="space-y-2">
+                            <div>
+                              <div className="mb-1 flex items-center justify-between text-[11px] text-futvar-light">
+                                <span>
+                                  Time mandante
+                                  {g.homeTeamName && <> ({g.homeTeamName})</>}
+                                </span>
+                                {g.homeCurrent != null && g.homeTarget != null && (
+                                  <span className="text-[10px] text-futvar-light/80">
+                                    {g.homeCurrent} / {g.homeTarget}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="h-2 rounded-full bg-white/10">
+                                <div
+                                  className="h-2 rounded-full bg-futvar-green transition-all"
+                                  style={{ width: `${homePct}%` }}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <div className="mb-1 flex items-center justify-between text-[11px] text-futvar-light">
+                                <span>
+                                  Time visitante
+                                  {g.awayTeamName && <> ({g.awayTeamName})</>}
+                                </span>
+                                {g.awayCurrent != null && g.awayTarget != null && (
+                                  <span className="text-[10px] text-futvar-light/80">
+                                    {g.awayCurrent} / {g.awayTarget}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="h-2 rounded-full bg-white/10">
+                                <div
+                                  className="h-2 rounded-full bg-sky-500 transition-all"
+                                  style={{ width: `${awayPct}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Mensagem/meta */}
+                          {metaBatida && (
+                            <p className="text-[11px] font-semibold text-futvar-green">
+                              Meta batida! Em breve o jogo estará no ar.
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Ação */}
+                        <div className="flex w-36 sm:w-44 flex-shrink-0 flex-col items-stretch justify-center gap-2">
+                          {!isPatrocinador && (
+                            <Link
+                              href="/planos"
+                              className="inline-flex w-full items-center justify-center px-5 py-2 text-[11px] sm:text-sm font-bold bg-futvar-green text-futvar-darker hover:bg-futvar-green-light transition-colors border border-futvar-green-dark rounded-[9px]"
+                            >
+                              Ser Patrocinador Torcedor
+                            </Link>
+                          )}
+
+                          {isPatrocinador && hasFavoriteTeam && (
+                            <>
+                              <div className="inline-flex w-full items-center justify-center rounded-[9px] border border-futvar-green/70 bg-futvar-green/10 px-3 py-2 text-[10px] sm:text-[11px] font-semibold text-futvar-green">
+                                Você já é Patrocinador Torcedor
+                              </div>
+                              <PreSaleShareButton
+                                title={g.title}
+                                className="inline-flex w-full items-center justify-center px-4 py-2 text-[10px] sm:text-[11px] font-semibold bg-futvar-dark border border-futvar-green/60 text-futvar-green hover:bg-futvar-green/10 transition-colors rounded-[9px]"
+                              />
+                            </>
+                          )}
+
+                          {isPatrocinador && !hasFavoriteTeam && (
+                            <Link
+                              href="/conta"
+                              className="inline-flex w-full items-center justify-center px-4 py-2 text-[10px] sm:text-[11px] font-semibold bg-futvar-dark border border-futvar-green/60 text-futvar-green hover:bg-futvar-green/10 transition-colors rounded-[9px]"
+                            >
+                              Escolher meu time do coração
+                            </Link>
+                          )}
                         </div>
                       </div>
                     </div>

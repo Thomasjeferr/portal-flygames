@@ -174,14 +174,14 @@ export default async function LivePage({ params }: Props) {
                     </span>
                     AO VIVO
                   </div>
-                  <StreamCustomPlayer hlsUrl={hlsUrl} title={live.title} />
+                  <StreamCustomPlayer hlsUrl={hlsUrl} title={live.title} posterUrl={live.thumbnailUrl ?? undefined} />
                 </div>
               ) : live.status === 'ENDED' && hlsUrl ? (
                 <div className="relative">
                   <div className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-full bg-futvar-dark/80 text-futvar-light text-sm">
                     Replay
                   </div>
-                  <StreamCustomPlayer hlsUrl={hlsUrl} title={live.title} />
+                  <StreamCustomPlayer hlsUrl={hlsUrl} title={live.title} posterUrl={live.thumbnailUrl ?? undefined} />
                 </div>
               ) : live.status === 'LIVE' && !live.cloudflareLiveInputId ? (
                 <div className="aspect-video bg-futvar-dark flex items-center justify-center">

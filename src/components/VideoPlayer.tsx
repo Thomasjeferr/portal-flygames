@@ -9,6 +9,8 @@ import { VideoPlayerCard } from '@/components/player/VideoPlayerCard';
 interface VideoPlayerProps {
   videoUrl: string;
   title: string;
+  /** URL opcional de thumb/poster do vídeo. */
+  posterUrl?: string;
   /** URL assinada iframe para Stream (fallback) */
   streamPlaybackUrl?: string;
   /** URL HLS assinada para player customizado (Video.js) */
@@ -22,6 +24,7 @@ interface VideoPlayerProps {
 export function VideoPlayer({
   videoUrl,
   title,
+  posterUrl,
   streamPlaybackUrl,
   streamHlsUrl,
   streamContext,
@@ -72,6 +75,7 @@ export function VideoPlayer({
       <StreamCustomPlayer
         hlsUrl={hls}
         title={title}
+        posterUrl={posterUrl}
         initialTimeSeconds={initialTimeSeconds}
         gameId={gameId}
       />
@@ -154,6 +158,7 @@ export function VideoPlayer({
     <VideoPlayerCard
       videoSrc={videoUrl}
       title={title}
+      posterUrl={posterUrl}
       initialTimeSeconds={initialTimeSeconds}
       gameId={gameId}
     />

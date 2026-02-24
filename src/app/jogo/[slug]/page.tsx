@@ -192,6 +192,7 @@ export default async function GamePage({ params }: Props) {
                 <VideoPlayer
                   videoUrl={game.videoUrl}
                   title={game.title}
+                  posterUrl={game.thumbnailUrl ?? undefined}
                   streamPlaybackUrl={streamPlaybackUrl}
                   streamHlsUrl={streamHlsUrl}
                   gameId={game.id}

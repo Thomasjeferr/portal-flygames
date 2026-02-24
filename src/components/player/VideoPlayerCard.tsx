@@ -10,6 +10,8 @@ const SAVE_PROGRESS_INTERVAL_MS = 30000;
 interface VideoPlayerCardProps {
   videoSrc: string;
   title: string;
+  /** Thumb inicial exibida antes do primeiro play. */
+  posterUrl?: string;
   /** Posição inicial em segundos (Continuar assistindo). */
   initialTimeSeconds?: number;
   /** Se informado, salva progresso periodicamente em /api/me/watch-progress. */
@@ -21,6 +23,7 @@ type SettingsView = 'root' | 'speed' | 'quality';
 export function VideoPlayerCard({
   videoSrc,
   title,
+  posterUrl,
   initialTimeSeconds = 0,
   gameId,
 }: VideoPlayerCardProps) {
@@ -238,41 +241,55 @@ export function VideoPlayerCard({
   const handleToggleFullscreen = () => {
     const container = containerRef.current;
     if (!container) return;
+
     const doc = document as Document & {
       webkitFullscreenElement?: Element | null;
-      webkitExitFullscreen?: () => Promise<void>;
-      webkitRequestFullscreen?: () => Promise<void>;
+      webkitExitFullscreen?: () => void | Promise<void>;
       mozFullScreenElement?: Element | null;
-      mozCancelFullScreen?: () => Promise<void>;
+      mozCancelFullScreen?: () => void | Promise<void>;
       msFullscreenElement?: Element | null;
-      msExitFullscreen?: () => Promise<void>;
+      msExitFullscreen?: () => void | Promise<void>;
     };
+
     const isFs =
       doc.fullscreenElement ||
       doc.webkitFullscreenElement ||
       doc.mozFullScreenElement ||
       doc.msFullscreenElement;
 
-    if (isFs) {
-      (doc.exitFullscreen ||
-        doc.webkitExitFullscreen ||
-        doc.mozCancelFullScreen ||
-        doc.msExitFullscreen ||
-        (() => Promise.resolve()))().catch(() => {});
-      setIsFullscreen(false);
-    } else {
-      (container.requestFullscreen ||
-        // @ts-expect-error webkit
-        container.webkitRequestFullscreen ||
-        // @ts-expect-error moz
-        container.mozRequestFullScreen ||
-        // @ts-expect-error ms
-        container.msRequestFullscreen ||
-        (() => Promise.resolve())
-      )
-        .call(container)
-        .catch(() => {});
-      setIsFullscreen(true);
+    try {
+      if (isFs) {
+        const exit =
+          doc.exitFullscreen ||
+          doc.webkitExitFullscreen ||
+          doc.mozCancelFullScreen ||
+          doc.msExitFullscreen;
+        if (exit) {
+          const result = exit.call(doc);
+          if (result && typeof (result as Promise<void>).catch === 'function') {
+            (result as Promise<void>).catch(() => {});
+          }
+        }
+      } else {
+        const anyContainer = container as HTMLElement & {
+          webkitRequestFullscreen?: () => void | Promise<void>;
+          mozRequestFullScreen?: () => void | Promise<void>;
+          msRequestFullscreen?: () => void | Promise<void>;
+        };
+        const request =
+          anyContainer.requestFullscreen ||
+          anyContainer.webkitRequestFullscreen ||
+          anyContainer.mozRequestFullScreen ||
+          anyContainer.msRequestFullscreen;
+        if (request) {
+          const result = request.call(anyContainer);
+          if (result && typeof (result as Promise<void>).catch === 'function') {
+            (result as Promise<void>).catch(() => {});
+          }
+        }
+      }
+    } catch {
+      // Silencia falhas de fullscreen para não quebrar o player
     }
   };
 
@@ -413,6 +430,8 @@ export function VideoPlayerCard({
             className="h-full w-full object-cover"
             playsInline
             preload="metadata"
+            poster={posterUrl}
+            onClick={handlePlayPause}
             onContextMenu={(e) => e.preventDefault()}
           >
             Seu navegador não suporta vídeos.
