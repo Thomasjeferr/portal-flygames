@@ -75,7 +75,7 @@ async function getGames(params: SearchParams) {
     });
   }
 
-  const where: Parameters<typeof prisma.game.findMany>[0]['where'] = {
+  const where = {
     displayMode: { in: ['public_no_media', 'public_with_media'] },
     ...(andConditions.length > 0 ? { AND: andConditions } : {}),
   };
