@@ -116,8 +116,9 @@ export function VideoPlayerCard({
           const autoOption: QualityOption = { id: 'auto', label: 'Automático', helper: undefined };
           const mapped: QualityOption[] = levels.map((level, index) => {
             const height = level.height || 0;
-            // Alguns builds de hls.js expõem frameRate, outros fps; usamos o que existir.
-            const rawFps = (level as unknown as { frameRate?: number; fps?: number }).frameRate ?? level.fps ?? 0;
+            // Alguns builds de hls.js expõem frameRate, outros fps; usamos o que existir (via any para não travar o tipo).
+            const anyLevel = level as unknown as { frameRate?: number; fps?: number };
+            const rawFps = anyLevel.frameRate ?? anyLevel.fps ?? 0;
             const fps = Math.round(rawFps || 0);
             let label = height ? `${height}p` : `${index + 1}`;
             if (fps && fps >= 50) label = `${label}${fps}p`.replace('p60p', 'p60');
