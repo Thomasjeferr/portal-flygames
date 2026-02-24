@@ -16,6 +16,10 @@ interface GameCardProps {
   badgeText?: string;
   /** Se false, não exibe badge "ASSISTIR" nem botão de play (card só publicação) */
   showAssistir?: boolean;
+  /** Quando true, esconde play/ASSISTIR e mostra apenas um badge alternativo (ex: "Promover time") */
+  locked?: boolean;
+  /** Texto do badge quando o card está "travado" (sem acesso), ex: "Promover time" */
+  lockedBadgeText?: string;
   /** Times do jogo: quando presentes, exibe logos e nomes lado a lado no card */
   homeTeam?: TeamInfo | null;
   awayTeam?: TeamInfo | null;
@@ -45,7 +49,21 @@ function TeamCrest({ team, size = 10 }: { team: TeamInfo; size?: number }) {
   );
 }
 
-export function GameCard({ slug, title, championship, thumbnailUrl, gameDate, featured, href, badgeText = 'ASSISTIR', showAssistir = true, homeTeam, awayTeam }: GameCardProps) {
+export function GameCard({
+  slug,
+  title,
+  championship,
+  thumbnailUrl,
+  gameDate,
+  featured,
+  href,
+  badgeText = 'ASSISTIR',
+  showAssistir = true,
+  homeTeam,
+  awayTeam,
+  locked = false,
+  lockedBadgeText,
+}: GameCardProps) {
   const linkHref = href ?? `/jogo/${slug}`;
   const date = new Date(gameDate).toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -53,9 +71,13 @@ export function GameCard({ slug, title, championship, thumbnailUrl, gameDate, fe
     year: 'numeric',
   });
   const showTeams = homeTeam && awayTeam;
+  const showWatchUi = showAssistir && !locked;
 
   return (
-    <Link href={linkHref} className="block game-card rounded-xl overflow-hidden bg-futvar-darker border group">
+    <Link
+      href={linkHref}
+      className="block game-card rounded-xl overflow-hidden bg-futvar-darker border border-futvar-green/20 group hover:border-futvar-green/40 transition-colors duration-300"
+    >
       <div className="relative aspect-video bg-futvar-gray overflow-hidden">
         {thumbnailUrl ? (
           <Image
@@ -76,12 +98,12 @@ export function GameCard({ slug, title, championship, thumbnailUrl, gameDate, fe
             DESTAQUE
           </span>
         )}
-        {showAssistir && (
+        {showWatchUi && (
           <span className="absolute top-3 right-3 px-2 py-1 bg-futvar-green/90 text-white text-xs font-semibold rounded">
             {badgeText}
           </span>
         )}
-        {showAssistir && (
+        {showWatchUi && (
           <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/30">
             <span className="w-16 h-16 rounded-full bg-futvar-green flex items-center justify-center text-white text-2xl pl-1 shadow-xl shadow-futvar-green/40 animate-pulse">
               ▶
@@ -90,6 +112,13 @@ export function GameCard({ slug, title, championship, thumbnailUrl, gameDate, fe
         )}
       </div>
       <div className="p-4">
+        {(showWatchUi || (locked && lockedBadgeText)) && (
+          <div className="mb-2 flex justify-center">
+            <span className="inline-flex items-center px-3 py-1 rounded-full border border-futvar-green/40 text-xs font-semibold text-futvar-green bg-futvar-green/5 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
+              {locked && lockedBadgeText ? lockedBadgeText : badgeText}
+            </span>
+          </div>
+        )}
         {showTeams ? (
           <div className="flex items-center justify-between gap-2 mb-2">
             <TeamCrest team={homeTeam} />

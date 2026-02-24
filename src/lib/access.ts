@@ -103,3 +103,56 @@ export async function canAccessLiveById(userId: string | null, liveId: string): 
   if (!live) return false;
   return canAccessLive(userId, live);
 }
+
+/**
+ * Retorna um mapa de acesso para vários jogos de uma vez.
+ * Chaves do mapa são gameId e o valor indica se o usuário pode assistir.
+ */
+export async function getGamesAccessMap(
+  userId: string | null,
+  gameIds: string[],
+): Promise<Record<string, boolean>> {
+  const result: Record<string, boolean> = {};
+  const uniqueIds = Array.from(new Set(gameIds)).filter(Boolean);
+
+  if (!uniqueIds.length) {
+    return result;
+  }
+
+  if (!userId) {
+    uniqueIds.forEach((id) => {
+      result[id] = false;
+    });
+    return result;
+  }
+
+  if (await hasFullAccess(userId)) {
+    uniqueIds.forEach((id) => {
+      result[id] = true;
+    });
+    return result;
+  }
+
+  const purchases = await prisma.purchase.findMany({
+    where: {
+      userId,
+      gameId: { in: uniqueIds },
+      paymentStatus: 'paid',
+      OR: [{ expiresAt: null }, { expiresAt: { gte: new Date() } }],
+    },
+    select: {
+      gameId: true,
+      plan: { select: { active: true } },
+    },
+  });
+
+  const purchasedIds = new Set(
+    purchases.filter((p) => p.plan?.active).map((p) => p.gameId),
+  );
+
+  uniqueIds.forEach((id) => {
+    result[id] = purchasedIds.has(id);
+  });
+
+  return result;
+}

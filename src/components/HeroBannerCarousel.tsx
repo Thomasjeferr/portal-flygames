@@ -147,7 +147,7 @@ export function HeroBannerCarousel() {
           src={effectiveMediaUrl}
           alt=""
           fill
-          className="object-cover"
+          className="object-cover 2xl:object-contain 2xl:object-right"
           sizes="100vw"
           priority
           onError={() => setImgError((e) => ({ ...e, [imgErrorKey]: true }))}
@@ -203,10 +203,11 @@ export function HeroBannerCarousel() {
 
   const heightPreset = banner.heightPreset ?? 'md';
   const heightClass = HEIGHT_CLASSES[heightPreset] ?? HEIGHT_CLASSES.md;
-  const inlineMinHeight =
-    typeof banner.customHeightPx === 'number' && banner.customHeightPx > 0
-      ? { minHeight: `${banner.customHeightPx}px` }
-      : undefined;
+  const hasCustomHeight =
+    typeof banner.customHeightPx === 'number' && banner.customHeightPx > 0;
+  const inlineHeightStyle = hasCustomHeight
+    ? { height: `${banner.customHeightPx}px` }
+    : undefined;
   const hasJanelinha =
     banner.secondaryMediaType &&
     banner.secondaryMediaType !== 'NONE' &&
@@ -254,8 +255,12 @@ export function HeroBannerCarousel() {
 
   return (
     <section
-      className={`relative flex items-center justify-start pt-20 pb-12 sm:pt-24 sm:pb-16 lg:pt-32 lg:pb-24 px-4 sm:px-6 lg:px-12 overflow-hidden ${heightClass}`}
-      style={inlineMinHeight}
+      className={`relative flex items-center justify-start ${
+        hasCustomHeight
+          ? 'pt-10 pb-10 sm:pt-12 sm:pb-12 lg:pt-16 lg:pb-16'
+          : 'pt-20 pb-12 sm:pt-24 sm:pb-16 lg:pt-32 lg:pb-24'
+      } px-4 sm:px-6 lg:px-12 overflow-hidden ${hasCustomHeight ? '' : heightClass}`}
+      style={inlineHeightStyle}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >

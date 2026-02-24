@@ -6,6 +6,8 @@ import { LiveNowSection } from '@/components/LiveNowSection';
 import { FindGameSection } from '@/components/FindGameSection';
 import { SponsorsSection } from '@/components/SponsorsSection';
 import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth';
+import { getGamesAccessMap } from '@/lib/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -276,6 +278,7 @@ function groupByChampionship(
 }
 
 export default async function HomePage() {
+  const session = await getSession();
   const [games, preSaleForClubs, preSaleWithMeta, liveReplays] = await Promise.all([
     getGames(),
     getPreSaleForClubs(),
@@ -283,6 +286,22 @@ export default async function HomePage() {
     getLiveReplays(),
   ]);
   const byChampionship = groupByChampionship(games);
+
+  // Mapa de acesso por jogo (apenas para jogos principais, não pré-estreia).
+  let gameAccessMap: Record<string, boolean> = {};
+  if (session) {
+    const idsNeedingCheck = Array.from(
+      new Set(
+        byChampionship
+          .flatMap((row) => row.games)
+          .filter((g) => g.displayMode === 'public_with_media')
+          .map((g) => g.id),
+      ),
+    );
+    if (idsNeedingCheck.length > 0) {
+      gameAccessMap = await getGamesAccessMap(session.userId, idsNeedingCheck);
+    }
+  }
 
   return (
     <div className="min-h-screen">
@@ -298,7 +317,7 @@ export default async function HomePage() {
               <div className="flex items-center gap-3 mb-4 animate-fade-in-up opacity-0 [animation-delay:0.08s]">
                 <span className="w-1 h-8 rounded-full bg-futvar-green" />
                 <h2 className="text-2xl lg:text-3xl font-bold text-white">
-                  Pré-estreias com Meta
+                  Pré-estreia
                 </h2>
               </div>
               <p className="text-futvar-light mb-6 max-w-2xl">
@@ -312,17 +331,29 @@ export default async function HomePage() {
                   return (
                     <div
                       key={g.id}
-                      className="bg-futvar-dark/80 border border-white/10 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row gap-4 lg:gap-6 animate-fade-in-up opacity-0"
+                      className="bg-futvar-dark/80 border border-white/10 rounded-2xl px-3 py-3 sm:px-4 sm:py-4 flex flex-col md:flex-row items-stretch gap-4 md:gap-6 animate-fade-in-up opacity-0"
                       style={{ animationDelay: `${0.1 + idx * 0.04}s` }}
                     >
-                      <div className="w-full lg:w-64 flex-shrink-0">
-                        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black/40 border border-white/10 flex items-center justify-center">
+                      <div className="w-full md:w-64 lg:w-72 flex-shrink-0">
+                        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black/40 border border-white/10">
                           {g.thumbnailUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={g.thumbnailUrl} alt={g.title} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="text-futvar-light text-xs">Pré-estreia</div>
+                            <div className="absolute inset-0 flex items-center justify-center text-futvar-light text-xs">
+                              Pré-estreia
+                            </div>
                           )}
+                          {/* Overlay play */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-black/60 border border-white/30 flex items-center justify-center">
+                              <span className="text-white text-xl pl-0.5">▶</span>
+                            </div>
+                          </div>
+                          {/* Badge LIVE */}
+                          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-semibold tracking-wide">
+                            LIVE
+                          </span>
                         </div>
                       </div>
                       <div className="flex-1 flex flex-col gap-3">
@@ -491,11 +522,29 @@ export default async function HomePage() {
                       </div>
                       <div className="overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0">
                         <div className="flex gap-5" style={{ width: 'max-content', minWidth: '100%' }}>
-                          {slice.map((game) => (
-                            <div key={game.id + game.slug} className="flex-shrink-0 w-[280px] sm:w-[300px]">
-                              <GameCard slug={game.slug} title={game.title} championship={game.championship} thumbnailUrl={game.thumbnailUrl} gameDate={game.gameDate} featured={game.featured} href={game.href} homeTeam={game.homeTeam ?? undefined} awayTeam={game.awayTeam ?? undefined} showAssistir={game.displayMode === 'public_with_media'} />
-                            </div>
-                          ))}
+                          {slice.map((game) => {
+                            const isPublicWithMedia = game.displayMode === 'public_with_media';
+                            const canWatch = isPublicWithMedia && !!gameAccessMap[game.id];
+                            const locked = isPublicWithMedia && !canWatch;
+                            return (
+                              <div key={game.id + game.slug} className="flex-shrink-0 w-[280px] sm:w-[300px]">
+                                <GameCard
+                                  slug={game.slug}
+                                  title={game.title}
+                                  championship={game.championship}
+                                  thumbnailUrl={game.thumbnailUrl}
+                                  gameDate={game.gameDate}
+                                  featured={game.featured}
+                                  href={game.href}
+                                  homeTeam={game.homeTeam ?? undefined}
+                                  awayTeam={game.awayTeam ?? undefined}
+                                  showAssistir={canWatch}
+                                  locked={locked}
+                                  lockedBadgeText={locked ? 'Promover time' : undefined}
+                                />
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
