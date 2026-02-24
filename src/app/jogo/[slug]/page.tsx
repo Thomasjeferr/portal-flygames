@@ -84,58 +84,81 @@ export default async function GamePage({ params }: Props) {
         </div>
 
         {!canWatch ? (
-          <div className="bg-futvar-dark border border-futvar-green/20 rounded-2xl p-8 md:p-12 text-center">
-            <div className="mb-6">
-              <PlayerMatchInfo
-                title={game.title}
-                homeTeam={game.homeTeam ?? undefined}
-                awayTeam={game.awayTeam ?? undefined}
-                subtitle={`${game.championship} • ${gameDateFormatted}`}
-              />
-            </div>
-            {game.thumbnailUrl && (
-              <div className="relative aspect-video max-w-2xl mx-auto rounded-lg overflow-hidden mb-8">
+          <MatchPlayerPage
+            teamA={
+              game.homeTeam
+                ? {
+                    name: game.homeTeam.shortName || game.homeTeam.name,
+                    crest: game.homeTeam.crestUrl || undefined,
+                    score: game.homeScore ?? undefined,
+                  }
+                : undefined
+            }
+            teamB={
+              game.awayTeam
+                ? {
+                    name: game.awayTeam.shortName || game.awayTeam.name,
+                    crest: game.awayTeam.crestUrl || undefined,
+                    score: game.awayScore ?? undefined,
+                  }
+                : undefined
+            }
+            title={game.title}
+            dateLabel={`${game.championship} • ${gameDateFormatted}`}
+            isLive={false}
+            isReplay={false}
+            description={game.description}
+          >
+            <div className="relative mx-auto max-w-[1100px] overflow-hidden rounded-2xl border border-emerald-400/25 bg-black shadow-[0_18px_60px_rgba(0,0,0,0.9)] shadow-emerald-500/10 aspect-video flex items-center justify-center">
+              {game.thumbnailUrl ? (
                 <Image
                   src={game.thumbnailUrl.startsWith('http') ? game.thumbnailUrl : game.thumbnailUrl}
                   alt={game.title}
                   fill
-                  className="object-cover"
+                  className="object-cover opacity-70"
                 />
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <div className="text-center">
-                    <p className="text-lg text-white mb-4">Assinatura ou compra necessária para assistir</p>
-                    {session && isTeamManager ? (
-                      <p className="text-futvar-light max-w-md mx-auto">
-                        Esta conta é de responsável pelo time e não pode comprar acesso. Para assinar ou comprar jogos, saia e crie uma conta de cliente em <Link href="/cadastro" className="text-futvar-green hover:underline">Cadastro</Link>.
-                      </p>
-                    ) : (
-                      <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4">
-                        {session ? (
-                          <Link
-                            href="/planos"
-                            className="inline-block px-8 py-4 bg-futvar-green text-futvar-darker font-bold rounded-lg hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
-                          >
-                            Ver planos e patrocinar
-                          </Link>
-                        ) : (
-                          <Link
-                            href="/entrar?redirect=/planos"
-                            className="inline-block px-8 py-4 bg-futvar-green text-futvar-darker font-bold rounded-lg hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
-                          >
-                            Entrar ou cadastrar para patrocinar
-                          </Link>
-                        )}
-                        <BuyGameButton gameId={game.id} className="inline-block px-6 py-4 border-2 border-futvar-gold/50 text-futvar-gold font-bold rounded-lg hover:bg-futvar-gold/10 transition-colors" />
-                      </div>
-                    )}
-                  </div>
+              ) : null}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/70 to-black/40 flex items-center justify-center px-6 sm:px-10">
+                <div className="max-w-xl text-center space-y-4 sm:space-y-6">
+                  <p className="text-base sm:text-lg md:text-xl font-semibold text-white">
+                    Assinatura ou compra necessária para assistir a este jogo.
+                  </p>
+                  {session && isTeamManager ? (
+                    <p className="text-sm sm:text-base text-emerald-50/85">
+                      Esta conta é de responsável pelo time e não pode comprar acesso.
+                      Para assinar ou comprar jogos, saia e crie uma conta de cliente em{' '}
+                      <Link href="/cadastro" className="text-futvar-green hover:underline font-semibold">
+                        Cadastro
+                      </Link>
+                      .
+                    </p>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4">
+                      {session ? (
+                        <Link
+                          href="/planos"
+                          className="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-futvar-green text-futvar-darker font-bold text-sm sm:text-base hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
+                        >
+                          Ver planos e patrocinar
+                        </Link>
+                      ) : (
+                        <Link
+                          href="/entrar?redirect=/planos"
+                          className="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-futvar-green text-futvar-darker font-bold text-sm sm:text-base hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
+                        >
+                          Entrar ou cadastrar para patrocinar
+                        </Link>
+                      )}
+                      <BuyGameButton
+                        gameId={game.id}
+                        className="inline-flex items-center justify-center px-6 py-3.5 rounded-full border-2 border-futvar-gold/60 text-futvar-gold font-bold text-sm sm:text-base hover:bg-futvar-gold/10 transition-colors"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-            {game.description && (
-              <p className="text-futvar-light text-left max-w-2xl mx-auto">{game.description}</p>
-            )}
-          </div>
+            </div>
+          </MatchPlayerPage>
         ) : showPlayer ? (
           <>
             <GamePlayTracker gameId={game.id} />
