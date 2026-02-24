@@ -63,14 +63,24 @@ export default function AdminPreEstreiaMetaNovoPage() {
       const gradeData = (await safeJson(resGrade)) as { error?: string } | unknown[];
       const teamsData = (await safeJson(resTeams)) as { error?: string } | unknown[];
       if (!resNormal.ok) {
-        const msg = typeof normalData === 'object' && normalData !== null && 'error' in normalData ? String((normalData as { error: string }).error) : 'Erro ao carregar categorias normais';
+        const msg =
+          typeof normalData === 'object' && normalData !== null && 'error' in normalData
+            ? String((normalData as { error: string }).error)
+            : 'Erro ao carregar categorias normais';
         setCategoriesError(msg);
         setNormalCategories([]);
       } else {
-        setNormalCategories(Array.isArray(normalData) ? normalData : []);
+        const list = Array.isArray(normalData) ? (normalData as PreSaleCategory[]) : [];
+        setNormalCategories(list);
       }
-      setGradeCategories(resGrade.ok && Array.isArray(gradeData) ? gradeData : []);
-      setTeams(resTeams.ok && Array.isArray(teamsData) ? teamsData : []);
+      const gradeList =
+        resGrade.ok && Array.isArray(gradeData) ? (gradeData as GradeCategory[]) : [];
+      setGradeCategories(gradeList);
+      const teamsList =
+        resTeams.ok && Array.isArray(teamsData)
+          ? (teamsData as { id: string; name: string; shortName: string | null }[])
+          : [];
+      setTeams(teamsList);
     }).catch((err) => {
       setCategoriesError(err?.message ? `Erro: ${err.message}` : 'Erro de conexão ao carregar categorias');
       setNormalCategories([]);
