@@ -49,26 +49,20 @@ export async function POST(request: NextRequest) {
     const normalCatIds = Array.isArray(data.normalCategoryIds) ? data.normalCategoryIds.filter(Boolean) : [];
     const gradeCategoryId = data.gradeCategoryId?.trim() || null;
 
-    // Se pré-estreia com meta estiver ativada e os dois times definidos, calcula baseline de assinantes e metas.
+    const isMeta = data.metaEnabled === true;
+    const metaExtra = isMeta ? (data.metaExtraPerTeam ?? 0) : 0;
     let baselineHomeSubs: number | null = null;
     let baselineAwaySubs: number | null = null;
     let metaHomeTotal: number | null = null;
     let metaAwayTotal: number | null = null;
-    const metaExtra = data.metaEnabled ? data.metaExtraPerTeam ?? 0 : 0;
 
-    if (data.metaEnabled && metaExtra > 0 && data.homeTeamId && data.awayTeamId) {
+    if (isMeta && metaExtra >= 1 && data.homeTeamId && data.awayTeamId) {
       const [homeCount, awayCount] = await Promise.all([
         prisma.subscription.count({
-          where: {
-            active: true,
-            user: { favoriteTeamId: data.homeTeamId },
-          },
+          where: { active: true, user: { favoriteTeamId: data.homeTeamId } },
         }),
         prisma.subscription.count({
-          where: {
-            active: true,
-            user: { favoriteTeamId: data.awayTeamId },
-          },
+          where: { active: true, user: { favoriteTeamId: data.awayTeamId } },
         }),
       ]);
       baselineHomeSubs = homeCount;
@@ -77,31 +71,41 @@ export async function POST(request: NextRequest) {
       metaAwayTotal = awayCount + metaExtra;
     }
 
+    const specialCategoryId = data.specialCategoryId?.trim() || null;
+    const premiereAtRaw = data.premiereAt && typeof data.premiereAt === 'string' ? data.premiereAt.trim() : '';
+    const premiereAt = premiereAtRaw ? (() => { const d = new Date(premiereAtRaw); return isNaN(d.getTime()) ? null : d; })() : null;
+
+    const createData: Parameters<typeof prisma.preSaleGame.create>[0]['data'] = {
+      title: data.title,
+      description: data.description,
+      thumbnailUrl: data.thumbnailUrl,
+      videoUrl: data.videoUrl?.trim() || null,
+      ...(specialCategoryId ? { specialCategoryId } : {}),
+      gradeCategoryId: gradeCategoryId || undefined,
+      clubAPrice: isMeta ? 0 : data.clubAPrice,
+      clubBPrice: isMeta ? 0 : data.clubBPrice,
+      maxSimultaneousPerClub: isMeta ? 1 : data.maxSimultaneousPerClub,
+      featured: data.featured ?? false,
+      slug,
+      homeTeamId: data.homeTeamId?.trim() || null,
+      awayTeamId: data.awayTeamId?.trim() || null,
+      ...(premiereAt ? { premiereAt } : {}),
+      normalCategories: normalCatIds.length > 0
+        ? { create: normalCatIds.map((categoryId: string) => ({ categoryId })) }
+        : undefined,
+    };
+
+    if (isMeta) {
+      (createData as Record<string, unknown>).metaEnabled = true;
+      (createData as Record<string, unknown>).metaExtraPerTeam = metaExtra;
+      (createData as Record<string, unknown>).baselineHomeSubs = baselineHomeSubs;
+      (createData as Record<string, unknown>).baselineAwaySubs = baselineAwaySubs;
+      (createData as Record<string, unknown>).metaHomeTotal = metaHomeTotal;
+      (createData as Record<string, unknown>).metaAwayTotal = metaAwayTotal;
+    }
+
     const game = await prisma.preSaleGame.create({
-      data: {
-        title: data.title,
-        description: data.description,
-        thumbnailUrl: data.thumbnailUrl,
-        videoUrl: data.videoUrl?.trim() || null,
-        specialCategoryId: data.specialCategoryId,
-        gradeCategoryId: gradeCategoryId || undefined,
-        clubAPrice: data.clubAPrice,
-        clubBPrice: data.clubBPrice,
-        maxSimultaneousPerClub: data.maxSimultaneousPerClub,
-        featured: data.featured ?? false,
-        slug,
-        homeTeamId: data.homeTeamId?.trim() || null,
-        awayTeamId: data.awayTeamId?.trim() || null,
-        metaEnabled: data.metaEnabled ?? false,
-        metaExtraPerTeam: data.metaEnabled ? metaExtra : null,
-        baselineHomeSubs,
-        baselineAwaySubs,
-        metaHomeTotal,
-        metaAwayTotal,
-        normalCategories: normalCatIds.length > 0
-          ? { create: normalCatIds.map((categoryId: string) => ({ categoryId })) }
-          : undefined,
-      },
+      data: createData,
       include: {
         specialCategory: true,
         normalCategories: { include: { category: true } },

@@ -24,19 +24,18 @@ interface Game {
   description: string;
   thumbnailUrl: string;
   videoUrl: string | null;
-  specialCategoryId: string;
+  specialCategoryId: string | null;
   gradeCategoryId: string | null;
-  clubAPrice: number;
-  clubBPrice: number;
-  maxSimultaneousPerClub: number;
   featured: boolean;
   clubSlots: { paymentStatus: string }[];
   normalCategories: { categoryId: string }[];
   metaEnabled?: boolean | null;
   metaExtraPerTeam?: number | null;
+  homeTeam?: { id: string } | null;
+  awayTeam?: { id: string } | null;
 }
 
-export default function AdminPreEstreiaEditarPage() {
+export default function AdminPreEstreiaMetaEditarPage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
@@ -57,9 +56,6 @@ export default function AdminPreEstreiaEditarPage() {
     specialCategoryId: '',
     normalCategoryIds: [] as string[],
     gradeCategoryId: '',
-    clubAPrice: '',
-    clubBPrice: '',
-    maxSimultaneousPerClub: '10',
     featured: false,
     homeTeamId: '' as string,
     awayTeamId: '' as string,
@@ -73,51 +69,61 @@ export default function AdminPreEstreiaEditarPage() {
     fetch(`/api/admin/pre-sale-games/${id}`)
       .then((resGame) => resGame.json())
       .then((g) => {
-        const scope = g?.metaEnabled ? 'META' : 'CLUB';
+        if (g?.id && !g?.metaEnabled) {
+          router.replace('/admin/pre-estreia-meta');
+          return null;
+        }
         return Promise.all([
           Promise.resolve(g),
-          fetch(`/api/admin/pre-sale-categories?type=SPECIAL&scope=${scope}`),
-          fetch(`/api/admin/pre-sale-categories?type=NORMAL&scope=${scope}`),
+          fetch('/api/admin/pre-sale-categories?type=SPECIAL&scope=META'),
+          fetch('/api/admin/pre-sale-categories?type=NORMAL&scope=META'),
           fetch('/api/admin/categories?active=true'),
           fetch('/api/admin/teams'),
         ]);
       })
-      .then(async ([g, resSpecial, resNormal, resGrade, resTeams]) => {
-        const special = await resSpecial.json();
-        const normal = await resNormal.json();
-        const grade = await resGrade.json();
-        const teamsData = await resTeams.json();
+      .then((result) => {
+        if (!result) return;
+        const [g, resSpecial, resNormal, resGrade, resTeams] = result;
+        return Promise.all([resSpecial.json(), resNormal.json(), resGrade.json(), resTeams.json()]).then(([special, normal, grade, teamsData]) => ({
+          g,
+          special,
+          normal,
+          grade,
+          teamsData,
+          resSpecial,
+          resGrade,
+          resTeams,
+        }));
+      })
+      .then((data) => {
+        if (!data) return;
+        const { g, special, normal, grade, teamsData, resSpecial, resGrade, resTeams } = data;
         setGame(g?.id ? g : null);
         setSpecialCategories(resSpecial.ok && Array.isArray(special) ? special : []);
-        setNormalCategories(resNormal.ok && Array.isArray(normal) ? normal : []);
+        setNormalCategories(Array.isArray(normal) ? normal : []);
         setGradeCategories(resGrade.ok && Array.isArray(grade) ? grade : []);
         setTeams(resTeams.ok && Array.isArray(teamsData) ? teamsData : []);
         if (g?.id) {
-        setForm({
-          title: g.title,
-          description: g.description,
-          thumbnailUrl: g.thumbnailUrl,
-          videoUrl: g.videoUrl || '',
-          specialCategoryId: g.specialCategoryId,
-          normalCategoryIds: (g.normalCategories || []).map((x: { categoryId: string }) => x.categoryId),
-          gradeCategoryId: g.gradeCategoryId || '',
-          clubAPrice: String(g.clubAPrice),
-          clubBPrice: String(g.clubBPrice),
-          maxSimultaneousPerClub: String(Math.max(1, Number(g.maxSimultaneousPerClub) || 10)),
-          featured: g.featured ?? false,
-          homeTeamId: g.homeTeamId ?? g.homeTeam?.id ?? '',
-          awayTeamId: g.awayTeamId ?? g.awayTeam?.id ?? '',
-          metaExtraPerTeam: String(Math.max(1, Number(g.metaExtraPerTeam) || 10)),
-          premiereDate: g.premiereAt ? new Date(g.premiereAt).toISOString().slice(0, 10) : '',
-          premiereTime: g.premiereAt ? `${String(new Date(g.premiereAt).getHours()).padStart(2, '0')}:${String(new Date(g.premiereAt).getMinutes()).padStart(2, '0')}` : '',
-        });
-      }
+          setForm({
+            title: g.title,
+            description: g.description,
+            thumbnailUrl: g.thumbnailUrl,
+            videoUrl: g.videoUrl || '',
+            specialCategoryId: g.specialCategoryId || '',
+            normalCategoryIds: (g.normalCategories || []).map((x: { categoryId: string }) => x.categoryId),
+            gradeCategoryId: g.gradeCategoryId || '',
+            featured: g.featured ?? false,
+            homeTeamId: g.homeTeamId ?? g.homeTeam?.id ?? '',
+            awayTeamId: g.awayTeamId ?? g.awayTeam?.id ?? '',
+            metaExtraPerTeam: String(Math.max(1, Number(g.metaExtraPerTeam) || 10)),
+            premiereDate: g.premiereAt ? new Date(g.premiereAt).toISOString().slice(0, 10) : '',
+            premiereTime: g.premiereAt ? `${String(new Date(g.premiereAt).getHours()).padStart(2, '0')}:${String(new Date(g.premiereAt).getMinutes()).padStart(2, '0')}` : '',
+          });
+        }
       })
       .catch(() => setGame(null))
       .finally(() => setLoading(false));
-  }, [id]);
-
-  const hasAnyPaid = game?.clubSlots?.some((s) => s.paymentStatus === 'PAID') ?? false;
+  }, [id, router]);
 
   const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -154,13 +160,10 @@ export default function AdminPreEstreiaEditarPage() {
           specialCategoryId: form.specialCategoryId || undefined,
           normalCategoryIds: form.normalCategoryIds,
           gradeCategoryId: form.gradeCategoryId.trim() || undefined,
-          clubAPrice: game.metaEnabled || hasAnyPaid ? undefined : parseFloat(form.clubAPrice),
-          clubBPrice: game.metaEnabled || hasAnyPaid ? undefined : parseFloat(form.clubBPrice),
-          maxSimultaneousPerClub: game.metaEnabled ? undefined : Math.max(1, parseInt(form.maxSimultaneousPerClub, 10) || 10),
           featured: form.featured,
           homeTeamId: form.homeTeamId || null,
           awayTeamId: form.awayTeamId || null,
-          ...(game.metaEnabled && { metaExtraPerTeam: Math.max(1, parseInt(form.metaExtraPerTeam, 10) || 10) }),
+          metaExtraPerTeam: Math.max(1, parseInt(form.metaExtraPerTeam, 10) || 10),
           premiereAt: form.premiereDate && form.premiereTime ? new Date(`${form.premiereDate}T${form.premiereTime}`).toISOString() : null,
         }),
       });
@@ -169,7 +172,7 @@ export default function AdminPreEstreiaEditarPage() {
         setError(data.error || 'Erro ao salvar');
         return;
       }
-      router.push(`/admin/pre-estreia/${id}`);
+      router.push('/admin/pre-estreia-meta');
     } catch {
       setError('Erro de conexao');
     } finally {
@@ -178,43 +181,35 @@ export default function AdminPreEstreiaEditarPage() {
   };
 
   if (loading || !game) {
-    return <div className="max-w-2xl mx-auto px-6 py-10 text-netflix-light">{loading ? 'Carregando...' : 'Jogo nao encontrado.'}</div>;
+    return <div className="max-w-2xl mx-auto px-6 py-10 text-netflix-light">{loading ? 'Carregando...' : 'Jogo não encontrado.'}</div>;
   }
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
-      <Link href={`/admin/pre-estreia/${id}`} className="text-netflix-light hover:text-white text-sm mb-6 inline-block">← Voltar</Link>
-      <h1 className="text-2xl font-bold text-white mb-8">Editar jogo — Pre-estreia</h1>
+      <Link href={`/admin/pre-estreia-meta/${id}`} className="text-netflix-light hover:text-white text-sm mb-6 inline-block">← Voltar</Link>
+      <h1 className="text-2xl font-bold text-white mb-8">Editar jogo — Pré-estreia Meta</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && <p className="text-red-400 text-sm">{error}</p>}
-        {hasAnyPaid && !game.metaEnabled && <p className="text-amber-400 text-sm">Precos nao podem ser alterados apos o primeiro pagamento.</p>}
         <div className="rounded-lg border border-futvar-green/30 bg-futvar-dark/60 p-3 text-xs text-futvar-light flex items-center justify-between gap-3">
-          <p>
-            Tipo de pré-estreia:{' '}
-            <span className="font-semibold text-white">
-              {game.metaEnabled ? 'Meta de assinantes por time' : 'Clubes financiam (slots por clube)'}
-            </span>
-          </p>
-          {game.metaEnabled && typeof game.metaExtraPerTeam === 'number' && game.metaExtraPerTeam > 0 && (
-            <span className="px-2 py-1 rounded-full bg-futvar-green/15 text-futvar-green text-[11px] font-semibold">
-              Meta extra: +{game.metaExtraPerTeam} assinantes/torcida
-            </span>
-          )}
+          <span className="font-semibold text-white">Meta de assinantes por time</span>
+          <span className="px-2 py-1 rounded-full bg-futvar-green/15 text-futvar-green text-[11px] font-semibold">
+            Meta extra: +{form.metaExtraPerTeam} assinantes/torcida
+          </span>
         </div>
         <div>
-          <label className="block text-sm font-medium text-white mb-2">Titulo *</label>
+          <label className="block text-sm font-medium text-white mb-2">Título *</label>
           <input type="text" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} required className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-white mb-2">Times (opcional)</label>
-          <p className="text-xs text-netflix-light mb-2">Mandante x Visitante — ex.: Time A x Time B</p>
+          <label className="block text-sm font-medium text-white mb-2">Times (Mandante x Visitante) *</label>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-netflix-light mb-1">Mandante</label>
               <select
                 value={form.homeTeamId}
                 onChange={(e) => setForm((f) => ({ ...f, homeTeamId: e.target.value }))}
+                required
                 className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
               >
                 <option value="">— Selecionar —</option>
@@ -228,6 +223,7 @@ export default function AdminPreEstreiaEditarPage() {
               <select
                 value={form.awayTeamId}
                 onChange={(e) => setForm((f) => ({ ...f, awayTeamId: e.target.value }))}
+                required
                 className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
               >
                 <option value="">— Selecionar —</option>
@@ -239,7 +235,7 @@ export default function AdminPreEstreiaEditarPage() {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-white mb-2">Descricao *</label>
+          <label className="block text-sm font-medium text-white mb-2">Descrição *</label>
           <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} required rows={4} className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white" />
         </div>
         <div>
@@ -259,33 +255,16 @@ export default function AdminPreEstreiaEditarPage() {
           <label className="block text-sm font-medium text-white mb-2">Thumbnail *</label>
           <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleThumbnailUpload} />
           <div className="flex gap-3 items-center flex-wrap">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2 rounded bg-netflix-gray text-white text-sm hover:bg-white/20"
-            >
-              Upload imagem
-            </button>
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm hover:bg-white/20">Upload imagem</button>
             <span className="text-xs text-netflix-light">ou</span>
-            <input
-              type="url"
-              value={form.thumbnailUrl}
-              onChange={(e) => setForm((f) => ({ ...f, thumbnailUrl: e.target.value }))}
-              placeholder="Cole a URL da imagem"
-              required
-              className="flex-1 min-w-[200px] px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white placeholder:text-netflix-light"
-            />
+            <input type="url" value={form.thumbnailUrl} onChange={(e) => setForm((f) => ({ ...f, thumbnailUrl: e.target.value }))} placeholder="Cole a URL da imagem" required className="flex-1 min-w-[200px] px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white placeholder:text-netflix-light" />
           </div>
         </div>
-        <StreamVideoField
-          value={form.videoUrl}
-          onChange={(url) => setForm((f) => ({ ...f, videoUrl: url }))}
-          label="Vídeo (opcional)"
-          required={false}
-        />
+        <StreamVideoField value={form.videoUrl} onChange={(url) => setForm((f) => ({ ...f, videoUrl: url }))} label="Vídeo (opcional)" required={false} />
         <div>
-          <label className="block text-sm font-medium text-white mb-2">Categoria especial *</label>
-          <select value={form.specialCategoryId} onChange={(e) => setForm((f) => ({ ...f, specialCategoryId: e.target.value }))} required className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white">
+          <label className="block text-sm font-medium text-white mb-2">Categoria especial (opcional)</label>
+          <select value={form.specialCategoryId} onChange={(e) => setForm((f) => ({ ...f, specialCategoryId: e.target.value }))} className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white">
+            <option value="">— Nenhuma —</option>
             {specialCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
@@ -304,35 +283,14 @@ export default function AdminPreEstreiaEditarPage() {
           <label className="block text-sm font-medium text-white mb-2">Categoria na grade (quando publicado)</label>
           <select value={form.gradeCategoryId} onChange={(e) => setForm((f) => ({ ...f, gradeCategoryId: e.target.value }))} className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white">
             <option value="">Nenhuma / Outros</option>
-            {gradeCategories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
+            {gradeCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <p className="text-netflix-light text-xs mt-1">Ao publicar na grade, o jogo aparecera nesta categoria.</p>
         </div>
-        {game.metaEnabled && (
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">Meta extra por time (novos assinantes) *</label>
-            <input type="number" min={1} value={form.metaExtraPerTeam} onChange={(e) => setForm((f) => ({ ...f, metaExtraPerTeam: e.target.value }))} required className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white" />
-            <p className="text-xs text-netflix-light mt-1">Quantos assinantes a mais cada time precisa para liberar o jogo.</p>
-          </div>
-        )}
-        {!game.metaEnabled && (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">Preco Clube A (R$) *</label>
-              <input type="number" step="0.01" min="0" value={form.clubAPrice} onChange={(e) => setForm((f) => ({ ...f, clubAPrice: e.target.value }))} required disabled={hasAnyPaid} className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white disabled:opacity-60" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">Preco Clube B (R$) *</label>
-              <input type="number" step="0.01" min="0" value={form.clubBPrice} onChange={(e) => setForm((f) => ({ ...f, clubBPrice: e.target.value }))} required disabled={hasAnyPaid} className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white disabled:opacity-60" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">Max. simultaneos por clube *</label>
-              <input type="number" min="1" value={form.maxSimultaneousPerClub} onChange={(e) => setForm((f) => ({ ...f, maxSimultaneousPerClub: e.target.value }))} required className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white" />
-            </div>
-          </>
-        )}
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Meta extra por time (novos assinantes) *</label>
+          <input type="number" min={1} value={form.metaExtraPerTeam} onChange={(e) => setForm((f) => ({ ...f, metaExtraPerTeam: e.target.value }))} required className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white" />
+          <p className="text-xs text-netflix-light mt-1">Quantos assinantes a mais cada time precisa para liberar o jogo.</p>
+        </div>
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />
           <span className="text-white text-sm">Destaque</span>

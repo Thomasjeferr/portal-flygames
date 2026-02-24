@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { GameCard } from '@/components/GameCard';
 import { HeroBannerCarousel } from '@/components/HeroBannerCarousel';
 import { ContinueWatchingSection } from '@/components/ContinueWatchingSection';
+import { LiveNowSection } from '@/components/LiveNowSection';
+import { FindGameSection } from '@/components/FindGameSection';
 import { SponsorsSection } from '@/components/SponsorsSection';
 import { prisma } from '@/lib/db';
 
@@ -13,6 +15,7 @@ type GameWithCategory = {
   slug: string;
   championship: string;
   gameDate: string;
+  createdAt: string;
   thumbnailUrl: string | null;
   featured: boolean;
   displayMode?: string;
@@ -45,11 +48,22 @@ type PreSaleMetaCard = {
 
 async function getPreSaleForClubs() {
   try {
-    return prisma.preSaleGame.findMany({
-      where: { status: { in: ['PRE_SALE', 'FUNDED'] } },
+    const games = await prisma.preSaleGame.findMany({
+      where: {
+        status: { in: ['PRE_SALE', 'FUNDED'] },
+        ...({ metaEnabled: false } as { metaEnabled?: boolean }),
+      },
       orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
-      select: { id: true, title: true, slug: true, thumbnailUrl: true, fundedClubsCount: true, createdAt: true },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        thumbnailUrl: true,
+        fundedClubsCount: true,
+        createdAt: true,
+      },
     });
+    return games;
   } catch {
     return [];
   }
@@ -60,41 +74,33 @@ async function getPreSaleWithMeta(): Promise<PreSaleMetaCard[]> {
     const games = await prisma.preSaleGame.findMany({
       where: {
         status: { in: ['PRE_SALE', 'FUNDED'] },
+        ...({ metaEnabled: true } as { metaEnabled?: boolean }),
+        homeTeamId: { not: null },
+        awayTeamId: { not: null },
       },
       orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
       take: 6,
-    }) as Array<
-      typeof prisma.preSaleGame extends { findMany: (...args: any) => Promise<(infer T)[]> }
-        ? T & {
-            metaEnabled?: boolean;
-            metaExtraPerTeam?: number | null;
-            metaHomeTotal?: number | null;
-            metaAwayTotal?: number | null;
-          }
-        : any
-    >;
-
+    });
     const cards: PreSaleMetaCard[] = [];
     for (const g of games) {
-      if (!g.homeTeamId || !g.awayTeamId || !g.metaEnabled || !g.metaExtraPerTeam) continue;
-
+      const homeId = g.homeTeamId!;
+      const awayId = g.awayTeamId!;
+      const meta = g as { metaExtraPerTeam?: number | null; metaHomeTotal?: number | null; metaAwayTotal?: number | null };
+      if (!meta.metaExtraPerTeam) continue;
       const [homeCount, awayCount] = await Promise.all([
         prisma.subscription.count({
-          where: { active: true, user: { favoriteTeamId: g.homeTeamId } },
+          where: { active: true, user: { favoriteTeamId: homeId } },
         }),
         prisma.subscription.count({
-          where: { active: true, user: { favoriteTeamId: g.awayTeamId } },
+          where: { active: true, user: { favoriteTeamId: awayId } },
         }),
       ]);
-
       const [homeTeam, awayTeam] = await Promise.all([
-        prisma.team.findUnique({ where: { id: g.homeTeamId }, select: { name: true, shortName: true } }),
-        prisma.team.findUnique({ where: { id: g.awayTeamId }, select: { name: true, shortName: true } }),
+        prisma.team.findUnique({ where: { id: homeId }, select: { name: true, shortName: true } }),
+        prisma.team.findUnique({ where: { id: awayId }, select: { name: true, shortName: true } }),
       ]);
-
-      const homeTarget = (g.metaHomeTotal ?? null) ?? (homeCount + (g.metaExtraPerTeam ?? 0));
-      const awayTarget = (g.metaAwayTotal ?? null) ?? (awayCount + (g.metaExtraPerTeam ?? 0));
-
+      const homeTarget = meta.metaHomeTotal ?? homeCount + meta.metaExtraPerTeam;
+      const awayTarget = meta.metaAwayTotal ?? awayCount + meta.metaExtraPerTeam;
       cards.push({
         id: g.id,
         title: g.title,
@@ -108,7 +114,6 @@ async function getPreSaleWithMeta(): Promise<PreSaleMetaCard[]> {
         awayTarget,
       });
     }
-
     return cards;
   } catch {
     return [];
@@ -120,7 +125,7 @@ async function getGames(): Promise<GameWithCategory[]> {
     const [games, preSaleGames] = await Promise.all([
       prisma.game.findMany({
         where: { displayMode: { in: ['public_no_media', 'public_with_media'] } },
-        orderBy: [{ order: 'asc' }, { featured: 'desc' }, { gameDate: 'desc' }],
+        orderBy: [{ order: 'asc' }, { featured: 'desc' }, { createdAt: 'desc' }],
         select: {
           id: true,
           title: true,
@@ -130,6 +135,7 @@ async function getGames(): Promise<GameWithCategory[]> {
           thumbnailUrl: true,
           featured: true,
           displayMode: true,
+          createdAt: true,
           category: { select: { id: true, name: true, slug: true, order: true } },
           homeTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
           awayTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
@@ -158,6 +164,7 @@ async function getGames(): Promise<GameWithCategory[]> {
     const mappedGames = games.map((g) => ({
       ...g,
       gameDate: g.gameDate.toISOString(),
+      createdAt: g.createdAt.toISOString(),
       category: g.category,
     })) as GameWithCategory[];
 
@@ -169,6 +176,7 @@ async function getGames(): Promise<GameWithCategory[]> {
         slug: g.slug,
         championship: 'Pre-estreia Clubes',
         gameDate: g.createdAt.toISOString(),
+        createdAt: g.createdAt.toISOString(),
         thumbnailUrl: g.thumbnailUrl,
         featured: g.featured,
         category: firstCat ? { ...firstCat, order: 0 } : null,
@@ -214,21 +222,57 @@ async function getLiveReplays(): Promise<LiveReplayCard[]> {
   }
 }
 
-function groupByCategory(games: GameWithCategory[]): { name: string; id: string; order: number; games: GameWithCategory[] }[] {
-  const map = new Map<string, { name: string; id: string; order: number; games: GameWithCategory[] }>();
-  const noCategory: GameWithCategory[] = [];
-  for (const g of games) {
-    if (g.category) {
-      const key = g.category.id;
-      if (!map.has(key)) map.set(key, { id: key, name: g.category.name, order: g.category.order, games: [] });
-      map.get(key)!.games.push(g);
-    } else {
-      noCategory.push(g);
+const MAX_GAMES_PER_ROW = 10;
+
+/**
+ * Agrupa jogos (apenas os que não são pré-estreia clubes) por categoria
+ * para as faixas da home. O nome da categoria vira a headline.
+ * Dentro de cada categoria, o primeiro jogo é sempre o último adicionado
+ * (ordenado por createdAt desc, caindo para gameDate se necessário).
+ */
+function groupByChampionship(
+  games: GameWithCategory[],
+): { championship: string; games: GameWithCategory[]; categoryId?: string }[] {
+  // Ignora pré-estreias (essas já têm bloco próprio)
+  const regularGames = games.filter(
+    (g) => !g.href?.startsWith('/pre-estreia') && g.category
+  );
+
+  type Group = { label: string; order: number; categoryId: string; games: GameWithCategory[] };
+  const map = new Map<string, Group>();
+
+  for (const g of regularGames) {
+    const cat = g.category!;
+    const key = cat.id;
+    if (!map.has(key)) {
+      map.set(key, { label: cat.name, order: cat.order ?? 0, categoryId: key, games: [] });
     }
+    map.get(key)!.games.push(g);
   }
-  const categories = Array.from(map.values()).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
-  if (noCategory.length > 0) categories.push({ id: '', name: 'Outros', order: 9999, games: noCategory });
-  return categories;
+
+  const rows = Array.from(map.values()).map(({ label, order, categoryId, games }) => {
+    const sortedGames = [...games].sort((a, b) => {
+      const aDateStr = a.createdAt || a.gameDate;
+      const bDateStr = b.createdAt || b.gameDate;
+      const aTime = new Date(aDateStr).getTime();
+      const bTime = new Date(bDateStr).getTime();
+      return bTime - aTime; // mais novo primeiro
+    });
+    return {
+      championship: label,
+      games: sortedGames,
+      order,
+      categoryId,
+    };
+  });
+
+  // Ordena categorias pela ordem configurada e, em seguida, pelo nome
+  return rows
+    .sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.championship.localeCompare(b.championship);
+    })
+    .map(({ championship, games, categoryId }) => ({ championship, games, categoryId }));
 }
 
 export default async function HomePage() {
@@ -238,13 +282,13 @@ export default async function HomePage() {
     getPreSaleWithMeta(),
     getLiveReplays(),
   ]);
-  const featured = games.filter((g) => g.featured);
-  const byCategory = groupByCategory(games);
+  const byChampionship = groupByChampionship(games);
 
   return (
     <div className="min-h-screen">
       <HeroBannerCarousel />
       <ContinueWatchingSection />
+      <LiveNowSection />
 
       {/* Conteúdo */}
       <section id="jogos" className="py-12 lg:py-16 px-4 lg:px-12">
@@ -258,7 +302,8 @@ export default async function HomePage() {
                 </h2>
               </div>
               <p className="text-futvar-light mb-6 max-w-2xl">
-                Quando as torcidas batem a meta de novos assinantes, o jogo de pré-estreia libera para todo mundo. Ao assinar, você já libera todo o conteúdo normal do portal na hora.
+                Quando as torcidas batem a meta de novos <span className="font-semibold text-white">Patrocinadores Torcedores</span>, o jogo de pré-estreia libera para todo mundo.
+                Ao se tornar Patrocinador Torcedor, você <span className="font-semibold text-white">investe diretamente no seu time</span>, ajuda a bater a meta deste jogo e ainda libera todo o conteúdo normal do portal na hora.
               </p>
               <div className="space-y-4">
                 {preSaleWithMeta.map((g, idx) => {
@@ -297,7 +342,12 @@ export default async function HomePage() {
                         <div className="space-y-2 mt-1">
                           <div>
                             <div className="flex justify-between text-xs text-futvar-light mb-1">
-                              <span>Time mandante</span>
+                              <span>
+                                Time mandante
+                                {g.homeTeamName && (
+                                  <> ({g.homeTeamName})</>
+                                )}
+                              </span>
                               {g.homeCurrent != null && g.homeTarget != null && (
                                 <span>{g.homeCurrent} / {g.homeTarget}</span>
                               )}
@@ -311,7 +361,12 @@ export default async function HomePage() {
                           </div>
                           <div>
                             <div className="flex justify-between text-xs text-futvar-light mb-1">
-                              <span>Time visitante</span>
+                              <span>
+                                Time visitante
+                                {g.awayTeamName && (
+                                  <> ({g.awayTeamName})</>
+                                )}
+                              </span>
                               {g.awayCurrent != null && g.awayTarget != null && (
                                 <span>{g.awayCurrent} / {g.awayTarget}</span>
                               )}
@@ -326,13 +381,13 @@ export default async function HomePage() {
                         </div>
                         <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
                           <p className="text-xs text-futvar-light max-w-md">
-                            Ao assinar, você apoia o seu time, libera todo o conteúdo normal do portal e ajuda a bater a meta para liberar este jogo.
+                            Ao se tornar <span className="font-semibold text-white">Patrocinador Torcedor</span>, você apoia financeiramente o seu time, participa da meta desta pré-estreia e libera todo o conteúdo normal do portal para você.
                           </p>
                           <Link
                             href="/planos"
                             className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-bold text-sm hover:bg-futvar-green-light transition-colors"
                           >
-                            Assinar pelo seu time
+                          Ser Patrocinador Torcedor
                           </Link>
                         </div>
                       </div>
@@ -385,83 +440,82 @@ export default async function HomePage() {
               <p className="text-futvar-light mb-6 max-w-2xl">
                 Assista às transmissões que já rolaram, disponíveis como replay para quem tem acesso.
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
-                {liveReplays.map((live, i) => (
-                  <div
-                    key={live.id}
-                    className="animate-scale-in opacity-0"
-                    style={{ animationDelay: `${0.18 + i * 0.05}s` }}
-                  >
-                    <GameCard
-                      slug={live.id}
-                      title={live.title}
-                      championship="Replay de live"
-                      thumbnailUrl={live.thumbnailUrl}
-                      gameDate={live.endedAt}
-                      featured={false}
-                      href={`/live/${live.id}`}
-                      badgeText="REPLAY"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {featured.length > 0 && (
-            <div className="mb-14">
-              <div className="flex items-center gap-3 mb-6 animate-fade-in-up opacity-0 [animation-delay:0.15s]">
-                <span className="w-1 h-8 rounded-full bg-futvar-gold" />
-                <h2 className="text-2xl lg:text-3xl font-bold text-white">
-                  Principais jogos
-                </h2>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
-                {featured.map((game, i) => (
-                  <div key={game.id + game.slug} className="animate-scale-in opacity-0" style={{ animationDelay: `${0.2 + i * 0.06}s` }}>
-                    <GameCard slug={game.slug} title={game.title} championship={game.championship} thumbnailUrl={game.thumbnailUrl} gameDate={game.gameDate} featured={game.featured} href={game.href} homeTeam={game.homeTeam ?? undefined} awayTeam={game.awayTeam ?? undefined} showAssistir={game.displayMode === 'public_with_media'} />
-                  </div>
-                ))}
+              <div className="overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0">
+                <div className="flex gap-5" style={{ width: 'max-content', minWidth: '100%' }}>
+                  {liveReplays.map((live, i) => (
+                    <div key={live.id} className="flex-shrink-0 w-[280px] sm:w-[300px] animate-scale-in opacity-0" style={{ animationDelay: `${0.18 + i * 0.05}s` }}>
+                      <GameCard
+                        slug={live.id}
+                        title={live.title}
+                        championship="Replay de live"
+                        thumbnailUrl={live.thumbnailUrl}
+                        gameDate={live.endedAt}
+                        featured={false}
+                        href={`/live/${live.id}`}
+                        badgeText="REPLAY"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
-          {games.length === 0 ? (
+          {byChampionship.length > 0 && (
+            <div id="jogos-por-campeonato" className="mb-14">
+              <div className="space-y-10">
+                {byChampionship.map((row, rowIndex) => {
+                  const slice = row.games.slice(0, MAX_GAMES_PER_ROW);
+                  const catalogUrl = row.categoryId
+                    ? `/jogos?categoria=${encodeURIComponent(row.categoryId)}`
+                    : '/jogos';
+                  return (
+                    <div
+                      key={row.championship}
+                      className="animate-fade-in-up opacity-0"
+                      style={{ animationDelay: `${0.16 + rowIndex * 0.04}s` }}
+                    >
+                      <div className="flex items-center justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3">
+                          <span className="w-1 h-8 rounded-full bg-futvar-green" />
+                          <h2 className="text-2xl lg:text-3xl font-bold text-white">
+                            {row.championship}
+                          </h2>
+                        </div>
+                        <Link
+                          href={catalogUrl}
+                          className="text-futvar-green hover:underline text-sm font-semibold shrink-0"
+                        >
+                          Ver todos →
+                        </Link>
+                      </div>
+                      <div className="overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0">
+                        <div className="flex gap-5" style={{ width: 'max-content', minWidth: '100%' }}>
+                          {slice.map((game) => (
+                            <div key={game.id + game.slug} className="flex-shrink-0 w-[280px] sm:w-[300px]">
+                              <GameCard slug={game.slug} title={game.title} championship={game.championship} thumbnailUrl={game.thumbnailUrl} gameDate={game.gameDate} featured={game.featured} href={game.href} homeTeam={game.homeTeam ?? undefined} awayTeam={game.awayTeam ?? undefined} showAssistir={game.displayMode === 'public_with_media'} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {games.length === 0 && preSaleForClubs.length === 0 && preSaleWithMeta.length === 0 && (
             <div className="text-center py-24 rounded-2xl border-2 border-dashed border-futvar-green/20 bg-futvar-green/5 animate-fade-in opacity-0 [animation-delay:0.2s]">
               <div className="text-6xl mb-4">⚽</div>
               <p className="text-xl text-futvar-light font-medium">Nenhum jogo disponível no momento.</p>
               <p className="mt-2 text-futvar-light/80">Em breve teremos transmissões incríveis para você assistir.</p>
             </div>
-          ) : (
-            <>
-              {byCategory.map((cat, catIndex) => (
-                <div key={cat.id || 'outros'} className="mb-14">
-                  <div
-                    className="flex items-center gap-3 mb-6 animate-fade-in-up opacity-0"
-                    style={{ animationDelay: `${0.15 + catIndex * 0.08}s` }}
-                  >
-                    <span className="w-1 h-8 rounded-full bg-futvar-green" />
-                    <h2 className="text-2xl lg:text-3xl font-bold text-white">
-                      {cat.name}
-                    </h2>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
-                    {cat.games.map((game, i) => (
-                      <div
-                        key={game.id + game.slug}
-                        className="animate-scale-in opacity-0"
-                        style={{ animationDelay: `${0.25 + catIndex * 0.08 + i * 0.05}s` }}
-                      >
-                        <GameCard slug={game.slug} title={game.title} championship={game.championship} thumbnailUrl={game.thumbnailUrl} gameDate={game.gameDate} featured={game.featured} href={game.href} homeTeam={game.homeTeam ?? undefined} awayTeam={game.awayTeam ?? undefined} showAssistir={game.displayMode === 'public_with_media'} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </>
           )}
         </div>
       </section>
 
+      <FindGameSection />
       <SponsorsSection />
     </div>
   );

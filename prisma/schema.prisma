@@ -325,13 +325,14 @@ model HomeBanner {
   live    Live?       @relation(fields: [liveId], references: [id], onDelete: SetNull)
 }
 
-// ========== PRÉ-ESTREIA CLUBES ==========
-// Categorias para pré-estreia (NORMAL = catálogo, SPECIAL = pré-venda)
+// ========== PRÉ-ESTREIA ==========
+// Categorias: scope CLUB = só Pré-estreia Clubes, META = só Pré-estreia Meta (não misturar)
 model PreSaleCategory {
   id        String   @id @default(cuid())
   name      String   @map("name")
   slug      String   @unique @map("slug")
   type      String   @map("type") // NORMAL | SPECIAL
+  scope     String   @default("CLUB") @map("scope") // CLUB | META
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -346,8 +347,8 @@ model PreSaleGame {
   thumbnailUrl          String    @map("thumbnail_url")
   videoUrl              String?   @map("video_url")
   status                String    @default("PRE_SALE") @map("status") // PRE_SALE | FUNDED | PUBLISHED
-  // Modelo atual: clubes financiam slots
-  specialCategoryId     String    @map("special_category_id")
+  // Modelo atual: clubes financiam slots. Opcional quando metaEnabled (Pré-estreia Meta).
+  specialCategoryId     String?   @map("special_category_id")
   gradeCategoryId       String?   @map("grade_category_id")  // categoria da grade convencional (quando publicado)
   featured              Boolean   @default(false) @map("featured")
   maxSimultaneousPerClub Int      @map("max_simultaneous_per_club")
@@ -364,12 +365,13 @@ model PreSaleGame {
   slug                  String    @unique @map("slug")
   homeTeamId            String?   @map("home_team_id")
   awayTeamId            String?   @map("away_team_id")
+  premiereAt             DateTime? @map("premiere_at")   // Data e hora da estreia (informativo)
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
   homeTeam          Team?                 @relation("HomePreSaleGame", fields: [homeTeamId], references: [id], onDelete: SetNull)
   awayTeam          Team?                 @relation("AwayPreSaleGame", fields: [awayTeamId], references: [id], onDelete: SetNull)
-  specialCategory   PreSaleCategory       @relation("SpecialCategory", fields: [specialCategoryId], references: [id], onDelete: Restrict)
+  specialCategory   PreSaleCategory?      @relation("SpecialCategory", fields: [specialCategoryId], references: [id], onDelete: Restrict)
   gradeCategory     Category?             @relation(fields: [gradeCategoryId], references: [id], onDelete: SetNull)
   normalCategories  PreSaleGameCategory[]
   clubSlots         PreSaleClubSlot[]

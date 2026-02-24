@@ -125,19 +125,19 @@ export function Header() {
           onClick={() => setLivePreviewOpen((o) => !o)}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm transition-colors ${
             liveHighlight.mode === 'LIVE'
-              ? 'border-red-500/60 bg-red-600/20 text-red-200 hover:bg-red-600/30'
+              ? 'border-red-500 bg-red-600 text-white hover:bg-red-500 shadow-red-500/30 shadow-md'
               : 'border-amber-400/60 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25'
           }`}
         >
-          <span className="relative flex h-2 w-2">
+          <span className="relative flex h-2.5 w-2.5">
+            {liveHighlight.mode === 'LIVE' && (
+              <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 animate-ping opacity-70" />
+            )}
             <span
-              className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                liveHighlight.mode === 'LIVE' ? 'bg-red-400 animate-ping' : 'bg-amber-300'
-              }`}
-            />
-            <span
-              className={`relative inline-flex rounded-full h-2 w-2 ${
-                liveHighlight.mode === 'LIVE' ? 'bg-red-200' : 'bg-amber-200'
+              className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                liveHighlight.mode === 'LIVE'
+                  ? 'bg-red-300 animate-live-blink'
+                  : 'bg-amber-200'
               }`}
             />
           </span>
@@ -361,18 +361,22 @@ export function Header() {
                     const live = liveHighlight.live;
                     if (live) router.push(`/live/${live.id}`);
                   }}
-                  className="mb-2 px-4 py-3 rounded-lg text-sm font-semibold flex items-center justify-between bg-futvar-dark border border-futvar-green/40 text-futvar-light"
+                  className={`mb-2 px-4 py-3 rounded-lg text-sm font-semibold flex items-center justify-between border ${
+                    liveHighlight.mode === 'LIVE'
+                      ? 'bg-red-600/90 border-red-500 text-white'
+                      : 'bg-futvar-dark border-futvar-green/40 text-futvar-light'
+                  }`}
                 >
                   <span className="flex items-center gap-2">
-                    <span className="relative flex h-2 w-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      {liveHighlight.mode === 'LIVE' && (
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 animate-ping opacity-70" />
+                      )}
                       <span
-                        className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                          liveHighlight.mode === 'LIVE' ? 'bg-red-400 animate-ping' : 'bg-amber-300'
-                        }`}
-                      />
-                      <span
-                        className={`relative inline-flex rounded-full h-2 w-2 ${
-                          liveHighlight.mode === 'LIVE' ? 'bg-red-200' : 'bg-amber-200'
+                        className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                          liveHighlight.mode === 'LIVE'
+                            ? 'bg-red-300 animate-live-blink'
+                            : 'bg-amber-200'
                         }`}
                       />
                     </span>
@@ -381,7 +385,7 @@ export function Header() {
                       {liveHighlight.live.title}
                     </span>
                   </span>
-                  <span className="text-xs text-futvar-green font-bold">
+                  <span className={`text-xs font-bold ${liveHighlight.mode === 'LIVE' ? 'text-red-100' : 'text-futvar-green'}`}>
                     {liveHighlight.mode === 'LIVE' ? 'Assistir' : 'Ver'}
                   </span>
                 </button>

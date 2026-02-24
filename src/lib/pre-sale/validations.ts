@@ -5,7 +5,7 @@ const basePreSaleGameSchema = z.object({
   description: z.string().min(1, 'Descrição obrigatória'),
   thumbnailUrl: z.string().url('URL da thumbnail inválida'),
   videoUrl: z.string().url().optional().nullable().or(z.literal('')),
-  specialCategoryId: z.string().min(1, 'Categoria especial obrigatória'),
+  specialCategoryId: z.string().min(1).optional().nullable().or(z.literal('')),
   normalCategoryIds: z.array(z.string()).default([]),
   gradeCategoryId: z.string().min(1).optional().nullable().or(z.literal('')),
   // Preço por clube (modo clubes financiam). No modo meta, pode ser 0.
@@ -15,12 +15,21 @@ const basePreSaleGameSchema = z.object({
   featured: z.boolean().optional().default(false),
   homeTeamId: z.string().optional().nullable(),
   awayTeamId: z.string().optional().nullable(),
-  // Novo modo: pré-estreia com meta de assinantes
+  // Pré-estreia com meta (quando tiver formulário próprio): 0 quando só clubes financiam
   metaEnabled: z.boolean().optional().default(false),
-  metaExtraPerTeam: z.number().int().min(1, 'Meta extra deve ser >= 1').optional().default(0),
+  metaExtraPerTeam: z.number().int().min(0).optional().default(0),
+  premiereAt: z.string().optional().nullable().or(z.literal('')),
 });
 
 export const createPreSaleGameSchema = basePreSaleGameSchema.superRefine((data, ctx) => {
+  // Pré-estreia Clubes: categoria especial obrigatória
+  if (!data.metaEnabled && (!data.specialCategoryId || data.specialCategoryId.trim() === '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['specialCategoryId'],
+      message: 'Categoria especial obrigatória',
+    });
+  }
   // Se NÃO for pré-estreia com meta, preços dos clubes precisam ser > 0
   if (!data.metaEnabled) {
     if (data.clubAPrice <= 0) {
@@ -37,6 +46,14 @@ export const createPreSaleGameSchema = basePreSaleGameSchema.superRefine((data, 
         message: 'Preço B deve ser > 0',
       });
     }
+  }
+  // Se for pré-estreia com meta, meta extra deve ser >= 1
+  if (data.metaEnabled && (data.metaExtraPerTeam ?? 0) < 1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['metaExtraPerTeam'],
+      message: 'Meta extra deve ser >= 1',
+    });
   }
 });
 

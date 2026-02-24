@@ -11,7 +11,8 @@ const menuItems = [
   { href: '/admin/sumulas', label: 'Súmula', icon: 'clipboard' },
   { href: '/admin/times', label: 'Times', icon: 'team' },
   { href: '/admin/lives', label: 'Lives', icon: 'broadcast' },
-  { href: '/admin/pre-estreia', label: 'Pré-estreia', icon: 'film' },
+  { href: '/admin/pre-estreia', label: 'Pré-estreia Clubes', icon: 'film' },
+  { href: '/admin/pre-estreia-meta', label: 'Pré-estreia Meta', icon: 'film' },
   { href: '/admin/categorias', label: 'Categorias', icon: 'folder' },
   { href: '/admin/banner', label: 'Hero Banners', icon: 'image' },
   { href: '/admin/sponsors', label: 'Patrocinadores', icon: 'trophy' },
@@ -89,9 +90,16 @@ export function AdminSidebar() {
 
       <nav className="flex-1 p-4 space-y-1">
         {menuItems.map((item) => {
-          const isActive = item.href === '/admin'
-            ? pathname === '/admin'
-            : pathname.startsWith(item.href);
+          let isActive: boolean;
+          if (item.href === '/admin') {
+            isActive = pathname === '/admin';
+          } else if (item.href === '/admin/pre-estreia') {
+            isActive = (pathname === '/admin/pre-estreia' || pathname.startsWith('/admin/pre-estreia/')) && !pathname.startsWith('/admin/pre-estreia-meta');
+          } else if (item.href === '/admin/pre-estreia-meta') {
+            isActive = pathname === '/admin/pre-estreia-meta' || pathname.startsWith('/admin/pre-estreia-meta/');
+          } else {
+            isActive = pathname.startsWith(item.href);
+          }
           const className = `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
             isActive
               ? 'bg-netflix-red/20 text-netflix-red border border-netflix-red/30'

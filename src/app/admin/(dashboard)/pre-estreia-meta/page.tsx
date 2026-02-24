@@ -9,12 +9,14 @@ interface PreSaleGame {
   title: string;
   status: string;
   thumbnailUrl: string;
-  fundedClubsCount: number;
-  specialCategory: { name: string };
   metaEnabled?: boolean;
+  metaExtraPerTeam?: number | null;
+  specialCategory: { name: string };
+  homeTeam?: { name: string; shortName: string | null } | null;
+  awayTeam?: { name: string; shortName: string | null } | null;
 }
 
-export default function AdminPreEstreiaPage() {
+export default function AdminPreEstreiaMetaPage() {
   const [games, setGames] = useState<PreSaleGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export default function AdminPreEstreiaPage() {
           return;
         }
         const list = Array.isArray(data) ? data : [];
-        setGames(list.filter((g: PreSaleGame) => g.metaEnabled !== true));
+        setGames(list.filter((g: PreSaleGame) => g.metaEnabled === true));
       })
       .catch(() => {
         setLoadError('Falha de conexão ao carregar a lista.');
@@ -63,22 +65,30 @@ export default function AdminPreEstreiaPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-white">Pre-estreia Clubes</h1>
+        <h1 className="text-3xl font-bold text-white">Pré-estreia Meta</h1>
         <div className="flex gap-2">
-          <Link href="/admin/pre-estreia/categorias" className="px-4 py-2 rounded bg-netflix-gray text-white font-semibold hover:bg-white/20">Categorias</Link>
-          <Link href="/admin/pre-estreia/novo" className="px-4 py-2 rounded bg-netflix-red text-white font-semibold hover:bg-red-600">Novo jogo</Link>
+          <Link href="/admin/pre-estreia-meta/categorias" className="px-4 py-2 rounded bg-netflix-gray text-white font-semibold hover:bg-white/20">
+            Categorias
+          </Link>
+          <Link href="/admin/pre-estreia-meta/novo" className="px-4 py-2 rounded bg-netflix-red text-white font-semibold hover:bg-red-600">
+            Novo jogo Meta
+          </Link>
         </div>
       </div>
-      {loading ? <p className="text-netflix-light">Carregando...</p> : loadError ? (
+      <p className="text-netflix-light mb-6 max-w-2xl">
+        Jogos que liberam quando as torcidas batem a meta de novos assinantes. Mandante e visitante obrigatórios; meta extra por time define quantos assinantes a mais cada time precisa.
+      </p>
+      {loading ? (
+        <p className="text-netflix-light">Carregando...</p>
+      ) : loadError ? (
         <div className="bg-netflix-dark border border-white/10 rounded-lg p-8 text-center text-netflix-light">
           <p className="mb-4 text-amber-400">{loadError}</p>
-          <p className="text-sm mb-2">Se você não está logado como admin, faça login novamente.</p>
           <button type="button" onClick={() => window.location.reload()} className="text-futvar-green hover:underline">Recarregar</button>
         </div>
       ) : games.length === 0 ? (
         <div className="bg-netflix-dark border border-white/10 rounded-lg p-8 text-center text-netflix-light">
-          <p className="mb-4">Nenhum jogo cadastrado.</p>
-          <Link href="/admin/pre-estreia/novo" className="text-netflix-red hover:underline">Criar primeiro jogo</Link>
+          <p className="mb-4">Nenhum jogo com meta cadastrado.</p>
+          <Link href="/admin/pre-estreia-meta/novo" className="text-netflix-red hover:underline">Criar primeiro jogo Meta</Link>
         </div>
       ) : (
         <div className="space-y-4">
@@ -86,14 +96,20 @@ export default function AdminPreEstreiaPage() {
           {games.map((g) => (
             <div key={g.id} className="flex flex-wrap items-center gap-4 bg-netflix-dark border border-white/10 rounded-lg p-4">
               <div className="relative w-24 h-14 rounded overflow-hidden bg-netflix-gray flex-shrink-0">
-                <Image src={g.thumbnailUrl} alt="" fill className="object-cover" unoptimized={g.thumbnailUrl.startsWith('http')} />
+                <Image src={g.thumbnailUrl} alt="" fill className="object-cover" unoptimized={g.thumbnailUrl?.startsWith('http')} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-white truncate">{g.title}</p>
-                <p className="text-sm text-netflix-light">{g.specialCategory?.name} • {g.status} • {g.fundedClubsCount}/2</p>
+                <p className="text-sm text-netflix-light">
+                  {g.specialCategory?.name ?? '—'} • {g.status}
+                  {g.homeTeam && g.awayTeam && (
+                    <> • {(g.homeTeam.shortName || g.homeTeam.name)} x {(g.awayTeam.shortName || g.awayTeam.name)}</>
+                  )}
+                  {g.metaExtraPerTeam != null && <> • +{g.metaExtraPerTeam} assinantes/time</>}
+                </p>
               </div>
-              <Link href={`/admin/pre-estreia/${g.id}`} className="px-3 py-1.5 rounded bg-netflix-gray text-white text-sm hover:bg-white/20">Ver</Link>
-              <Link href={`/admin/pre-estreia/${g.id}/editar`} className="px-3 py-1.5 rounded bg-netflix-gray text-white text-sm hover:bg-white/20">Editar</Link>
+              <Link href={`/admin/pre-estreia-meta/${g.id}`} className="px-3 py-1.5 rounded bg-netflix-gray text-white text-sm hover:bg-white/20">Ver</Link>
+              <Link href={`/admin/pre-estreia-meta/${g.id}/editar`} className="px-3 py-1.5 rounded bg-netflix-gray text-white text-sm hover:bg-white/20">Editar</Link>
               <button
                 type="button"
                 onClick={() => handleDelete(g)}

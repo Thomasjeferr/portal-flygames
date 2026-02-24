@@ -10,7 +10,7 @@ interface PreSaleCategory {
   type: string;
 }
 
-export default function AdminPreEstreiaCategoriasPage() {
+export default function AdminPreEstreiaMetaCategoriasPage() {
   const [special, setSpecial] = useState<PreSaleCategory[]>([]);
   const [normal, setNormal] = useState<PreSaleCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +21,7 @@ export default function AdminPreEstreiaCategoriasPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDelete = async (cat: PreSaleCategory) => {
-    if (!confirm(`Excluir a categoria "${cat.name}"? Só é possível excluir se nenhum jogo estiver vinculado.`)) return;
+    if (!confirm(`Excluir a categoria "${cat.name}"? Só é possível excluir se nenhum jogo Meta estiver vinculado.`)) return;
     setError('');
     setDeletingId(cat.id);
     try {
@@ -41,8 +41,8 @@ export default function AdminPreEstreiaCategoriasPage() {
 
   const loadCategories = () => {
     Promise.all([
-      fetch('/api/admin/pre-sale-categories?type=SPECIAL&scope=CLUB'),
-      fetch('/api/admin/pre-sale-categories?type=NORMAL&scope=CLUB'),
+      fetch('/api/admin/pre-sale-categories?type=SPECIAL&scope=META'),
+      fetch('/api/admin/pre-sale-categories?type=NORMAL&scope=META'),
     ])
       .then(async ([resSpecial, resNormal]) => {
         const s = await resSpecial.json();
@@ -67,7 +67,7 @@ export default function AdminPreEstreiaCategoriasPage() {
       const res = await fetch('/api/admin/pre-sale-categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName.trim(), type: newType, scope: 'CLUB' }),
+        body: JSON.stringify({ name: newName.trim(), type: newType, scope: 'META' }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -85,12 +85,12 @@ export default function AdminPreEstreiaCategoriasPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
-      <Link href="/admin/pre-estreia" className="text-netflix-light hover:text-white text-sm mb-6 inline-block">
+      <Link href="/admin/pre-estreia-meta" className="text-netflix-light hover:text-white text-sm mb-6 inline-block">
         Voltar
       </Link>
-      <h1 className="text-2xl font-bold text-white mb-6">Categorias Pré-estreia Clubes</h1>
+      <h1 className="text-2xl font-bold text-white mb-6">Categorias Pré-estreia Meta</h1>
       <p className="text-netflix-light text-sm mb-8">
-        Categorias só para jogos em que clubes se financiam. SPECIAL = pré-venda; NORMAL = catálogo após publicação.
+        Categorias só para jogos com meta de assinantes. Não mistura com Pré-estreia Clubes. SPECIAL = pré-venda; NORMAL = catálogo após publicação.
       </p>
 
       <form onSubmit={handleCreate} className="bg-netflix-dark border border-white/10 rounded-lg p-6 mb-8">
@@ -102,7 +102,7 @@ export default function AdminPreEstreiaCategoriasPage() {
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="Ex: Libertadores, Brasileirao"
+              placeholder="Ex.: Libertadores Meta"
               className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder:text-netflix-light"
             />
           </div>
@@ -183,10 +183,10 @@ export default function AdminPreEstreiaCategoriasPage() {
       )}
 
       <Link
-        href="/admin/pre-estreia/novo"
+        href="/admin/pre-estreia-meta/novo"
         className="mt-8 inline-block text-futvar-green hover:underline text-sm"
       >
-        Ir para Novo jogo
+        Ir para Novo jogo Meta
       </Link>
     </div>
   );

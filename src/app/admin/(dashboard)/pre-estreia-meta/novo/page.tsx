@@ -19,13 +19,12 @@ interface GradeCategory {
   order: number;
 }
 
-export default function AdminPreEstreiaNovoPage() {
+export default function AdminPreEstreiaMetaNovoPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [categoriesError, setCategoriesError] = useState('');
-  const [specialCategories, setSpecialCategories] = useState<PreSaleCategory[]>([]);
   const [normalCategories, setNormalCategories] = useState<PreSaleCategory[]>([]);
   const [gradeCategories, setGradeCategories] = useState<GradeCategory[]>([]);
   const [teams, setTeams] = useState<Array<{ id: string; name: string; shortName: string | null }>>([]);
@@ -34,12 +33,9 @@ export default function AdminPreEstreiaNovoPage() {
     description: '',
     thumbnailUrl: '',
     videoUrl: '',
-    specialCategoryId: '',
     normalCategoryIds: [] as string[],
     gradeCategoryId: '',
-    clubAPrice: '',
-    clubBPrice: '',
-    maxSimultaneousPerClub: '10',
+    metaExtraPerTeam: '10',
     featured: false,
     homeTeamId: '' as string,
     awayTeamId: '' as string,
@@ -47,35 +43,36 @@ export default function AdminPreEstreiaNovoPage() {
     premiereTime: '',
   });
 
+  const safeJson = async (res: Response): Promise<unknown> => {
+    const text = await res.text();
+    try {
+      return text ? JSON.parse(text) : null;
+    } catch {
+      return { error: res.ok ? 'Resposta inválida' : `Servidor retornou status ${res.status}. Verifique se as migrações do banco foram aplicadas (npx prisma migrate deploy).` };
+    }
+  };
+
   const loadCategories = () => {
     setCategoriesError('');
     Promise.all([
-      fetch('/api/admin/pre-sale-categories?type=SPECIAL&scope=CLUB'),
-      fetch('/api/admin/pre-sale-categories?type=NORMAL&scope=CLUB'),
+      fetch('/api/admin/pre-sale-categories?type=NORMAL&scope=META'),
       fetch('/api/admin/categories?active=true'),
       fetch('/api/admin/teams'),
-    ]).then(async ([resSpecial, resNormal, resGrade, resTeams]) => {
-      const specialData = await resSpecial.json();
-      const normalData = await resNormal.json();
-      const gradeData = await resGrade.json();
-      if (!resSpecial.ok) {
-        setCategoriesError(specialData?.error || 'Erro ao carregar categorias especiais');
-        setSpecialCategories([]);
-      } else {
-        setSpecialCategories(Array.isArray(specialData) ? specialData : []);
-      }
+    ]).then(async ([resNormal, resGrade, resTeams]) => {
+      const normalData = (await safeJson(resNormal)) as { error?: string } | unknown[];
+      const gradeData = (await safeJson(resGrade)) as { error?: string } | unknown[];
+      const teamsData = (await safeJson(resTeams)) as { error?: string } | unknown[];
       if (!resNormal.ok) {
-        setCategoriesError((prev) => prev || normalData?.error || 'Erro ao carregar categorias normais');
+        const msg = typeof normalData === 'object' && normalData !== null && 'error' in normalData ? String((normalData as { error: string }).error) : 'Erro ao carregar categorias normais';
+        setCategoriesError(msg);
         setNormalCategories([]);
       } else {
         setNormalCategories(Array.isArray(normalData) ? normalData : []);
       }
       setGradeCategories(resGrade.ok && Array.isArray(gradeData) ? gradeData : []);
-      const teamsData = await resTeams.json();
       setTeams(resTeams.ok && Array.isArray(teamsData) ? teamsData : []);
-    }).catch(() => {
-      setCategoriesError('Erro de conexao ao carregar categorias');
-      setSpecialCategories([]);
+    }).catch((err) => {
+      setCategoriesError(err?.message ? `Erro: ${err.message}` : 'Erro de conexão ao carregar categorias');
       setNormalCategories([]);
       setGradeCategories([]);
       setTeams([]);
@@ -118,14 +115,14 @@ export default function AdminPreEstreiaNovoPage() {
           description: form.description.trim(),
           thumbnailUrl: form.thumbnailUrl.trim(),
           videoUrl: form.videoUrl.trim() || null,
-          specialCategoryId: form.specialCategoryId || undefined,
           normalCategoryIds: form.normalCategoryIds,
           gradeCategoryId: form.gradeCategoryId.trim() || undefined,
-          clubAPrice: parseFloat(form.clubAPrice) || 0,
-          clubBPrice: parseFloat(form.clubBPrice) || 0,
-          maxSimultaneousPerClub: parseInt(form.maxSimultaneousPerClub, 10) || 10,
+          clubAPrice: 0,
+          clubBPrice: 0,
+          maxSimultaneousPerClub: 1,
           featured: form.featured,
-          metaEnabled: false,
+          metaEnabled: true,
+          metaExtraPerTeam: parseInt(form.metaExtraPerTeam, 10) || 10,
           homeTeamId: form.homeTeamId || null,
           awayTeamId: form.awayTeamId || null,
           premiereAt: form.premiereDate && form.premiereTime ? new Date(`${form.premiereDate}T${form.premiereTime}`).toISOString() : null,
@@ -136,7 +133,7 @@ export default function AdminPreEstreiaNovoPage() {
         setError(data.error || 'Erro ao criar');
         return;
       }
-      router.push(`/admin/pre-estreia/${data.id}`);
+      router.push(`/admin/pre-estreia-meta`);
     } catch {
       setError('Erro de conexão');
     } finally {
@@ -146,10 +143,13 @@ export default function AdminPreEstreiaNovoPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
-      <Link href="/admin/pre-estreia" className="text-netflix-light hover:text-white text-sm mb-6 inline-block">
+      <Link href="/admin/pre-estreia-meta" className="text-netflix-light hover:text-white text-sm mb-6 inline-block">
         ← Voltar
       </Link>
-      <h1 className="text-2xl font-bold text-white mb-8">Novo jogo — Pré-estreia</h1>
+      <h1 className="text-2xl font-bold text-white mb-8">Novo jogo — Pré-estreia Meta</h1>
+      <p className="text-netflix-light text-sm mb-6">
+        O jogo será liberado quando as duas torcidas baterem a meta de novos assinantes. Defina mandante e visitante e quantos assinantes a mais cada time precisa.
+      </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -164,22 +164,21 @@ export default function AdminPreEstreiaNovoPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-white mb-2">Times (opcional)</label>
-          <p className="text-xs text-netflix-light mb-2">Mandante x Visitante — ex.: Time A x Time B</p>
+          <label className="block text-sm font-medium text-white mb-2">Times (Mandante x Visitante) *</label>
+          <p className="text-xs text-netflix-light mb-2">Obrigatório para calcular a meta por torcida.</p>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-netflix-light mb-1">Mandante</label>
               <select
                 value={form.homeTeamId}
                 onChange={(e) => setForm((f) => ({ ...f, homeTeamId: e.target.value }))}
+                required
                 className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
               >
                 <option value="">— Selecionar —</option>
                 {teams.map((t) => {
                   const label = t.shortName ? `${t.name} (${t.shortName})` : t.name;
-                  return (
-                    <option key={t.id} value={t.id}>{label}</option>
-                  );
+                  return <option key={t.id} value={t.id}>{label}</option>;
                 })}
               </select>
             </div>
@@ -188,18 +187,31 @@ export default function AdminPreEstreiaNovoPage() {
               <select
                 value={form.awayTeamId}
                 onChange={(e) => setForm((f) => ({ ...f, awayTeamId: e.target.value }))}
+                required
                 className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
               >
                 <option value="">— Selecionar —</option>
                 {teams.map((t) => {
                   const label = t.shortName ? `${t.name} (${t.shortName})` : t.name;
-                  return (
-                    <option key={t.id} value={t.id}>{label}</option>
-                  );
+                  return <option key={t.id} value={t.id}>{label}</option>;
                 })}
               </select>
             </div>
           </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Meta extra por time (novos assinantes) *</label>
+          <input
+            type="number"
+            min={1}
+            value={form.metaExtraPerTeam}
+            onChange={(e) => setForm((f) => ({ ...f, metaExtraPerTeam: e.target.value }))}
+            required
+            className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
+          />
+          <p className="text-xs text-netflix-light mt-1">
+            Ex.: 10 → cada time precisa de <strong>+10 assinantes</strong> em relação ao que já tem hoje para liberar o jogo.
+          </p>
         </div>
         <div>
           <label className="block text-sm font-medium text-white mb-2">Descrição *</label>
@@ -256,28 +268,7 @@ export default function AdminPreEstreiaNovoPage() {
             />
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-white mb-2">Categoria especial (SPECIAL) *</label>
-          <select
-            value={form.specialCategoryId}
-            onChange={(e) => setForm((f) => ({ ...f, specialCategoryId: e.target.value }))}
-            required
-            className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
-          >
-            <option value="">Selecione</option>
-            {specialCategories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-          {categoriesError && <p className="text-amber-400 text-sm mt-1">{categoriesError}</p>}
-          {specialCategories.length === 0 && !categoriesError && (
-            <p className="text-netflix-light text-sm mt-1">
-              Nenhuma categoria especial. <Link href="/admin/pre-estreia/categorias" className="text-futvar-green hover:underline">Criar categorias</Link>
-              {' · '}
-              <button type="button" onClick={loadCategories} className="text-futvar-green hover:underline">Recarregar</button>
-            </p>
-          )}
-        </div>
+        {categoriesError && <p className="text-amber-400 text-sm">{categoriesError}</p>}
         <div>
           <label className="block text-sm font-medium text-white mb-2">Categorias normais (NORMAL)</label>
           <select
@@ -293,13 +284,6 @@ export default function AdminPreEstreiaNovoPage() {
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
-          {normalCategories.length === 0 && !categoriesError && (
-            <p className="text-netflix-light text-sm mt-1">
-              Nenhuma categoria normal. <Link href="/admin/pre-estreia/categorias" className="text-futvar-green hover:underline">Criar categorias</Link>
-              {' · '}
-              <button type="button" onClick={loadCategories} className="text-futvar-green hover:underline">Recarregar</button>
-            </p>
-          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-white mb-2">Categoria na grade (quando publicado)</label>
@@ -313,47 +297,6 @@ export default function AdminPreEstreiaNovoPage() {
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
-          <p className="text-netflix-light text-xs mt-1">Ao publicar na grade, o jogo aparecerá nesta categoria para usuários comprarem.</p>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">Preço Clube A (R$) *</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.clubAPrice}
-              onChange={(e) => setForm((f) => ({ ...f, clubAPrice: e.target.value }))}
-              required
-              className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">Preço Clube B (R$) *</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.clubBPrice}
-              onChange={(e) => setForm((f) => ({ ...f, clubBPrice: e.target.value }))}
-              required
-              className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
-            />
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-white mb-2">Max. simultâneos por clube *</label>
-          <input
-            type="number"
-            min="1"
-            value={form.maxSimultaneousPerClub}
-            onChange={(e) => setForm((f) => ({ ...f, maxSimultaneousPerClub: e.target.value }))}
-            required
-            className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
-          />
-          <p className="text-xs text-netflix-light mt-1">
-            Quantos acessos simultâneos cada clube pode ter ao assistir.
-          </p>
         </div>
         <StreamVideoField
           value={form.videoUrl}
@@ -361,12 +304,16 @@ export default function AdminPreEstreiaNovoPage() {
           label="Vídeo (opcional)"
           required={false}
         />
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />
+          <span className="text-white text-sm">Destaque</span>
+        </label>
         <button
           type="submit"
           disabled={loading}
           className="px-6 py-3 rounded bg-netflix-red text-white font-semibold hover:bg-red-600 disabled:opacity-50"
         >
-          {loading ? 'Criando...' : 'Criar jogo'}
+          {loading ? 'Criando...' : 'Criar jogo Meta'}
         </button>
       </form>
     </div>

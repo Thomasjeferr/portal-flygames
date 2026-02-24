@@ -5,22 +5,32 @@ import { z } from 'zod';
 import { slugify } from '@/lib/slug';
 
 export async function GET(request: NextRequest) {
-  const session = await getSession();
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
+  try {
+    const session = await getSession();
+    if (!session || session.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
+    }
+    const type = request.nextUrl.searchParams.get('type') as 'NORMAL' | 'SPECIAL' | null;
+    const scope = request.nextUrl.searchParams.get('scope') as 'CLUB' | 'META' | null;
+    const where: { type?: string; scope?: string } = {};
+    if (type === 'NORMAL' || type === 'SPECIAL') where.type = type;
+    if (scope === 'CLUB' || scope === 'META') where.scope = scope;
+    const categories = await prisma.preSaleCategory.findMany({
+      where,
+      orderBy: { name: 'asc' },
+    });
+    return NextResponse.json(categories);
+  } catch (e) {
+    console.error('GET /api/admin/pre-sale-categories', e);
+    const message = e instanceof Error ? e.message : 'Erro ao carregar categorias';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-  const type = request.nextUrl.searchParams.get('type') as 'NORMAL' | 'SPECIAL' | null;
-  const where = type && (type === 'NORMAL' || type === 'SPECIAL') ? { type } : {};
-  const categories = await prisma.preSaleCategory.findMany({
-    where,
-    orderBy: { name: 'asc' },
-  });
-  return NextResponse.json(categories);
 }
 
 const createSchema = z.object({
   name: z.string().min(1),
   type: z.enum(['NORMAL', 'SPECIAL']),
+  scope: z.enum(['CLUB', 'META']).default('CLUB'),
 });
 
 export async function POST(request: NextRequest) {
@@ -42,7 +52,7 @@ export async function POST(request: NextRequest) {
       slug = `${baseSlug}-${i++}`;
     }
     const cat = await prisma.preSaleCategory.create({
-      data: { name: parsed.data.name, slug, type: parsed.data.type },
+      data: { name: parsed.data.name, slug, type: parsed.data.type, scope: parsed.data.scope },
     });
     return NextResponse.json(cat);
   } catch (e) {

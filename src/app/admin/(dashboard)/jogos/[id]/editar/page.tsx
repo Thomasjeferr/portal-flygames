@@ -184,7 +184,7 @@ export default function EditGamePage() {
               >
                 <option value="">— Selecionar —</option>
                 {teams.map((t) => (
-                  <option key={t.id} value={t.id}>{t.shortName || t.name}</option>
+                  <option key={t.id} value={t.id}>{t.shortName ? `${t.name} (${t.shortName})` : t.name}</option>
                 ))}
               </select>
             </div>
@@ -208,7 +208,7 @@ export default function EditGamePage() {
               >
                 <option value="">— Selecionar —</option>
                 {teams.map((t) => (
-                  <option key={t.id} value={t.id}>{t.shortName || t.name}</option>
+                  <option key={t.id} value={t.id}>{t.shortName ? `${t.name} (${t.shortName})` : t.name}</option>
                 ))}
               </select>
             </div>

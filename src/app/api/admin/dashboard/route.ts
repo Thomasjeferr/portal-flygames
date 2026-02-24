@@ -232,9 +232,9 @@ export async function GET() {
       };
     });
 
-    // Pré-estreias em andamento (PRE_SALE ou FUNDED)
+    // Pré-estreias Clubes em andamento (PRE_SALE ou FUNDED; exclui Meta)
     const preSales = await prisma.preSaleGame.findMany({
-      where: { status: { in: ['PRE_SALE', 'FUNDED'] } },
+      where: { status: { in: ['PRE_SALE', 'FUNDED'] }, metaEnabled: false },
       include: {
         clubSlots: { where: { paymentStatus: 'PAID' }, select: { slotIndex: true } },
         specialCategory: { select: { name: true } },

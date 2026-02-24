@@ -61,12 +61,17 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'scale(0.95)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
+        'live-blink': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.2' },
+        },
       },
       animation: {
         'fade-in-up': 'fade-in-up 0.6s ease-out both',
         'fade-in': 'fade-in 0.5s ease-out both',
         'slide-down': 'slide-down 0.5s ease-out both',
         'scale-in': 'scale-in 0.4s ease-out both',
+        'live-blink': 'live-blink 1.2s ease-in-out infinite',
       },
       animationDelay: {
         '75': '75ms',
