@@ -141,6 +141,10 @@ export default function AdminPreEstreiaEditarPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!game) {
+      setError('Jogo nao encontrado.');
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/pre-sale-games/${id}`, {
