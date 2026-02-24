@@ -269,7 +269,7 @@ export function Header() {
                   createPortal(
                     <button
                       type="button"
-                      className="fixed inset-0 z-[9998] cursor-default"
+                      className="fixed inset-0 z-40 cursor-default"
                       onClick={() => setUserMenuOpen(false)}
                       aria-label="Fechar menu do usuário"
                     />,
