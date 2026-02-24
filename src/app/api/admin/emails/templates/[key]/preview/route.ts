@@ -28,12 +28,20 @@ const SAMPLE_VARS: Record<string, Record<string, string>> = {
     username: 'clube-abc123-1',
     password: 'Xy7kL9mN2p',
     intro_text: 'O pagamento foi confirmado. Seguem os dados de acesso à pré-estreia.',
+    max_simultaneous: '10',
+    limite_dispositivos: 'LIMITE: 10 DISPOSITIVOS SIMULTÂNEOS',
+    info_assinante:
+      'Se o membro do time for patrocinador ativo (conta paga), desconsidere o usuário e senha abaixo: ele assiste na grade normal conforme o plano.',
   },
   PRE_SALE_CREDENTIALS_NEW_PASSWORD: {
     game_title: 'Amistoso Clube A x Clube B',
     watch_url: 'https://flygames.app/pre-estreia/assistir/amistoso-clube-a-b',
     username: 'clube-abc123-1',
     password: 'NovaSenha9K',
+    max_simultaneous: '10',
+    limite_dispositivos: 'LIMITE: 10 DISPOSITIVOS SIMULTÂNEOS',
+    info_assinante:
+      'Se o membro do time for patrocinador ativo (conta paga), desconsidere o usuário e senha abaixo: ele assiste na grade normal conforme o plano.',
   },
 };
 

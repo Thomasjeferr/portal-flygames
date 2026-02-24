@@ -97,6 +97,13 @@ export async function PATCH(
       }
     }
 
+    // Pré-estreia com Meta: ao salvar com URL, publicar e tirar do bloco "Pré-estreia com Meta" (só na categoria)
+    const finalVideoUrl =
+      data.videoUrl !== undefined ? (data.videoUrl?.trim() || null) : existing.videoUrl?.trim() || null;
+    if (existing.metaEnabled && existing.homeTeamId && existing.awayTeamId && finalVideoUrl) {
+      (updateData as Record<string, unknown>).status = 'PUBLISHED';
+    }
+
     const updated = await prisma.preSaleGame.update({
       where: { id },
       data: updateData as any,

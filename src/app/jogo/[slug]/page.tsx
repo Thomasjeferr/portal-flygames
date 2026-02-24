@@ -6,6 +6,7 @@ import { GamePlayTracker } from '@/components/GamePlayTracker';
 import { BuyGameButton } from '@/components/BuyGameButton';
 import { GameCard } from '@/components/GameCard';
 import { PlayerMatchInfo } from '@/components/PlayerMatchInfo';
+import { MatchPlayerPage } from '@/components/match/MatchPlayerPage';
 import { getSession } from '@/lib/auth';
 import { canAccessGameBySlug } from '@/lib/access';
 import { prisma } from '@/lib/db';
@@ -74,7 +75,7 @@ export default async function GamePage({ params }: Props) {
   });
 
   return (
-    <div className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
+    <div className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-gradient-to-b from-[#07130f] via-[#06221a] to-[#081a1a]">
       <div className="max-w-5xl mx-auto">
         <div className="mb-6">
           <Link href="/" className="text-futvar-green hover:text-futvar-green-light text-sm font-semibold inline-flex items-center gap-2 transition-colors">
@@ -138,7 +139,32 @@ export default async function GamePage({ params }: Props) {
         ) : showPlayer ? (
           <>
             <GamePlayTracker gameId={game.id} />
-            <div className="rounded-2xl overflow-hidden bg-black mb-8 border border-futvar-green/20 shadow-xl">
+
+            <MatchPlayerPage
+              teamA={
+                game.homeTeam
+                  ? {
+                      name: game.homeTeam.shortName || game.homeTeam.name,
+                      crest: game.homeTeam.crestUrl || undefined,
+                      score: game.homeScore ?? undefined,
+                    }
+                  : undefined
+              }
+              teamB={
+                game.awayTeam
+                  ? {
+                      name: game.awayTeam.shortName || game.awayTeam.name,
+                      crest: game.awayTeam.crestUrl || undefined,
+                      score: game.awayScore ?? undefined,
+                    }
+                  : undefined
+              }
+              title={game.title}
+              dateLabel={`${game.championship} • ${gameDateFormatted}`}
+              isLive={false}
+              isReplay={true}
+              description={game.description}
+            >
               {game.videoUrl ? (
                 <VideoPlayer
                   videoUrl={game.videoUrl}
@@ -148,33 +174,16 @@ export default async function GamePage({ params }: Props) {
                   gameId={game.id}
                 />
               ) : (
-                <div className="relative aspect-video bg-black flex items-center justify-center">
+                <div className="relative mx-auto mt-4 max-w-[1100px] overflow-hidden rounded-2xl border border-emerald-400/25 bg-black shadow-[0_18px_60px_rgba(0,0,0,0.9)] shadow-emerald-500/10 aspect-video flex items-center justify-center">
                   {game.thumbnailUrl ? (
-                    <Image src={game.thumbnailUrl} alt={game.title} fill className="object-cover opacity-50" />
+                    <Image src={game.thumbnailUrl} alt={game.title} fill className="object-cover opacity-60" />
                   ) : null}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                    <p className="text-futvar-light">Vídeo em breve</p>
+                    <p className="text-emerald-50/90">Vídeo em breve</p>
                   </div>
                 </div>
               )}
-            </div>
-            <div className="mb-6">
-              <PlayerMatchInfo
-                title={game.title}
-                homeTeam={game.homeTeam ?? undefined}
-                awayTeam={game.awayTeam ?? undefined}
-                subtitle={
-                  <>
-                    <span>{game.championship}</span>
-                    <span>•</span>
-                    <span>{gameDateFormatted}</span>
-                  </>
-                }
-              />
-            </div>
-            {game.description && (
-              <p className="text-futvar-light leading-relaxed max-w-3xl mb-6">{game.description}</p>
-            )}
+            </MatchPlayerPage>
           </>
         ) : (
           <div className="bg-futvar-dark border border-futvar-green/20 rounded-2xl p-8 md:p-12 text-center">

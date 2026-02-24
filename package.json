@@ -26,7 +26,6 @@
     "isomorphic-dompurify": "^3.0.0-rc.2",
     "leaflet": "^1.9.4",
     "next": "14.2.35",
-    "@next/swc-linux-x64-gnu": "14.2.33",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
@@ -39,7 +38,8 @@
     "video.js": "^8.22.0",
     "videojs-contrib-quality-levels": "^4.1.0",
     "videojs-contrib-quality-menu": "^1.0.4",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "hls.js": "^1.5.8"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

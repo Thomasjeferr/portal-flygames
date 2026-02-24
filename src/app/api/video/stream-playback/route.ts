@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { canAccessGameBySlug } from '@/lib/access';
+import { canAccessGameBySlug, hasFullAccess } from '@/lib/access';
 import { prisma } from '@/lib/db';
 import { getSignedPlaybackUrls } from '@/lib/cloudflare-stream';
 
@@ -42,6 +42,8 @@ export async function GET(request: NextRequest) {
       });
       allowed = !!streamSession;
     } else if (session?.role === 'admin') {
+      allowed = true;
+    } else if (session && (await hasFullAccess(session.userId))) {
       allowed = true;
     }
     if (!allowed) {

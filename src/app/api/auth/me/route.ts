@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { hasFullAccess } from '@/lib/access';
 import { prisma } from '@/lib/db';
 
 export async function GET() {
@@ -8,7 +9,7 @@ export async function GET() {
     return NextResponse.json({ user: null }, { status: 200 });
   }
 
-  const [user, subscription, teamManagerCount, approvedPartner] = await Promise.all([
+  const [user, subscription, teamManagerCount, approvedPartner, fullAccess] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.userId },
       select: { id: true, email: true, name: true, role: true, emailVerified: true, createdAt: true, favoriteTeamId: true, avatarUrl: true },
@@ -19,6 +20,7 @@ export async function GET() {
       where: { userId: session.userId, status: 'approved' },
       select: { id: true, refCode: true },
     }),
+    hasFullAccess(session.userId),
   ]);
 
   if (!user) return NextResponse.json({ user: null }, { status: 200 });
@@ -45,5 +47,6 @@ export async function GET() {
     isTeamManager,
     isPartner: !!approvedPartner,
     partner: approvedPartner ? { id: approvedPartner.id, refCode: approvedPartner.refCode } : null,
+    hasFullAccess: fullAccess,
   });
 }

@@ -82,12 +82,19 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
     recipients.push(siteSettings.adminCredentialsEmail.trim());
   const uniqueRecipients = Array.from(new Set(recipients));
 
-  const vars = {
+  const maxSimultaneous = slot.preSaleGame.maxSimultaneousPerClub ?? 10;
+  const limiteDispositivos = `LIMITE: ${maxSimultaneous} DISPOSITIVOS SIMULTÂNEOS`;
+  const infoAssinante =
+    'Se o membro do time for patrocinador ativo (conta paga), desconsidere o usuário e senha abaixo: ele assiste na grade normal conforme o plano.';
+  const vars: Record<string, string> = {
     game_title: slot.preSaleGame.title,
     watch_url: watchUrl,
     username: loginUsername,
     password: plainPassword,
     intro_text: 'O pagamento foi confirmado. Seguem os dados de acesso à pré-estreia.',
+    max_simultaneous: String(maxSimultaneous),
+    limite_dispositivos: limiteDispositivos,
+    info_assinante: infoAssinante,
   };
   for (const to of uniqueRecipients) {
     await sendTransactionalEmail({
@@ -132,11 +139,18 @@ export async function regenerateClubViewerPassword(slotId: string): Promise<{ pa
   if (siteSettings?.adminCredentialsEmail?.trim())
     recipients.push(siteSettings.adminCredentialsEmail.trim());
   const uniqueRecipients = Array.from(new Set(recipients));
-  const vars = {
+  const maxSimultaneous = slot.preSaleGame.maxSimultaneousPerClub ?? 10;
+  const limiteDispositivos = `LIMITE: ${maxSimultaneous} DISPOSITIVOS SIMULTÂNEOS`;
+  const infoAssinante =
+    'Se o membro do time for patrocinador ativo (conta paga), desconsidere o usuário e senha abaixo: ele assiste na grade normal conforme o plano.';
+  const vars: Record<string, string> = {
     game_title: slot.preSaleGame.title,
     watch_url: watchUrl,
     username: slot.clubViewerAccount.loginUsername,
     password: newPassword,
+    max_simultaneous: String(maxSimultaneous),
+    limite_dispositivos: limiteDispositivos,
+    info_assinante: infoAssinante,
   };
   for (const to of uniqueRecipients) {
     await sendTransactionalEmail({

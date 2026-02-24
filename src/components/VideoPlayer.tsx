@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { extractYouTubeVideoId, isYouTubeUrl } from '@/lib/youtube';
 import { isStreamVideo, extractStreamVideoId } from '@/lib/cloudflare-stream';
 import { StreamCustomPlayer } from './StreamCustomPlayer';
+import { VideoPlayerCard } from '@/components/player/VideoPlayerCard';
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -18,7 +19,14 @@ interface VideoPlayerProps {
   gameId?: string;
 }
 
-export function VideoPlayer({ videoUrl, title, streamPlaybackUrl, streamHlsUrl, streamContext, gameId }: VideoPlayerProps) {
+export function VideoPlayer({
+  videoUrl,
+  title,
+  streamPlaybackUrl,
+  streamHlsUrl,
+  streamContext,
+  gameId,
+}: VideoPlayerProps) {
   const [streamUrl, setStreamUrl] = useState<string | null>(streamPlaybackUrl ?? null);
   const [hlsUrl, setHlsUrl] = useState<string | null>(streamHlsUrl ?? null);
   const [initialTimeSeconds, setInitialTimeSeconds] = useState(0);
@@ -143,16 +151,11 @@ export function VideoPlayer({ videoUrl, title, streamPlaybackUrl, streamHlsUrl, 
   }
 
   return (
-    <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
-      <video
-        src={videoUrl}
-        controls
-        className="w-full h-full"
-        poster=""
-        preload="metadata"
-      >
-        Seu navegador não suporta vídeos.
-      </video>
-    </div>
+    <VideoPlayerCard
+      videoSrc={videoUrl}
+      title={title}
+      initialTimeSeconds={initialTimeSeconds}
+      gameId={gameId}
+    />
   );
 }

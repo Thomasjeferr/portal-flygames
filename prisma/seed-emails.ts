@@ -113,6 +113,8 @@ async function main() {
 <p><strong>Link para assistir:</strong> <a href="{{watch_url}}">{{watch_url}}</a></p>
 <p><strong>Usuário:</strong> <code style="background:#f0f0f0;padding:2px 6px">{{username}}</code></p>
 <p><strong>Senha:</strong> <code style="background:#f0f0f0;padding:2px 6px">{{password}}</code></p>
+<p style="margin-top:16px;padding:12px;background:#fef3c7;border-left:4px solid #f59e0b;font-weight:bold"><strong>{{limite_dispositivos}}</strong></p>
+<p style="margin-top:16px;padding:12px;background:#f0fdf4;border-left:4px solid #22c55e"><strong>{{info_assinante}}</strong></p>
 <p>Compartilhe o usuário e a senha com os membros do clube. Este acesso vale apenas para este jogo de pré-estreia.</p>
 <p>Para comprar planos ou outros jogos no site, é necessário criar uma conta normal (cadastro).</p>
 <p style="margin-top:24px;color:#666;font-size:12px">{{footer_text}}</p>
@@ -130,6 +132,8 @@ async function main() {
 <p><strong>Link para assistir:</strong> <a href="{{watch_url}}">{{watch_url}}</a></p>
 <p><strong>Usuário:</strong> <code style="background:#f0f0f0;padding:2px 6px">{{username}}</code></p>
 <p><strong>Senha:</strong> <code style="background:#f0f0f0;padding:2px 6px">{{password}}</code></p>
+<p style="margin-top:16px;padding:12px;background:#fef3c7;border-left:4px solid #f59e0b;font-weight:bold"><strong>{{limite_dispositivos}}</strong></p>
+<p style="margin-top:16px;padding:12px;background:#f0fdf4;border-left:4px solid #22c55e"><strong>{{info_assinante}}</strong></p>
 <p>Compartilhe o usuário e a senha com os membros do clube. Este acesso vale apenas para este jogo de pré-estreia.</p>
 <p style="margin-top:24px;color:#666;font-size:12px">{{footer_text}}</p>
 </div></body></html>`,

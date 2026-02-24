@@ -502,7 +502,7 @@ Todas em `src/app/api/`. Métodos: GET, POST, PATCH, PUT, DELETE conforme a rota
 
 ## 5. Páginas principais (App Router)
 
-- **/** — Home: HeroBannerCarousel, ContinueWatching, LiveNow, seção jogos (Pré-estreia, Pré-estreias com Meta, Últimos jogos, Jogos por campeonato/categoria), FindGame, Sponsors. Usa getGames(), getPreSaleForClubs(), getPreSaleWithMeta(), getLiveReplays(), groupByChampionship(); getSession() + getGamesAccessMap() para badges Assistir vs Promover time.
+- **/** — Home: HeroBannerCarousel, ContinueWatching, LiveNow, seção jogos (Pré-estreia, Pré-estreias com Meta, Últimos jogos, Jogos por campeonato/categoria), FindGame, Sponsors. Usa getGames(), getPreSaleForClubs(), getPreSaleWithMeta(), getLiveReplays(), groupByChampionship(); getSession() + getGamesAccessMap() para badges Assistir vs Promover time. **Pré-estreia Clubes:** quando `fundedClubsCount === 2` o card exibe "Patrocínio OK" e subtítulo de disponibilidade (sponsorOkLabel/sponsorOkSubtitle no GameCard).
 - **/entrar** — Login.
 - **/cadastro** — Cadastro.
 - **/recuperar-senha** — Esqueci senha.
@@ -540,7 +540,7 @@ Todas em `src/app/api/`. Métodos: GET, POST, PATCH, PUT, DELETE conforme a rota
 
 ### 6.3 Cards e listagens
 
-- **GameCard** — Card de jogo: thumbnail, título ou logos dos times, campeonato, data. Props: slug, title, championship, thumbnailUrl, gameDate, featured, href, badgeText, showAssistir, homeTeam, awayTeam, **locked**, **lockedBadgeText**. Se showAssistir e !locked: badge “ASSISTIR” + overlay com play. Se locked: só badge “Promover time” (ou lockedBadgeText) e chip no hover abaixo da thumb.
+- **GameCard** — Card de jogo: thumbnail, título ou logos dos times, campeonato, data. Props: slug, title, championship, thumbnailUrl, gameDate, featured, href, badgeText, showAssistir, homeTeam, awayTeam, **locked**, **lockedBadgeText**, **sponsorOkLabel**, **sponsorOkSubtitle**. Se sponsorOkLabel definido: faixa verde no topo da thumbnail (ex. "Patrocínio OK"); sponsorOkSubtitle abaixo do campeonato em verde. Se showAssistir e !locked: badge “ASSISTIR” + overlay com play. Se locked: só badge “Promover time” (ou lockedBadgeText) e chip no hover abaixo da thumb.
 - **PlayerMatchInfo** — Exibe título, times (mandante x visitante), subtítulo (campeonato, data).
 
 ### 6.4 Vídeo e player
@@ -584,7 +584,7 @@ Todas em `src/app/api/`. Métodos: GET, POST, PATCH, PUT, DELETE conforme a rota
 
 1. **Acesso a jogo:** getSession() → getGamesAccessMap(userId, gameIds) ou canAccessGame/canAccessGameBySlug; na home os cards usam gameAccessMap para showAssistir/locked/lockedBadgeText.
 2. **Acesso a live:** canAccessLive(userId, { id, requireSubscription, allowOneTimePurchase }); considera assinatura e compra avulsa.
-3. **Pré-estreia Clubes:** status PRE_SALE/FUNDED; metaEnabled false; specialCategoryId obrigatório; checkout por clube (slots).
+3. **Pré-estreia Clubes:** status PRE_SALE/FUNDED; metaEnabled false; specialCategoryId obrigatório; checkout por clube (slots). **Patrocínio OK:** quando os dois clubes já pagaram (`fundedClubsCount === 2`), o card na home exibe faixa verde "Patrocínio OK" na thumbnail, championship "Financiados: 2/2", subtítulo "Em breve disponível para membros dos clubes e assinantes." (GameCard com `sponsorOkLabel` e `sponsorOkSubtitle`); o badge "APOIAR" e o botão de play são ocultados (`showAssistir` false).
 4. **Pré-estreia Meta:** metaEnabled true; metaExtraPerTeam; barras por time (assinantes atuais vs meta); specialCategoryId opcional; CTA “Ser Patrocinador Torcedor”.
 5. **Hero:** Banners com type MANUAL ou FEATURED_*; altura por preset ou customHeightPx; em 2xl object-contain + object-right para não cortar em 4K.
 6. **Menu (Header):** Na home, no topo: gradiente from-futvar-darker to transparent; ao scroll ou em outras páginas: bg sólido + border sutil. Dropdown do usuário com createPortal (overlay em body) para fechar ao clicar fora.

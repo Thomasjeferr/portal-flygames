@@ -20,6 +20,10 @@ interface GameCardProps {
   locked?: boolean;
   /** Texto do badge quando o card está "travado" (sem acesso), ex: "Promover time" */
   lockedBadgeText?: string;
+  /** Quando definido, exibe faixa verde no topo da thumbnail (ex: "Patrocínio OK") */
+  sponsorOkLabel?: string;
+  /** Subtítulo exibido abaixo do championship quando sponsorOkLabel está definido */
+  sponsorOkSubtitle?: string;
   /** Times do jogo: quando presentes, exibe logos e nomes lado a lado no card */
   homeTeam?: TeamInfo | null;
   awayTeam?: TeamInfo | null;
@@ -63,6 +67,8 @@ export function GameCard({
   awayTeam,
   locked = false,
   lockedBadgeText,
+  sponsorOkLabel,
+  sponsorOkSubtitle,
 }: GameCardProps) {
   const linkHref = href ?? `/jogo/${slug}`;
   const date = new Date(gameDate).toLocaleDateString('pt-BR', {
@@ -98,6 +104,11 @@ export function GameCard({
             DESTAQUE
           </span>
         )}
+        {sponsorOkLabel && (
+          <span className="absolute top-2 left-2 right-2 text-center px-2 py-1.5 rounded bg-futvar-green/90 text-futvar-darker text-[10px] font-bold tracking-wide">
+            {sponsorOkLabel}
+          </span>
+        )}
         {showWatchUi && (
           <span className="absolute top-3 right-3 px-2 py-1 bg-futvar-green/90 text-white text-xs font-semibold rounded">
             {badgeText}
@@ -129,6 +140,9 @@ export function GameCard({
           <h3 className="font-bold text-white line-clamp-2 text-base leading-tight">{title}</h3>
         )}
         <p className="text-sm text-futvar-green font-medium mt-1 truncate">{championship}</p>
+        {sponsorOkSubtitle && (
+          <p className="text-xs text-futvar-green/90 mt-1 font-medium">{sponsorOkSubtitle}</p>
+        )}
         <p className="text-xs text-futvar-light mt-1">{date}</p>
       </div>
     </Link>

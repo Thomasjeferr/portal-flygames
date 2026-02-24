@@ -156,6 +156,7 @@ async function getGames(): Promise<GameWithCategory[]> {
           thumbnailUrl: true,
           featured: true,
           createdAt: true,
+          gradeCategory: { select: { id: true, name: true, slug: true, order: true } },
           normalCategories: {
             include: { category: { select: { id: true, name: true, slug: true } } },
           },
@@ -171,17 +172,24 @@ async function getGames(): Promise<GameWithCategory[]> {
     })) as GameWithCategory[];
 
     const preSaleMapped = preSaleGames.map((g) => {
-      const firstCat = g.normalCategories[0]?.category;
+      // Categoria na grade (quando publicado): usa a escolhida no admin; senão fallback para primeira normal
+      const gradeCat = g.gradeCategory;
+      const firstNormal = g.normalCategories[0]?.category;
+      const category = gradeCat
+        ? { id: gradeCat.id, name: gradeCat.name, slug: gradeCat.slug, order: gradeCat.order ?? 0 }
+        : firstNormal
+          ? { ...firstNormal, order: 0 }
+          : null;
       return {
         id: g.id,
         title: g.title,
         slug: g.slug,
-        championship: 'Pre-estreia Clubes',
+        championship: category?.name ?? 'Pre-estreia Clubes',
         gameDate: g.createdAt.toISOString(),
         createdAt: g.createdAt.toISOString(),
         thumbnailUrl: g.thumbnailUrl,
         featured: g.featured,
-        category: firstCat ? { ...firstCat, order: 0 } : null,
+        category,
         href: `/pre-estreia/assistir/${g.slug}`,
       } as GameWithCategory;
     });
@@ -235,10 +243,8 @@ const MAX_GAMES_PER_ROW = 10;
 function groupByChampionship(
   games: GameWithCategory[],
 ): { championship: string; games: GameWithCategory[]; categoryId?: string }[] {
-  // Ignora pré-estreias (essas já têm bloco próprio)
-  const regularGames = games.filter(
-    (g) => !g.href?.startsWith('/pre-estreia') && g.category
-  );
+  // Inclui todos os jogos que têm categoria (jogos normais e pré-estreias publicadas com categoria na grade)
+  const regularGames = games.filter((g) => g.category);
 
   type Group = { label: string; order: number; categoryId: string; games: GameWithCategory[] };
   const map = new Map<string, Group>();
@@ -328,6 +334,7 @@ export default async function HomePage() {
                 {preSaleWithMeta.map((g, idx) => {
                   const homePct = g.homeCurrent != null && g.homeTarget ? Math.min(100, Math.round((g.homeCurrent / g.homeTarget) * 100)) : 0;
                   const awayPct = g.awayCurrent != null && g.awayTarget ? Math.min(100, Math.round((g.awayCurrent / g.awayTarget) * 100)) : 0;
+                  const metaBatida = homePct >= 100 && awayPct >= 100;
                   return (
                     <div
                       key={g.id}
@@ -350,6 +357,11 @@ export default async function HomePage() {
                               <span className="text-white text-xl pl-0.5">▶</span>
                             </div>
                           </div>
+                          {metaBatida && (
+                            <span className="absolute top-2 left-2 right-2 text-center px-2 py-1 rounded bg-futvar-green/90 text-futvar-darker text-[10px] font-bold tracking-wide">
+                              Meta batida! Em breve o jogo estará no ar.
+                            </span>
+                          )}
                           {/* Badge LIVE */}
                           <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-semibold tracking-wide">
                             LIVE
@@ -411,14 +423,21 @@ export default async function HomePage() {
                           </div>
                         </div>
                         <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-                          <p className="text-xs text-futvar-light max-w-md">
-                            Ao se tornar <span className="font-semibold text-white">Patrocinador Torcedor</span>, você apoia financeiramente o seu time, participa da meta desta pré-estreia e libera todo o conteúdo normal do portal para você.
-                          </p>
+                          <div className="max-w-md">
+                            {metaBatida && (
+                              <p className="text-sm font-semibold text-futvar-green mb-1">
+                                Meta batida! Em breve o jogo estará no ar.
+                              </p>
+                            )}
+                            <p className="text-xs text-futvar-light">
+                              Ao se tornar <span className="font-semibold text-white">Patrocinador Torcedor</span>, você apoia financeiramente o seu time, participa da meta desta pré-estreia e libera todo o conteúdo normal do portal para você.
+                            </p>
+                          </div>
                           <Link
                             href="/planos"
-                            className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-bold text-sm hover:bg-futvar-green-light transition-colors"
+                            className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-bold text-sm hover:bg-futvar-green-light transition-colors shrink-0"
                           >
-                          Ser Patrocinador Torcedor
+                            Ser Patrocinador Torcedor
                           </Link>
                         </div>
                       </div>
@@ -440,20 +459,26 @@ export default async function HomePage() {
                 Dois clubes financiam previamente o jogo.
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
-                {preSaleForClubs.map((g, i) => (
-                  <div key={g.id} className="animate-scale-in opacity-0" style={{ animationDelay: `${0.15 + i * 0.05}s` }}>
-                    <GameCard
-                      slug={g.slug}
-                      title={g.title}
-                      championship={`Financiados: ${g.fundedClubsCount}/2`}
-                      thumbnailUrl={g.thumbnailUrl}
-                      gameDate={g.createdAt.toISOString()}
-                      featured={false}
-                      href={`/pre-estreia/${g.id}/checkout`}
-                      badgeText="APOIAR"
-                    />
-                  </div>
-                ))}
+                {preSaleForClubs.map((g, i) => {
+                  const patrocinioOk = g.fundedClubsCount === 2;
+                  return (
+                    <div key={g.id} className="animate-scale-in opacity-0" style={{ animationDelay: `${0.15 + i * 0.05}s` }}>
+                      <GameCard
+                        slug={g.slug}
+                        title={g.title}
+                        championship={patrocinioOk ? 'Financiados: 2/2' : `Financiados: ${g.fundedClubsCount}/2`}
+                        thumbnailUrl={g.thumbnailUrl}
+                        gameDate={g.createdAt.toISOString()}
+                        featured={false}
+                        href={`/pre-estreia/${g.id}/checkout`}
+                        badgeText={patrocinioOk ? undefined : 'APOIAR'}
+                        showAssistir={!patrocinioOk}
+                        sponsorOkLabel={patrocinioOk ? 'Patrocínio OK' : undefined}
+                        sponsorOkSubtitle={patrocinioOk ? 'Em breve disponível para membros dos clubes e assinantes.' : undefined}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
