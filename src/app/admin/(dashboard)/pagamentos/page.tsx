@@ -110,19 +110,20 @@ export default function AdminPagamentosPage() {
 
         <section className="bg-netflix-dark border border-white/10 rounded-lg p-6">
           <h2 className="text-lg font-semibold text-white mb-1">Woovi (Pix)</h2>
-          <p className="text-xs text-netflix-light mb-4">Chaves em: Woovi → Configurações → API</p>
+          <p className="text-xs text-netflix-light mb-4">Chaves em: Woovi → API/Plugins → Visualização de credenciais</p>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-netflix-light mb-2">API Key *</label>
+              <label className="block text-sm font-medium text-netflix-light mb-2">API Key (appID) *</label>
               <div className="relative">
                 <input
                   type={showPasswords ? 'text' : 'password'}
                   value={form.wooviApiKey}
                   onChange={(e) => setForm((f) => ({ ...f, wooviApiKey: e.target.value }))}
-                  placeholder={form.wooviConfigured ? '•••••••• (deixe em branco para manter)' : 'Chave da API Woovi'}
+                  placeholder={form.wooviConfigured ? '•••••••• (deixe em branco para manter)' : 'Cole o appID (string longa base64), não o Client_Id'}
                   autoComplete="off"
                   className="w-full px-4 py-3 pr-20 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
                 />
+                <p className="text-xs text-amber-200/90 mt-1">Use o <strong>appID</strong> da aba &quot;Visualização de credenciais&quot; (string longa em base64), não o Client_Id.</p>
                 <button
                   type="button"
                   onClick={() => setShowPasswords((s) => !s)}

@@ -18,22 +18,27 @@ export async function GET(
   }
 
   const id = (await params).id;
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      emailVerified: true,
-      createdAt: true,
-      updatedAt: true,
-      subscription: true,
-    },
-  });
+  const [user, paidPurchasesCount] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        emailVerified: true,
+        createdAt: true,
+        updatedAt: true,
+        subscription: true,
+      },
+    }),
+    prisma.purchase.count({
+      where: { userId: id, paymentStatus: 'paid' },
+    }),
+  ]);
 
   if (!user) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
-  return NextResponse.json(user);
+  return NextResponse.json({ ...user, paidPurchasesCount });
 }
 
 export async function PATCH(

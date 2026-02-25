@@ -20,6 +20,133 @@ interface Game {
   thumbnailUrl: string | null;
 }
 
+const PIX_TIMEOUT_MINUTES = 15;
+
+function PixPaymentScreen({
+  qrCode,
+  qrCodeImage,
+  purchaseId,
+  expiresAt,
+  onPaid,
+}: {
+  qrCode?: string;
+  qrCodeImage?: string;
+  purchaseId?: string;
+  expiresAt?: string;
+  onPaid: (result?: { gameTitle?: string; gameSlug?: string }) => void;
+}) {
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [paidSuccess, setPaidSuccess] = useState<{ gameTitle?: string; gameSlug?: string } | null>(null);
+
+  const expiryMs = expiresAt ? new Date(expiresAt).getTime() : Date.now() + PIX_TIMEOUT_MINUTES * 60 * 1000;
+
+  useEffect(() => {
+    const update = () => {
+      const left = Math.max(0, Math.floor((expiryMs - Date.now()) / 1000));
+      setSecondsLeft(left);
+    };
+    update();
+    const t = setInterval(update, 1000);
+    return () => clearInterval(t);
+  }, [expiryMs]);
+
+  useEffect(() => {
+    if (!purchaseId) return;
+    const check = async () => {
+      try {
+        const res = await fetch(`/api/checkout/purchase/${purchaseId}/status`, { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.paid) {
+            const result = { gameTitle: data.gameTitle, gameSlug: data.gameSlug };
+            setPaidSuccess(result);
+            onPaid(result);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+    check();
+    const interval = setInterval(check, 3000);
+    return () => clearInterval(interval);
+  }, [purchaseId, onPaid]);
+
+  const handleCopy = async () => {
+    if (!qrCode) return;
+    try {
+      await navigator.clipboard.writeText(qrCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback
+      setCopied(false);
+    }
+  };
+
+  const fmt = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+  };
+
+  if (paidSuccess) {
+    return (
+      <div className="pt-24 pb-16 px-4 min-h-screen bg-futvar-darker flex items-center justify-center">
+        <div className="max-w-md mx-auto text-center">
+          <div className="rounded-2xl border border-futvar-green/40 bg-futvar-green/10 p-8">
+            <p className="text-xl font-semibold text-white mb-2">Pagamento aprovado.</p>
+            <p className="text-futvar-light">
+              {paidSuccess.gameTitle
+                ? `Você já pode assistir a ${paidSuccess.gameTitle}. Redirecionando…`
+                : 'Redirecionando para sua conta…'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pt-24 pb-16 px-4 min-h-screen bg-futvar-darker">
+      <div className="max-w-md mx-auto text-center">
+        <h1 className="text-2xl font-bold text-white mb-2">Pague com Pix</h1>
+        <p className="text-futvar-light mb-4">Escaneie o QR Code ou use o código Copia e Cola.</p>
+
+        {secondsLeft !== null && (
+          <p className="text-amber-300 text-sm font-medium mb-4">
+            Tempo para pagar: {fmt(secondsLeft)}
+            {secondsLeft === 0 && ' — Expirado'}
+          </p>
+        )}
+
+        {qrCodeImage && (
+          <div className="bg-white p-4 rounded-xl inline-block mb-4">
+            <Image src={qrCodeImage} alt="QR Code Pix" width={256} height={256} unoptimized />
+          </div>
+        )}
+        {qrCode && !qrCodeImage && (
+          <p className="text-xs text-futvar-light break-all mb-4">{qrCode}</p>
+        )}
+
+        {qrCode && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="mb-6 px-6 py-3 rounded-lg bg-futvar-green/20 border border-futvar-green text-futvar-green font-semibold hover:bg-futvar-green/30 transition-colors"
+          >
+            {copied ? 'Copiado!' : 'Copia e Cola'}
+          </button>
+        )}
+
+        <p className="text-sm text-futvar-light">Após o pagamento, o acesso será liberado em instantes. Você pode ser redirecionado automaticamente.</p>
+        <Link href="/conta" className="mt-6 inline-block text-futvar-green hover:underline">Ir para minha conta</Link>
+      </div>
+    </div>
+  );
+}
+
 function CheckoutContent() {
   const router = useRouter();
   const pathname = usePathname();
@@ -39,7 +166,13 @@ function CheckoutContent() {
   const [error, setError] = useState('');
   const [isClubViewer, setIsClubViewer] = useState(false);
   const [isTeamManager, setIsTeamManager] = useState(false);
-  const [pixQr, setPixQr] = useState<{ qrCode?: string; qrCodeImage?: string } | null>(null);
+  const [pixQr, setPixQr] = useState<{
+    qrCode?: string;
+    qrCodeImage?: string;
+    purchaseId?: string;
+    expiresAt?: string;
+  } | null>(null);
+  const [pixCopied, setPixCopied] = useState(false);
   const [stripeSecret, setStripeSecret] = useState<string | null>(null);
   const [paymentAvailability, setPaymentAvailability] = useState<{ pix: boolean; card: boolean } | null>(null);
 
@@ -149,7 +282,12 @@ function CheckoutContent() {
         return;
       }
       if (data.method === 'pix' && (data.qrCode || data.qrCodeImage)) {
-        setPixQr({ qrCode: data.qrCode, qrCodeImage: data.qrCodeImage });
+        setPixQr({
+          qrCode: data.qrCode,
+          qrCodeImage: data.qrCodeImage,
+          purchaseId: data.purchaseId,
+          expiresAt: data.expiresAt,
+        });
       } else if (data.method === 'card' && data.clientSecret) {
         setStripeSecret(data.clientSecret);
         setError('Configure o Stripe Elements no front para finalizar. Por enquanto use Pix.');
@@ -212,22 +350,18 @@ function CheckoutContent() {
 
   if (pixQr && (pixQr.qrCode || pixQr.qrCodeImage)) {
     return (
-      <div className="pt-24 pb-16 px-4 min-h-screen bg-futvar-darker">
-        <div className="max-w-md mx-auto text-center">
-          <h1 className="text-2xl font-bold text-white mb-2">Pague com Pix</h1>
-          <p className="text-futvar-light mb-6">Escaneie o QR Code com o app do seu banco.</p>
-          {pixQr.qrCodeImage && (
-            <div className="bg-white p-4 rounded-xl inline-block mb-6">
-              <Image src={pixQr.qrCodeImage} alt="QR Code Pix" width={256} height={256} unoptimized />
-            </div>
-          )}
-          {pixQr.qrCode && !pixQr.qrCodeImage && (
-            <p className="text-xs text-futvar-light break-all mb-6">{pixQr.qrCode}</p>
-          )}
-          <p className="text-sm text-futvar-light">Após o pagamento, o acesso será liberado em instantes.</p>
-          <Link href="/conta" className="mt-6 inline-block text-futvar-green hover:underline">Ir para minha conta</Link>
-        </div>
-      </div>
+      <PixPaymentScreen
+        qrCode={pixQr.qrCode}
+        qrCodeImage={pixQr.qrCodeImage}
+        purchaseId={pixQr.purchaseId}
+        expiresAt={pixQr.expiresAt}
+        onPaid={(result) => {
+          setTimeout(() => {
+            if (result?.gameSlug) router.push(`/jogo/${result.gameSlug}`);
+            else router.push('/conta');
+          }, 2000);
+        }}
+      />
     );
   }
 

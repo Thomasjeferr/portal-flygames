@@ -1,17 +1,18 @@
 /**
- * Integração Woovi (Pix).
- * Documentação: https://docs.woovi.com/
- * Variáveis de ambiente: WOOVI_API_KEY, WOOVI_WEBHOOK_SECRET (opcional)
+ * Integração Woovi/OpenPix (Pix).
+ * Documentação: https://developers.woovi.com/ — usa API OpenPix.
+ * Autenticação: appID (base64 de Client_Id:Client_Secret) em "API Key" no admin.
+ * Variáveis de ambiente: WOOVI_API_KEY (ou config no Admin > Pagamentos).
  */
 
-const WOOVI_API = 'https://api.woovi.com';
+const OPENPIX_API = 'https://api.openpix.com.br';
 
 export interface WooviChargeInput {
   amount: number; // centavos
-  customer: string; // CPF ou email
+  customer: string; // email do cliente
+  customerName?: string; // nome (opcional)
   description?: string;
-  externalId: string; // id da compra no nosso sistema
-  expiresIn?: number; // segundos (ex: 3600 = 1h)
+  externalId: string; // id da compra (correlationID)
 }
 
 export interface WooviChargeResponse {
@@ -19,35 +20,42 @@ export interface WooviChargeResponse {
   status: string;
   qrCode?: string;
   qrCodeImage?: string;
+  brCode?: string;
   expiresAt?: string;
   [key: string]: unknown;
 }
 
 export async function createWooviCharge(input: WooviChargeInput): Promise<WooviChargeResponse | null> {
-  let apiKey = process.env.WOOVI_API_KEY;
-  if (!apiKey) {
+  let appId = process.env.WOOVI_API_KEY;
+  if (!appId) {
     const { getPaymentConfig } = await import('@/lib/payment-config');
     const config = await getPaymentConfig();
-    apiKey = config.wooviApiKey ?? undefined;
+    appId = config.wooviApiKey ?? undefined;
   }
-  if (!apiKey) {
-    console.warn('WOOVI_API_KEY não configurada');
+  if (!appId || !appId.trim()) {
+    console.warn('WOOVI_API_KEY / Woovi API Key (appID) não configurada');
     return null;
   }
 
+  const trimmedAppId = appId.trim();
+  const name = (input.customerName || input.customer || 'Cliente').slice(0, 100);
+  const email = input.customer || '';
+
   try {
-    const res = await fetch(`${WOOVI_API}/api/v1/charge`, {
+    const res = await fetch(`${OPENPIX_API}/api/openpix/v1/charge`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: trimmedAppId,
       },
       body: JSON.stringify({
-        amount: input.amount,
-        customer: input.customer,
-        description: input.description ?? 'Fly Games',
-        externalId: input.externalId,
-        expiresIn: input.expiresIn ?? 3600,
+        correlationID: input.externalId,
+        value: input.amount,
+        comment: input.description ?? 'Fly Games',
+        customer: {
+          name,
+          email,
+        },
       }),
     });
 
@@ -57,7 +65,20 @@ export async function createWooviCharge(input: WooviChargeInput): Promise<WooviC
       return null;
     }
 
-    return (await res.json()) as WooviChargeResponse;
+    const data = (await res.json()) as { charge?: WooviChargeResponse; brCode?: string; qrCodeImage?: string; [key: string]: unknown };
+    const charge = data.charge ?? data;
+    const id = (charge as { id?: string }).id;
+    const brCode = (charge as { brCode?: string }).brCode ?? (data as { brCode?: string }).brCode;
+    const qrCodeImage = (charge as { qrCodeImage?: string }).qrCodeImage ?? (data as { qrCodeImage?: string }).qrCodeImage;
+
+    return {
+      id: id ?? input.externalId,
+      status: (charge as { status?: string }).status ?? 'ACTIVE',
+      qrCode: brCode ?? (charge as WooviChargeResponse).qrCode,
+      qrCodeImage,
+      expiresAt: (charge as { expiresAt?: string }).expiresAt,
+      ...charge,
+    } as WooviChargeResponse;
   } catch (e) {
     console.error('Woovi createCharge error:', e);
     return null;

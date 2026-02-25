@@ -29,10 +29,10 @@ export async function POST(request: NextRequest) {
     const externalId = `presale-${slot.id}`;
     const charge = await createWooviCharge({
       amount: amountCents,
-      customer: 'club@presale.com',
+      customer: responsibleEmail.trim(),
+      customerName: responsibleName?.trim(),
       description: `Pre-estreia: ${slot.preSaleGame.title} - Clube ${slot.slotIndex}`,
       externalId,
-      expiresIn: 3600,
     });
 
     if (!charge?.qrCode && !charge?.qrCodeImage) {

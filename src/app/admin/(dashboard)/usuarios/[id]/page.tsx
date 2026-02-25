@@ -20,6 +20,7 @@ interface User {
   createdAt: string;
   updatedAt: string;
   subscription: Subscription | null;
+  paidPurchasesCount?: number;
 }
 
 export default function AdminUserDetailPage() {
@@ -298,6 +299,11 @@ export default function AdminUserDetailPage() {
           ) : (
             <div className="space-y-4">
               <p className="text-netflix-light text-sm">Usuário sem assinatura cadastrada.</p>
+              {(user.paidPurchasesCount ?? 0) > 0 && (
+                <p className="text-green-300 text-sm">
+                  {user.paidPurchasesCount} compra(s) avulsa(s) paga(s) (acesso a jogo(s)).
+                </p>
+              )}
               <div className="flex items-center gap-3">
                 <select
                   value={months}

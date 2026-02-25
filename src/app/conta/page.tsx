@@ -449,6 +449,12 @@ export default function ContaPage() {
             <h2 className="text-lg font-semibold text-white mb-4">Assinatura / Plano</h2>
             {subscription && subscription.plan ? (
               <div className="space-y-3">
+                <p className="text-white font-medium">
+                  {subscriptionActive ? 'Você tem assinatura recorrente.' : 'Sua assinatura está inativa.'}
+                </p>
+                {favoriteTeam && subscriptionActive && (
+                  <p className="text-futvar-green font-medium">Você patrocina o {favoriteTeam.name}.</p>
+                )}
                 <div className="flex items-center gap-2">
                   <span
                     className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
@@ -458,7 +464,7 @@ export default function ContaPage() {
                     {subscriptionActive ? 'Ativa' : 'Inativa'}
                   </span>
                 </div>
-                <p className="text-white font-medium">{subscription.plan.name}</p>
+                <p className="text-futvar-light text-sm">{subscription.plan.name}</p>
                 {subscription.plan.price != null && (
                   <p className="text-futvar-light">Valor: {formatPrice(subscription.plan.price)}</p>
                 )}
@@ -481,13 +487,49 @@ export default function ContaPage() {
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-white/20 bg-white/5 p-6 text-center">
-                <p className="text-futvar-light mb-4">Você ainda não possui assinatura.</p>
-                <Link
-                  href="/planos"
-                  className="inline-flex px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
-                >
-                  Ver planos
-                </Link>
+                {(() => {
+                  const paidPurchases = purchases.filter((p) => p.paymentStatus === 'paid');
+                  const paidWithGame = paidPurchases.filter((p) => p.game);
+                  if (paidWithGame.length > 0) {
+                    return (
+                      <>
+                        <p className="text-futvar-light mb-2">Você ainda não patrocina nenhum time.</p>
+                        <p className="text-green-300 text-sm font-medium mb-4">
+                          Você tem acesso a {paidWithGame.length} jogo(s) comprado(s).
+                        </p>
+                        <ul className="text-left text-sm text-futvar-light space-y-1 mb-4 max-h-24 overflow-y-auto">
+                          {paidWithGame.slice(0, 5).map((p) => (
+                            <li key={p.id}>
+                              <Link href={`/jogo/${p.game!.slug}`} className="text-futvar-green hover:underline">
+                                {p.game!.title}
+                              </Link>
+                            </li>
+                          ))}
+                          {paidWithGame.length > 5 && (
+                            <li className="text-futvar-light">+ {paidWithGame.length - 5} outro(s) abaixo</li>
+                          )}
+                        </ul>
+                        <Link
+                          href="/planos"
+                          className="inline-flex px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
+                        >
+                          Ver planos
+                        </Link>
+                      </>
+                    );
+                  }
+                  return (
+                    <>
+                      <p className="text-futvar-light mb-4">Você ainda não patrocina nenhum time.</p>
+                      <Link
+                        href="/planos"
+                        className="inline-flex px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
+                      >
+                        Ver planos
+                      </Link>
+                    </>
+                  );
+                })()}
               </div>
             )}
           </section>
