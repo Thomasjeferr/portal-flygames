@@ -3,29 +3,25 @@ import { getApprovedPartner } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/db';
 import { getAvailableAt } from '@/lib/payoutRules';
 
-/**
- * Resumo e lista de ganhos do parceiro.
- * Apenas valores líquidos (comissão), nunca faturamento total.
- */
-export async function GET() {
+export async function POST() {
   const partner = await getApprovedPartner();
   if (!partner) {
     return NextResponse.json({ error: 'Acesso apenas para parceiros aprovados' }, { status: 403 });
   }
 
   const earnings = await prisma.partnerEarning.findMany({
-    where: { partnerId: partner.id },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      sourceType: true,
-      amountCents: true,
-      commissionPercent: true,
-      status: true,
-      createdAt: true,
-      paidAt: true,
+    where: { partnerId: partner.id, status: 'pending' },
+    orderBy: { createdAt: 'asc' },
+    include: {
+      withdrawalItems: {
+        include: { withdrawal: { select: { status: true } } },
+      },
     },
   });
+
+  if (!earnings.length) {
+    return NextResponse.json({ error: 'Você ainda não tem comissões pendentes.' }, { status: 400 });
+  }
 
   const purchaseIds = earnings.filter((e) => e.sourceType === 'purchase').map((e) => e.sourceId);
   const sponsorOrderIds = earnings.filter((e) => e.sourceType === 'sponsor').map((e) => e.sourceId);
@@ -49,11 +45,13 @@ export async function GET() {
   const sponsorOrderMap = new Map(sponsorOrders.map((s) => [s.id, s]));
 
   const now = new Date();
-  let totalPendenteCents = 0;
-  let totalLiberadoCents = 0;
-  let totalPagoCents = 0;
+  const availableEarnings = [];
 
-  const itens = earnings.map((e) => {
+  for (const e of earnings) {
+    // Ignora comissões já vinculadas a saques não cancelados
+    const hasActiveWithdrawal = e.withdrawalItems.some((item) => item.withdrawal.status !== 'canceled');
+    if (hasActiveWithdrawal) continue;
+
     let createdAt = e.createdAt;
     let gateway: string | null | undefined = null;
 
@@ -72,32 +70,41 @@ export async function GET() {
     }
 
     const availableAt = getAvailableAt(createdAt, gateway);
-
-    if (e.status === 'paid') {
-      totalPagoCents += e.amountCents;
-    } else {
-      totalPendenteCents += e.amountCents;
-      if (availableAt <= now) {
-        totalLiberadoCents += e.amountCents;
-      }
+    if (availableAt <= now) {
+      availableEarnings.push(e);
     }
+  }
 
-    return {
-      id: e.id,
-      type: e.sourceType === 'purchase' ? 'plano' : 'patrocínio',
-      commissionCents: e.amountCents,
-      commissionPercent: e.commissionPercent,
-      status: e.status,
-      date: e.createdAt.toISOString(),
-      paidAt: e.paidAt?.toISOString() ?? null,
-      availableAt: availableAt.toISOString(),
-    };
+  if (!availableEarnings.length) {
+    return NextResponse.json(
+      { error: 'Você ainda não tem valores liberados para saque. Vendas em cartão liberam após o prazo de compensação.' },
+      { status: 400 }
+    );
+  }
+
+  const totalCents = availableEarnings.reduce((sum, e) => sum + e.amountCents, 0);
+
+  const withdrawal = await prisma.partnerWithdrawal.create({
+    data: {
+      partnerId: partner.id,
+      amountCents: totalCents,
+      status: 'requested',
+      requestedAt: now,
+      items: {
+        create: availableEarnings.map((e) => ({
+          earningId: e.id,
+          amountCents: e.amountCents,
+        })),
+      },
+    },
+    include: { items: true },
   });
 
   return NextResponse.json({
-    totalPendenteCents,
-    totalLiberadoCents,
-    totalPagoCents,
-    itens,
+    ok: true,
+    withdrawalId: withdrawal.id,
+    amountCents: withdrawal.amountCents,
+    itemsCount: withdrawal.items.length,
   });
 }
+

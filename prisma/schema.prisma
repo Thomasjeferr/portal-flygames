@@ -110,6 +110,7 @@ model Team {
   sponsorOrders SponsorOrder[]
   sponsorshipEarnings TeamSponsorshipEarning[]
   planEarnings        TeamPlanEarning[]
+  withdrawals         TeamWithdrawal[]
   purchases           Purchase[]
   managers            TeamManager[]
   members             TeamMember[]
@@ -506,8 +507,9 @@ model TeamSponsorshipEarning {
   paymentReference String?   @map("payment_reference")
   createdAt        DateTime  @default(now()) @map("created_at")
 
-  team         Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  sponsorOrder SponsorOrder @relation(fields: [sponsorOrderId], references: [id], onDelete: Cascade)
+  team                       Team                         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  sponsorOrder               SponsorOrder                 @relation(fields: [sponsorOrderId], references: [id], onDelete: Cascade)
+  withdrawalSponsorshipItems TeamWithdrawalSponsorshipItem[]
 
   @@unique([teamId, sponsorOrderId])
 }
@@ -697,10 +699,11 @@ model Partner {
   createdAt                DateTime @default(now()) @map("created_at")
   updatedAt                DateTime @updatedAt @map("updated_at")
 
-  user      User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
-  purchases Purchase[]
+  user          User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  purchases     Purchase[]
   sponsorOrders SponsorOrder[]
-  earnings  PartnerEarning[]
+  earnings      PartnerEarning[]
+  withdrawals   PartnerWithdrawal[]
 }
 
 model PartnerEarning {
@@ -716,7 +719,32 @@ model PartnerEarning {
   paymentReference String?   @map("payment_reference")
   createdAt        DateTime  @default(now()) @map("created_at")
 
-  partner Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partner         Partner                 @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  withdrawalItems PartnerWithdrawalItem[]
+}
+
+model PartnerWithdrawal {
+  id               String   @id @default(cuid())
+  partnerId        String   @map("partner_id")
+  amountCents      Int      @map("amount_cents")
+  status           String   @default("requested") @map("status") // requested | processing | paid | canceled
+  requestedAt      DateTime @default(now()) @map("requested_at")
+  paidAt           DateTime? @map("paid_at")
+  paymentReference String?  @map("payment_reference")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  partner Partner               @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  items   PartnerWithdrawalItem[]
+}
+
+model PartnerWithdrawalItem {
+  id           String  @id @default(cuid())
+  withdrawalId String  @map("withdrawal_id")
+  earningId    String  @map("earning_id")
+  amountCents  Int     @map("amount_cents")
+
+  withdrawal PartnerWithdrawal @relation(fields: [withdrawalId], references: [id], onDelete: Cascade)
+  earning    PartnerEarning    @relation(fields: [earningId], references: [id], onDelete: Cascade)
 }
 
 // Ganho do time com compra de plano/jogo (comissão do time de coração)
@@ -730,10 +758,46 @@ model TeamPlanEarning {
   paymentReference String?   @map("payment_reference")
   createdAt        DateTime  @default(now()) @map("created_at")
 
-  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  team              Team                     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  purchase          Purchase                 @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  withdrawalPlanItems TeamWithdrawalPlanItem[]
 
   @@unique([teamId, purchaseId])
+}
+
+model TeamWithdrawal {
+  id               String   @id @default(cuid())
+  teamId           String   @map("team_id")
+  amountCents      Int      @map("amount_cents")
+  status           String   @default("requested") @map("status") // requested | processing | paid | canceled
+  requestedAt      DateTime @default(now()) @map("requested_at")
+  paidAt           DateTime? @map("paid_at")
+  paymentReference String?  @map("payment_reference")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  team               Team                          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  planItems          TeamWithdrawalPlanItem[]
+  sponsorshipItems   TeamWithdrawalSponsorshipItem[]
+}
+
+model TeamWithdrawalPlanItem {
+  id           String @id @default(cuid())
+  withdrawalId String @map("withdrawal_id")
+  earningId    String @map("earning_id")
+  amountCents  Int    @map("amount_cents")
+
+  withdrawal TeamWithdrawal  @relation(fields: [withdrawalId], references: [id], onDelete: Cascade)
+  earning    TeamPlanEarning @relation(fields: [earningId], references: [id], onDelete: Cascade)
+}
+
+model TeamWithdrawalSponsorshipItem {
+  id           String @id @default(cuid())
+  withdrawalId String @map("withdrawal_id")
+  earningId    String @map("earning_id")
+  amountCents  Int    @map("amount_cents")
+
+  withdrawal TeamWithdrawal        @relation(fields: [withdrawalId], references: [id], onDelete: Cascade)
+  earning    TeamSponsorshipEarning @relation(fields: [earningId], references: [id], onDelete: Cascade)
 }
 
 // ========== DASHBOARD / ANALYTICS ==========

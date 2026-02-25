@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 type Resumo = {
   totalPendenteCents: number;
+  totalLiberadoCents: number;
   totalPagoCents: number;
   itens: {
     id: string;
@@ -13,6 +14,7 @@ type Resumo = {
     status: string;
     date: string;
     paidAt: string | null;
+    availableAt: string;
   }[];
 };
 
@@ -26,6 +28,9 @@ function formatMoney(cents: number) {
 export default function ParceiroComissoesPage() {
   const [data, setData] = useState<Resumo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [requesting, setRequesting] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     fetch('/api/partner/ganhos')
@@ -40,8 +45,33 @@ export default function ParceiroComissoesPage() {
 
   const resumo = data ?? {
     totalPendenteCents: 0,
+    totalLiberadoCents: 0,
     totalPagoCents: 0,
     itens: [],
+  };
+
+  const handleSolicitarSaque = async () => {
+    if (!resumo.totalLiberadoCents || requesting) return;
+    setError('');
+    setSuccess('');
+    setRequesting(true);
+    try {
+      const res = await fetch('/api/partner/withdrawals', { method: 'POST' });
+      const body = await res.json().catch(() => null);
+      if (!res.ok || !body?.ok) {
+        setError(body?.error || 'Erro ao solicitar saque.');
+        return;
+      }
+      setSuccess('Saque solicitado com sucesso. Pagamento em até 3 dias úteis.');
+      // Recarrega resumo
+      const r = await fetch('/api/partner/ganhos');
+      const json = r.ok ? await r.json() : null;
+      setData(json);
+    } catch {
+      setError('Erro de conexão ao solicitar saque.');
+    } finally {
+      setRequesting(false);
+    }
   };
 
   return (
@@ -53,16 +83,41 @@ export default function ParceiroComissoesPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 mb-8">
+      <div className="grid gap-4 sm:grid-cols-3 mb-4">
         <div className="rounded-xl bg-futvar-dark border border-amber-500/30 p-5">
           <p className="text-sm text-futvar-light">Pendente</p>
           <p className="text-2xl font-bold text-amber-300">{formatMoney(resumo.totalPendenteCents)}</p>
           <p className="text-xs text-futvar-light mt-1">A receber</p>
         </div>
+        <div className="rounded-xl bg-futvar-dark border border-sky-500/40 p-5">
+          <p className="text-sm text-futvar-light">Liberado para saque</p>
+          <p className="text-2xl font-bold text-sky-300">{formatMoney(resumo.totalLiberadoCents)}</p>
+          <p className="text-xs text-futvar-light mt-1">Valor já disponível para solicitar saque.</p>
+        </div>
         <div className="rounded-xl bg-futvar-dark border border-emerald-500/30 p-5">
           <p className="text-sm text-futvar-light">Já pago</p>
           <p className="text-2xl font-bold text-emerald-300">{formatMoney(resumo.totalPagoCents)}</p>
           <p className="text-xs text-futvar-light mt-1">Total recebido</p>
+        </div>
+      </div>
+
+      <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <button
+            type="button"
+            onClick={handleSolicitarSaque}
+            disabled={requesting || resumo.totalLiberadoCents === 0}
+            className="inline-flex items-center justify-center rounded-md bg-futvar-green px-5 py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {requesting ? 'Solicitando...' : 'Solicitar saque'}
+          </button>
+          <p className="text-xs text-futvar-light">
+            Após solicitar, o pagamento é realizado em até <span className="font-semibold">3 dias úteis</span>.
+          </p>
+        </div>
+        <div className="space-y-1 text-sm">
+          {error && <p className="text-red-400">{error}</p>}
+          {success && <p className="text-futvar-green">{success}</p>}
         </div>
       </div>
 
