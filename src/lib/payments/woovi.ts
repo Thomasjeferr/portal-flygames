@@ -96,6 +96,48 @@ export async function createWooviCharge(input: WooviChargeInput): Promise<WooviC
   }
 }
 
+/**
+ * Consulta uma cobrança Woovi/OpenPix pelo ID ou correlationID.
+ * Usado como fallback para sincronizar o status de pagamentos Pix
+ * caso o webhook não dispare ou falhe por algum motivo.
+ */
+export async function getWooviChargeStatus(idOrCorrelationId: string): Promise<WooviChargeResponse | null> {
+  let appId = process.env.WOOVI_API_KEY;
+  if (!appId) {
+    const { getPaymentConfig } = await import('@/lib/payment-config');
+    const config = await getPaymentConfig();
+    appId = config.wooviApiKey ?? undefined;
+  }
+  if (!appId || !appId.trim()) {
+    console.warn('WOOVI_API_KEY / Woovi API Key (appID) não configurada (getWooviChargeStatus)');
+    return null;
+  }
+
+  const trimmedAppId = appId.trim();
+
+  try {
+    const res = await fetch(`${OPENPIX_API}/api/v1/charge/${encodeURIComponent(idOrCorrelationId)}`, {
+      method: 'GET',
+      headers: {
+        Authorization: trimmedAppId,
+      },
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error('Woovi get charge error:', res.status, err);
+      return null;
+    }
+
+    const data = (await res.json()) as { charge?: WooviChargeResponse } & WooviChargeResponse;
+    const charge = (data.charge ?? data) as WooviChargeResponse;
+    return charge;
+  } catch (e) {
+    console.error('Woovi getChargeStatus error:', e);
+    return null;
+  }
+}
+
 import { createVerify } from 'crypto';
 
 /**

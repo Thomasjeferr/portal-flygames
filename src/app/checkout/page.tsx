@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import Image from 'next/image';
 
 interface Plan {
@@ -39,6 +39,9 @@ function PixPaymentScreen({
   const [copied, setCopied] = useState(false);
   const [paidSuccess, setPaidSuccess] = useState<{ gameTitle?: string; gameSlug?: string } | null>(null);
 
+  const syncAttemptedRef = useRef(false);
+  const pollCountRef = useRef(0);
+
   const [expiryMs] = useState(() =>
     expiresAt ? new Date(expiresAt).getTime() : Date.now() + PIX_TIMEOUT_MINUTES * 60 * 1000
   );
@@ -55,6 +58,11 @@ function PixPaymentScreen({
 
   useEffect(() => {
     if (!purchaseId) return;
+
+    // reinicia contadores quando a purchase muda
+    syncAttemptedRef.current = false;
+    pollCountRef.current = 0;
+
     const check = async () => {
       try {
         const res = await fetch(`/api/checkout/purchase/${purchaseId}/status`, { credentials: 'include' });
@@ -64,6 +72,21 @@ function PixPaymentScreen({
             const result = { gameTitle: data.gameTitle, gameSlug: data.gameSlug };
             setPaidSuccess(result);
             onPaid(result);
+            return;
+          }
+        }
+
+        // Se ainda não pagou, após alguns ciclos tenta uma sincronização direta com a Woovi.
+        pollCountRef.current += 1;
+        if (pollCountRef.current >= 10 && !syncAttemptedRef.current) {
+          syncAttemptedRef.current = true;
+          try {
+            await fetch(`/api/checkout/purchase/${purchaseId}/sync-woovi`, {
+              method: 'POST',
+              credentials: 'include',
+            });
+          } catch {
+            // ignorar erro de fallback
           }
         }
       } catch {
@@ -124,25 +147,35 @@ function PixPaymentScreen({
         )}
 
         {qrCodeImage && (
-          <div className="bg-white p-4 rounded-xl inline-block mb-4">
+          <div className="bg-white p-4 rounded-2xl inline-block mb-4 shadow-lg shadow-black/40">
             <Image src={qrCodeImage} alt="QR Code Pix" width={256} height={256} unoptimized />
           </div>
         )}
-        {qrCode && !qrCodeImage && (
-          <p className="text-xs text-futvar-light break-all mb-4">{qrCode}</p>
+        {qrCode && (
+          <div className="mb-4 text-left bg-black/40 border border-white/10 rounded-xl p-3 max-h-32 overflow-y-auto">
+            <p className="text-[11px] text-futvar-light break-all font-mono leading-relaxed">
+              {qrCode}
+            </p>
+          </div>
         )}
 
         {qrCode && (
           <button
             type="button"
             onClick={handleCopy}
-            className="mb-6 inline-flex items-center justify-center px-6 py-3 rounded-lg bg-futvar-green/20 border border-futvar-green text-futvar-green font-semibold hover:bg-futvar-green/30 transition-colors mx-auto"
+            className="w-full sm:w-auto mb-2 inline-flex items-center justify-center px-8 py-3 rounded-full bg-futvar-green text-futvar-darker font-bold shadow-lg shadow-futvar-green/30 hover:bg-futvar-green-light focus:outline-none focus:ring-2 focus:ring-futvar-green focus:ring-offset-2 focus:ring-offset-futvar-darker transition-colors mx-auto"
           >
-            {copied ? 'Copiado!' : 'Copia e Cola'}
+            {copied ? 'Código copiado!' : 'Copia e Cola do Pix'}
           </button>
         )}
 
-        <p className="text-sm text-futvar-light">Após o pagamento, o acesso será liberado em instantes. Você pode ser redirecionado automaticamente.</p>
+        <p className="text-xs text-futvar-light mb-4">
+          Clique em &quot;Copia e Cola do Pix&quot; e cole o código no app do seu banco para concluir o pagamento.
+        </p>
+
+        <p className="text-sm text-futvar-light">
+          Após o pagamento, o acesso será liberado em instantes. Você pode ser redirecionado automaticamente.
+        </p>
         <Link href="/conta" className="mt-6 inline-block text-futvar-green hover:underline">Ir para minha conta</Link>
       </div>
     </div>
