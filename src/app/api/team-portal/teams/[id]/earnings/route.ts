@@ -1,24 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Prisma } from '@prisma/client';
 import { getTeamAccess } from '@/lib/team-portal-auth';
 import { prisma } from '@/lib/db';
 import { getAvailableAt } from '@/lib/payoutRules';
-
-type SponsorEarningWithOrder = Prisma.TeamSponsorshipEarningGetPayload<{
-  include: {
-    sponsorOrder: {
-      select: { companyName: true; email: true; createdAt: true; amountCents: true; paymentGateway: true };
-    };
-  };
-}>;
-type PlanEarningWithPurchase = Prisma.TeamPlanEarningGetPayload<{
-  include: {
-    purchase: {
-      select: { createdAt: true; amountToTeamCents: true; paymentGateway: true };
-      include: { user: { select: { name: true; email: true } }; plan: { select: { name: true } } };
-    };
-  };
-}>;
 
 /** Comissões do time (patrocínio + planos/jogos) para painel do time (somente leitura). */
 export async function GET(
@@ -36,12 +19,12 @@ export async function GET(
   });
   if (!team) return NextResponse.json({ error: 'Time não encontrado' }, { status: 404 });
 
-  let sponsorEarnings: SponsorEarningWithOrder[] = [];
-  let planEarnings: PlanEarningWithPurchase[] = [];
+  let sponsorEarnings: any[] = [];
+  let planEarnings: any[] = [];
 
   try {
     [sponsorEarnings, planEarnings] = await Promise.all([
-      prisma.teamSponsorshipEarning.findMany({
+      await prisma.teamSponsorshipEarning.findMany({
         where: { teamId },
         include: {
           sponsorOrder: {
@@ -50,11 +33,10 @@ export async function GET(
         },
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.teamPlanEarning.findMany({
+      await prisma.teamPlanEarning.findMany({
         where: { teamId },
         include: {
           purchase: {
-            select: { createdAt: true, amountToTeamCents: true, paymentGateway: true },
             include: {
               user: { select: { name: true, email: true } },
               plan: { select: { name: true } },
@@ -68,7 +50,7 @@ export async function GET(
     console.error('[GET /api/team-portal/teams/[id]/earnings] query', e);
   }
 
-  const sponsorItems = (sponsorEarnings as SponsorEarningWithOrder[]).map((e) => {
+  const sponsorItems = sponsorEarnings.map((e) => {
     const orderCreatedAt = e.sponsorOrder?.createdAt ?? e.createdAt;
     const gateway = e.sponsorOrder?.paymentGateway ?? null;
     const availableAt = getAvailableAt(orderCreatedAt, gateway);
@@ -87,7 +69,7 @@ export async function GET(
     };
   });
 
-  const planItems = (planEarnings as PlanEarningWithPurchase[]).map((e) => {
+  const planItems = planEarnings.map((e) => {
     const orderCreatedAt = e.purchase?.createdAt ?? e.createdAt;
     const gateway = e.purchase?.paymentGateway ?? null;
     const availableAt = getAvailableAt(orderCreatedAt, gateway);

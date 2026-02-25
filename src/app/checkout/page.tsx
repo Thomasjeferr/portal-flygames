@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useRef, Suspense } from 'react';
 import Image from 'next/image';
+import CardPaymentScreen from '@/components/checkout/CardPaymentScreen';
 
 interface Plan {
   id: string;
@@ -325,7 +326,7 @@ function CheckoutContent() {
         });
       } else if (data.method === 'card' && data.clientSecret) {
         setStripeSecret(data.clientSecret);
-        setError('Configure o Stripe Elements no front para finalizar. Por enquanto use Pix.');
+        setError('');
       } else {
         router.push('/conta');
         router.refresh();
@@ -395,6 +396,21 @@ function CheckoutContent() {
             if (result?.gameSlug) router.push(`/jogo/${result.gameSlug}`);
             else router.push('/conta');
           }, 2000);
+        }}
+      />
+    );
+  }
+
+  if (stripeSecret && plan) {
+    const planPriceFormatted = `R$ ${Number(plan.price).toFixed(2).replace('.', ',')}`;
+    return (
+      <CardPaymentScreen
+        clientSecret={stripeSecret}
+        planName={plan.name}
+        planPrice={planPriceFormatted}
+        onBack={() => {
+          setStripeSecret(null);
+          setError('');
         }}
       />
     );

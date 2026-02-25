@@ -165,20 +165,20 @@ export default function AdminPagamentosPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-netflix-light mb-2">Secret Key *</label>
-              <div className="relative">
+              <div className="relative flex items-center gap-2">
                 <input
                   type={showPasswords ? 'text' : 'password'}
                   value={form.stripeSecretKey}
                   onChange={(e) => setForm((f) => ({ ...f, stripeSecretKey: e.target.value }))}
                   placeholder={form.stripeConfigured ? '•••••••• (deixe em branco para manter)' : 'sk_live_... ou sk_test_...'}
                   autoComplete="off"
-                  className="w-full px-4 py-3 pr-20 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                  className="flex-1 px-4 py-3 pr-4 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPasswords((s) => !s)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-netflix-light hover:text-white"
-                  aria-label={showPasswords ? 'Ocultar senhas' : 'Mostrar senhas'}
+                  className="shrink-0 px-3 py-2 rounded border border-white/20 text-sm text-netflix-light hover:text-white hover:bg-white/5 transition-colors"
+                  aria-label={showPasswords ? 'Ocultar' : 'Ver'}
                 >
                   {showPasswords ? 'Ocultar' : 'Ver'}
                 </button>
@@ -186,42 +186,43 @@ export default function AdminPagamentosPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-netflix-light mb-2">Webhook Secret *</label>
-              <div className="relative">
+              <div className="relative flex items-center gap-2">
                 <input
                   type={showPasswords ? 'text' : 'password'}
                   value={form.stripeWebhookSecret}
                   onChange={(e) => setForm((f) => ({ ...f, stripeWebhookSecret: e.target.value }))}
                   placeholder={form.stripeConfigured ? '•••••••• (deixe em branco para manter)' : 'whsec_...'}
                   autoComplete="off"
-                  className="w-full px-4 py-3 pr-20 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                  className="flex-1 px-4 py-3 pr-4 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPasswords((s) => !s)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-netflix-light hover:text-white"
-                  aria-label={showPasswords ? 'Ocultar senhas' : 'Mostrar senhas'}
+                  className="shrink-0 px-3 py-2 rounded border border-white/20 text-sm text-netflix-light hover:text-white hover:bg-white/5 transition-colors"
+                  aria-label={showPasswords ? 'Ocultar' : 'Ver'}
                 >
                   {showPasswords ? 'Ocultar' : 'Ver'}
                 </button>
               </div>
-              <p className="text-xs text-netflix-light mt-1">Use &quot;stripe listen --forward-to localhost:3000/api/webhooks/stripe&quot; em dev.</p>
+              <p className="text-xs text-netflix-light mt-1">Em produção: cadastre o webhook no Stripe Dashboard (Developers → Webhooks) e use a URL abaixo. Em dev: use &quot;stripe listen --forward-to localhost:3000/api/webhooks/stripe&quot;.</p>
+              <p className="text-xs text-netflix-light mt-0.5 font-mono break-all">URL do webhook: {typeof window !== 'undefined' ? `${window.location.origin}/api/webhooks/stripe` : '/api/webhooks/stripe'}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-netflix-light mb-2">Publishable Key (opcional)</label>
-              <div className="relative">
+              <div className="relative flex items-center gap-2">
                 <input
                   type={showPasswords ? 'text' : 'password'}
                   value={form.stripePublishableKey}
                   onChange={(e) => setForm((f) => ({ ...f, stripePublishableKey: e.target.value }))}
                   placeholder={form.stripeConfigured ? '•••••••• (deixe em branco para manter)' : 'pk_live_... ou pk_test_...'}
                   autoComplete="off"
-                  className="w-full px-4 py-3 pr-20 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                  className="flex-1 px-4 py-3 pr-4 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPasswords((s) => !s)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-netflix-light hover:text-white"
-                  aria-label={showPasswords ? 'Ocultar senhas' : 'Mostrar senhas'}
+                  className="shrink-0 px-3 py-2 rounded border border-white/20 text-sm text-netflix-light hover:text-white hover:bg-white/5 transition-colors"
+                  aria-label={showPasswords ? 'Ocultar' : 'Ver'}
                 >
                   {showPasswords ? 'Ocultar' : 'Ver'}
                 </button>
