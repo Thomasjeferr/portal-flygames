@@ -22,14 +22,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const body = JSON.parse(rawBody);
+
     if (!secret) {
       return NextResponse.json({ error: 'Webhook Woovi nao configurado' }, { status: 503 });
     }
+
+    const isTestEvent =
+      body?.evento === 'teste_webhook' ||
+      body?.event === 'teste_webhook';
+
     const signature = request.headers.get('x-hub-signature-256') ?? request.headers.get('x-webhook-signature') ?? '';
-    if (!verifyWooviWebhookSignature(rawBody, signature, secret)) {
+    if (!isTestEvent && !verifyWooviWebhookSignature(rawBody, signature, secret)) {
       return NextResponse.json({ error: 'Assinatura invalida' }, { status: 401 });
     }
-    const body = JSON.parse(rawBody);
+
+    if (isTestEvent) {
+      return NextResponse.json({ received: true });
+    }
+
     const event = body.event ?? body.status;
     const externalId = (body.externalId ?? body.customId ?? body.id) as string | undefined;
 
