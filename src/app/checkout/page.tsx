@@ -39,7 +39,9 @@ function PixPaymentScreen({
   const [copied, setCopied] = useState(false);
   const [paidSuccess, setPaidSuccess] = useState<{ gameTitle?: string; gameSlug?: string } | null>(null);
 
-  const expiryMs = expiresAt ? new Date(expiresAt).getTime() : Date.now() + PIX_TIMEOUT_MINUTES * 60 * 1000;
+  const [expiryMs] = useState(() =>
+    expiresAt ? new Date(expiresAt).getTime() : Date.now() + PIX_TIMEOUT_MINUTES * 60 * 1000
+  );
 
   useEffect(() => {
     const update = () => {
@@ -134,7 +136,7 @@ function PixPaymentScreen({
           <button
             type="button"
             onClick={handleCopy}
-            className="mb-6 px-6 py-3 rounded-lg bg-futvar-green/20 border border-futvar-green text-futvar-green font-semibold hover:bg-futvar-green/30 transition-colors"
+            className="mb-6 inline-flex items-center justify-center px-6 py-3 rounded-lg bg-futvar-green/20 border border-futvar-green text-futvar-green font-semibold hover:bg-futvar-green/30 transition-colors mx-auto"
           >
             {copied ? 'Copiado!' : 'Copia e Cola'}
           </button>

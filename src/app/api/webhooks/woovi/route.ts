@@ -41,18 +41,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    const event = body.event ?? body.status;
-    const externalId = (body.externalId ?? body.customId ?? body.id) as string | undefined;
+    const rawEvent = body.event as string | undefined;
+    const charge = body.charge ?? body.pix?.charge ?? body;
+    const chargeStatus = (charge?.status as string | undefined) ?? (body.status as string | undefined);
 
-    if (event !== 'charge.paid' && body.status !== 'COMPLETED') {
+    const isCompletedEvent =
+      (typeof rawEvent === 'string' && rawEvent.toUpperCase().includes('CHARGE_COMPLETED')) ||
+      chargeStatus === 'COMPLETED';
+
+    if (!isCompletedEvent) {
       return NextResponse.json({ received: true });
     }
-    if (!externalId) return NextResponse.json({ error: 'externalId missing' }, { status: 400 });
+
+    const correlationId =
+      (charge?.correlationID as string | undefined) ??
+      (body.correlationID as string | undefined);
+
+    if (!correlationId) {
+      console.error('[Woovi webhook] correlationID ausente no payload');
+      return NextResponse.json({ error: 'correlationID missing' }, { status: 400 });
+    }
 
     // Pré-estreia: externalId = presale-{slotId}
-    if (typeof externalId === 'string' && externalId.startsWith('presale-')) {
-      const slotId = externalId.replace('presale-', '');
-      await markSlotAsPaid(slotId, Provider.WOOVI, body.id ?? externalId);
+    if (typeof correlationId === 'string' && correlationId.startsWith('presale-')) {
+      const slotId = correlationId.replace('presale-', '');
+      await markSlotAsPaid(slotId, Provider.WOOVI, body.id ?? correlationId);
       createClubViewerAccountForSlot(slotId).catch((e) =>
         console.error('[Woovi] Erro ao criar conta clube:', e)
       );
@@ -60,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     const purchase = await prisma.purchase.findUnique({
-      where: { id: externalId },
+      where: { id: correlationId },
       include: { plan: true, partner: true },
     });
     if (!purchase || purchase.paymentStatus === 'paid') return NextResponse.json({ received: true });

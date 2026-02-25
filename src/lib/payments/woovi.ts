@@ -70,6 +70,17 @@ export async function createWooviCharge(input: WooviChargeInput): Promise<WooviC
     const id = (charge as { id?: string }).id;
     const brCode = (charge as { brCode?: string }).brCode ?? (data as { brCode?: string }).brCode;
     const qrCodeImage = (charge as { qrCodeImage?: string }).qrCodeImage ?? (data as { qrCodeImage?: string }).qrCodeImage;
+    const expiresDate = (charge as { expiresDate?: string }).expiresDate;
+    const expiresIn = (charge as { expiresIn?: number }).expiresIn;
+
+    let expiresAt: string | undefined;
+    if (typeof expiresDate === 'string') {
+      expiresAt = expiresDate;
+    } else if (typeof expiresIn === 'number') {
+      const d = new Date();
+      d.setSeconds(d.getSeconds() + expiresIn);
+      expiresAt = d.toISOString();
+    }
 
     return {
       ...charge,
@@ -77,7 +88,7 @@ export async function createWooviCharge(input: WooviChargeInput): Promise<WooviC
       status: (charge as { status?: string }).status ?? 'ACTIVE',
       qrCode: brCode ?? (charge as WooviChargeResponse).qrCode,
       qrCodeImage: qrCodeImage ?? (charge as WooviChargeResponse).qrCodeImage,
-      expiresAt: (charge as { expiresAt?: string }).expiresAt,
+      expiresAt: expiresAt,
     } as WooviChargeResponse;
   } catch (e) {
     console.error('Woovi createCharge error:', e);
