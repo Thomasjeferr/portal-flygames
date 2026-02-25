@@ -18,7 +18,10 @@ const schema = z.object({
     .regex(/[A-Z]/, 'Senha deve ter ao menos uma letra maiúscula')
     .regex(/[a-z]/, 'Senha deve ter ao menos uma letra minúscula')
     .regex(/[0-9]/, 'Senha deve ter ao menos um número'),
-  name: z.string().optional(),
+  name: z
+    .string()
+    .trim()
+    .min(3, 'Informe seu nome completo'),
 });
 
 function getClientIp(req: NextRequest): string {

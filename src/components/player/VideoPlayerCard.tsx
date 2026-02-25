@@ -16,6 +16,8 @@ interface VideoPlayerCardProps {
   initialTimeSeconds?: number;
   /** Se informado, salva progresso periodicamente em /api/me/watch-progress. */
   gameId?: string;
+  /** Iniciar reprodução automaticamente quando o vídeo estiver pronto (ex.: live). */
+  autoplay?: boolean;
 }
 
 type SettingsView = 'root' | 'speed' | 'quality';
@@ -26,6 +28,7 @@ export function VideoPlayerCard({
   posterUrl,
   initialTimeSeconds = 0,
   gameId,
+  autoplay = false,
 }: VideoPlayerCardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -200,7 +203,33 @@ export function VideoPlayerCard({
       updateBuffered();
     };
 
+    const tryAutoplay = () => {
+      if (!mountedRef.current || !videoRef.current || !autoplay) return;
+      const v = videoRef.current;
+      const p = v.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => {
+          if (mountedRef.current) setIsPlaying(true);
+        }).catch(() => {
+          if (!mountedRef.current || !videoRef.current) return;
+          const el = videoRef.current;
+          el.muted = true;
+          setIsMuted(true);
+          el.play().then(() => {
+            if (mountedRef.current) setIsPlaying(true);
+          }).catch(() => {});
+        });
+      }
+    };
+
+    const onCanPlay = () => {
+      if (!autoplay) return;
+      video.removeEventListener('canplay', onCanPlay);
+      tryAutoplay();
+    };
+
     video.addEventListener('loadedmetadata', onLoadedMetadata);
+    video.addEventListener('canplay', onCanPlay);
     video.addEventListener('timeupdate', onTimeUpdate);
     video.addEventListener('play', onPlay);
     video.addEventListener('pause', onPause);
@@ -230,12 +259,13 @@ export function VideoPlayerCard({
       video.removeEventListener('volumechange', onVolumeChange);
       video.removeEventListener('ratechange', onRateChange);
       video.removeEventListener('progress', onProgress);
+      video.removeEventListener('canplay', onCanPlay);
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
       }
     };
-  }, [videoSrc, isHlsSource, saveProgress, updateBuffered]);
+  }, [videoSrc, isHlsSource, autoplay, saveProgress, updateBuffered]);
 
   // Fullscreen helpers
   const handleToggleFullscreen = () => {

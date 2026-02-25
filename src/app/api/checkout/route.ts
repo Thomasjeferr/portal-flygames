@@ -72,11 +72,26 @@ export async function POST(request: NextRequest) {
     const amountCents = Math.round(plan.price * 100);
     let amountToTeamCents = 0;
     let partnerId: string | null = null;
+    let chosenTeamId: string | null = null;
 
-    if (teamId && plan.teamPayoutPercent > 0) {
+    // Se o usuário escolheu um time no checkout, validamos e:
+    // - usamos para comissão (amountToTeamCents) quando o plano tem teamPayoutPercent
+    // - salvamos como time do coração do usuário (favoriteTeamId), independente do tipo de plano
+    if (teamId) {
       const team = await prisma.team.findUnique({ where: { id: teamId } });
       if (team && team.isActive) {
-        amountToTeamCents = Math.round((amountCents * plan.teamPayoutPercent) / 100);
+        chosenTeamId = team.id;
+
+        if (plan.teamPayoutPercent > 0) {
+          amountToTeamCents = Math.round((amountCents * plan.teamPayoutPercent) / 100);
+        }
+
+        // Atualiza imediatamente o time do coração; só começa a contar para meta/comissão
+        // quando a assinatura estiver ativa ou a compra for paga.
+        await prisma.user.update({
+          where: { id: session.userId },
+          data: { favoriteTeamId: chosenTeamId },
+        });
       }
     }
 
@@ -125,7 +140,7 @@ export async function POST(request: NextRequest) {
         userId: session.userId,
         planId,
         gameId: plan.type === 'unitario' ? gameId : null,
-        teamId: amountToTeamCents > 0 ? teamId : null,
+        teamId: amountToTeamCents > 0 && chosenTeamId ? chosenTeamId : null,
         partnerId,
         amountToTeamCents,
         paymentStatus: 'pending',

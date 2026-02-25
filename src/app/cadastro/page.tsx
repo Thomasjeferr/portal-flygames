@@ -36,7 +36,7 @@ function RegisterForm() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name: name || undefined, password }),
+        body: JSON.stringify({ email, name, password }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -73,15 +73,16 @@ function RegisterForm() {
             )}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-futvar-light mb-2">
-                Nome (opcional)
+                Nome completo
               </label>
               <input
                 id="name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                required
                 className="w-full px-4 py-3 rounded bg-futvar-gray border border-futvar-green/20 text-white placeholder-futvar-light/60 focus:outline-none focus:ring-2 focus:ring-futvar-green focus:border-transparent"
-                placeholder="Seu nome"
+                placeholder="Seu nome completo"
               />
             </div>
             <div>

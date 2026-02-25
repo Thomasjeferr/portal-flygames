@@ -174,7 +174,7 @@ export default async function LivePage({ params }: Props) {
                     </span>
                     AO VIVO
                   </div>
-                  <StreamCustomPlayer hlsUrl={hlsUrl} title={live.title} posterUrl={live.thumbnailUrl ?? undefined} />
+                  <StreamCustomPlayer hlsUrl={hlsUrl} title={live.title} posterUrl={live.thumbnailUrl ?? undefined} autoplay />
                 </div>
               ) : live.status === 'ENDED' && hlsUrl ? (
                 <div className="relative">

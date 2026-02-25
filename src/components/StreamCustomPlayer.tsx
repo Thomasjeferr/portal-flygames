@@ -11,6 +11,8 @@ interface StreamCustomPlayerProps {
   initialTimeSeconds?: number;
   /** Se informado, salva progresso periodicamente em /api/me/watch-progress. */
   gameId?: string;
+  /** Iniciar reprodução automaticamente (ex.: página da live). */
+  autoplay?: boolean;
 }
 
 export function StreamCustomPlayer({
@@ -19,6 +21,7 @@ export function StreamCustomPlayer({
   posterUrl,
   initialTimeSeconds = 0,
   gameId,
+  autoplay = false,
 }: StreamCustomPlayerProps) {
   return (
     <VideoPlayerCard
@@ -27,6 +30,7 @@ export function StreamCustomPlayer({
       posterUrl={posterUrl}
       initialTimeSeconds={initialTimeSeconds}
       gameId={gameId}
+      autoplay={autoplay}
     />
   );
 }

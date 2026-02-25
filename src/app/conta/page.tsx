@@ -106,6 +106,8 @@ export default function ContaPage() {
       setData(json);
       setProfileForm({ name: json.user?.name ?? '', email: json.user?.email ?? '' });
       setFavoriteTeam(json.user?.favoriteTeam ?? null);
+      // Se o usuário ainda não tem time salvo, já abre o seletor para evitar esconder o botão de salvar
+      setShowTeamPicker(!json.user?.favoriteTeam);
     } catch {
       setError('Erro de conexão. Tente novamente.');
     } finally {
