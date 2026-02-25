@@ -159,9 +159,9 @@ export async function POST(request: NextRequest) {
       const woovi = await createWooviCharge({
         amount: amountCents,
         customer: session.email,
+        customerName: session.name ?? undefined,
         description: `Fly Games - ${plan.name}`,
         externalId: purchase.id,
-        expiresIn: 3600,
       });
       if (woovi) {
         await prisma.purchase.update({
