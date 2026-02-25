@@ -14,6 +14,7 @@ interface Plan {
   acessoTotal: boolean;
   duracaoDias: number | null;
   renovacaoAuto: boolean;
+  featured?: boolean;
 }
 
 const typeLabel: Record<string, string> = {
@@ -99,7 +100,14 @@ export default function AdminPlansPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-semibold text-white">{plan.name}</p>
                   {!plan.active && <span className="px-2 py-0.5 rounded text-xs bg-netflix-gray text-netflix-light">Inativo</span>}
-                  <span className="text-netflix-light text-sm">{typeLabel[plan.type] ?? plan.type} • {periodLabel[plan.periodicity] ?? plan.periodicity}</span>
+                  <span className="text-netflix-light text-sm">
+                    {typeLabel[plan.type] ?? plan.type} • {periodLabel[plan.periodicity] ?? plan.periodicity}
+                  </span>
+                  {plan.featured && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-300 uppercase tracking-wide">
+                      Mais relevante
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-netflix-light mt-1">
                   R$ {Number(plan.price).toFixed(2).replace('.', ',')}
@@ -110,6 +118,20 @@ export default function AdminPlansPage() {
                 {plan.description && <p className="text-xs text-netflix-light mt-1 line-clamp-1">{plan.description}</p>}
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await fetch(`/api/admin/plans/${plan.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ featured: !plan.featured }),
+                    });
+                    fetchPlans();
+                  }}
+                  className="px-3 py-1.5 rounded bg-amber-900/40 text-amber-200 text-sm hover:bg-amber-900/70"
+                >
+                  {plan.featured ? 'Remover destaque' : 'Marcar como mais relevante'}
+                </button>
                 <button type="button" onClick={() => handleToggleActive(plan)} disabled={toggling === plan.id} className={`px-3 py-1.5 rounded text-sm ${plan.active ? 'bg-amber-900/50 text-amber-300 hover:bg-amber-900' : 'bg-green-900/50 text-green-300 hover:bg-green-900'} disabled:opacity-50`}>
                   {toggling === plan.id ? '...' : plan.active ? 'Desativar' : 'Ativar'}
                 </button>

@@ -16,11 +16,12 @@ interface Plan {
   renovacaoAuto: boolean;
   maxConcurrentStreams?: number | null;
   teamPayoutPercent?: number | null;
+   featured?: boolean;
 }
 
 const typeLabel: Record<string, string> = {
   unitario: 'Jogo avulso',
-  recorrente: 'Assinatura',
+  recorrente: 'Recorrente',
 };
 const periodLabel: Record<string, string> = {
   mensal: 'Mensal',
@@ -47,9 +48,12 @@ export default function PlanosPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const featuredPlan = plans.find((p) => p.featured);
   const recommendedPlanId =
     plans.length > 0
-      ? (plans.find((p) => p.type === 'recorrente' && p.periodicity === 'mensal')?.id ?? plans[0].id)
+      ? featuredPlan?.id ??
+        plans.find((p) => p.type === 'recorrente' && p.periodicity === 'mensal')?.id ??
+        plans[0].id
       : null;
 
   return (
@@ -95,9 +99,11 @@ export default function PlanosPage() {
                     <span className="px-2 py-0.5 rounded text-xs font-medium bg-futvar-green/20 text-futvar-green">
                       {typeLabel[plan.type] ?? plan.type}
                     </span>
+                  {plan.type === 'recorrente' && (
                     <span className="text-futvar-light text-xs tracking-wide">
                       {periodLabel[plan.periodicity] ?? plan.periodicity}
                     </span>
+                  )}
                   </div>
                   {plan.id === recommendedPlanId && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-futvar-green text-futvar-darker tracking-wide">
@@ -108,8 +114,12 @@ export default function PlanosPage() {
                 <h2 className="text-xl font-bold text-white mb-1">{plan.name}</h2>
                 <p className="text-2xl font-bold text-futvar-green mb-1">
                   R$ {Number(plan.price).toFixed(2).replace('.', ',')}
-                  {plan.periodicity === 'mensal' && <span className="text-sm font-normal text-futvar-light">/mês</span>}
-                  {plan.periodicity === 'anual' && <span className="text-sm font-normal text-futvar-light">/ano</span>}
+                  {plan.type === 'recorrente' && plan.periodicity === 'mensal' && (
+                    <span className="text-sm font-normal text-futvar-light">/mês</span>
+                  )}
+                  {plan.type === 'recorrente' && plan.periodicity === 'anual' && (
+                    <span className="text-sm font-normal text-futvar-light">/ano</span>
+                  )}
                 </p>
                 {(plan.teamPayoutPercent ?? 0) > 0 && (
                   <p className="text-futvar-green/90 text-sm font-medium mb-2">

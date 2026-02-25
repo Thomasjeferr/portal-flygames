@@ -240,6 +240,7 @@ model Plan {
   acessoTotal       Boolean  @default(true) @map("acesso_total")
   duracaoDias       Int?     @map("duracao_dias") // null = ilimitado para unitário
   renovacaoAuto     Boolean  @default(false) @map("renovacao_auto")
+  featured          Boolean  @default(false) @map("featured") // destaca plano na página pública (Mais escolhido)
   teamPayoutPercent       Int      @default(0) @map("team_payout_percent") // 0-100: % que vai para o time (time de coração)
   partnerCommissionPercent Int     @default(0) @map("partner_commission_percent") // 0-100: % comissão para parceiro que indicar (0 = usa % do cadastro do parceiro)
   maxConcurrentStreams Int?  @map("max_concurrent_streams") // null = sem limite explícito

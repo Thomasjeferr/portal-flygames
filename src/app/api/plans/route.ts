@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
+/** Evita cache em produção: planos devem ser sempre lidos do banco (novos planos criados no admin aparecem na hora). */
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /** Lista todos os planos ativos (unitário e recorrente) para exibição pública em /planos e checkout. */
 export async function GET() {
-  const orderBy = [{ type: 'asc' as const }, { price: 'asc' as const }];
+  const orderBy = [
+    { featured: 'desc' as const },
+    { type: 'asc' as const },
+    { price: 'asc' as const },
+  ];
 
   // Preferencialmente, só planos ativos
   let plans = await prisma.plan.findMany({
@@ -17,5 +25,7 @@ export async function GET() {
     plans = await prisma.plan.findMany({ orderBy });
   }
 
-  return NextResponse.json(plans);
+  const res = NextResponse.json(plans);
+  res.headers.set('Cache-Control', 'private, no-store, max-age=0');
+  return res;
 }

@@ -16,6 +16,7 @@ const updateSchema = z.object({
   teamPayoutPercent: z.number().int().min(0).max(100).optional(),
   partnerCommissionPercent: z.number().int().min(0).max(100).optional(),
   maxConcurrentStreams: z.number().int().min(1).nullable().optional(),
+  featured: z.boolean().optional(),
 });
 
 export async function GET(
@@ -72,6 +73,7 @@ export async function PATCH(
     if (data.teamPayoutPercent !== undefined) update.teamPayoutPercent = data.teamPayoutPercent;
     if (data.partnerCommissionPercent !== undefined) update.partnerCommissionPercent = data.partnerCommissionPercent;
     if (data.maxConcurrentStreams !== undefined) update.maxConcurrentStreams = data.maxConcurrentStreams;
+    if (data.featured !== undefined) update.featured = data.featured;
 
     const plan = await prisma.plan.update({
       where: { id },

@@ -24,6 +24,7 @@ export default function EditPlanPage() {
     teamPayoutPercent: 0,
     partnerCommissionPercent: 0,
     maxConcurrentStreams: '' as string,
+    featured: false,
   });
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function EditPlanPage() {
           teamPayoutPercent: data.teamPayoutPercent ?? 0,
           partnerCommissionPercent: data.partnerCommissionPercent ?? 0,
           maxConcurrentStreams: data.maxConcurrentStreams != null ? String(data.maxConcurrentStreams) : '',
+          featured: data.featured ?? false,
         });
       })
       .catch(() => setError('Erro ao carregar'))
@@ -74,6 +76,7 @@ export default function EditPlanPage() {
           teamPayoutPercent: Number(form.teamPayoutPercent) ?? 0,
           partnerCommissionPercent: Number(form.partnerCommissionPercent) ?? 0,
           maxConcurrentStreams: form.maxConcurrentStreams === '' ? null : Number(form.maxConcurrentStreams),
+          featured: form.featured,
         }),
       });
       const data = await res.json();
@@ -199,6 +202,15 @@ export default function EditPlanPage() {
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={form.renovacaoAuto} onChange={(e) => setForm((f) => ({ ...f, renovacaoAuto: e.target.checked }))} className="rounded border-white/30 text-netflix-red focus:ring-netflix-red" />
             <span className="text-sm text-netflix-light">Renovação automática</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.featured}
+              onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))}
+              className="rounded border-white/30 text-netflix-red focus:ring-netflix-red"
+            />
+            <span className="text-sm text-netflix-light">Marcar como plano mais relevante (destacar na página pública)</span>
           </label>
         </div>
         <div className="flex gap-3 pt-2">

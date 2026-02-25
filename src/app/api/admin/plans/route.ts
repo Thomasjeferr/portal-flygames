@@ -16,6 +16,7 @@ const createSchema = z.object({
   teamPayoutPercent: z.number().int().min(0).max(100).optional(),
   partnerCommissionPercent: z.number().int().min(0).max(100).optional(),
   maxConcurrentStreams: z.number().int().min(1).nullable().optional(),
+  featured: z.boolean().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
       teamPayoutPercent: body.teamPayoutPercent != null ? Number(body.teamPayoutPercent) : 0,
       partnerCommissionPercent: body.partnerCommissionPercent != null ? Number(body.partnerCommissionPercent) : 0,
       maxConcurrentStreams: body.maxConcurrentStreams != null ? Number(body.maxConcurrentStreams) : null,
+      featured: body.featured ?? false,
     });
     if (!parsed.success) {
       return NextResponse.json(
@@ -75,6 +77,7 @@ export async function POST(request: NextRequest) {
         teamPayoutPercent: parsed.data.teamPayoutPercent ?? 0,
         partnerCommissionPercent: parsed.data.partnerCommissionPercent ?? 0,
         maxConcurrentStreams: parsed.data.maxConcurrentStreams ?? null,
+        featured: parsed.data.featured ?? false,
       },
     });
     return NextResponse.json(plan);
