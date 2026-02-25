@@ -72,12 +72,12 @@ export async function createWooviCharge(input: WooviChargeInput): Promise<WooviC
     const qrCodeImage = (charge as { qrCodeImage?: string }).qrCodeImage ?? (data as { qrCodeImage?: string }).qrCodeImage;
 
     return {
+      ...charge,
       id: id ?? input.externalId,
       status: (charge as { status?: string }).status ?? 'ACTIVE',
       qrCode: brCode ?? (charge as WooviChargeResponse).qrCode,
-      qrCodeImage,
+      qrCodeImage: qrCodeImage ?? (charge as WooviChargeResponse).qrCodeImage,
       expiresAt: (charge as { expiresAt?: string }).expiresAt,
-      ...charge,
     } as WooviChargeResponse;
   } catch (e) {
     console.error('Woovi createCharge error:', e);
