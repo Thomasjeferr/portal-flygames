@@ -9,12 +9,24 @@ import { sendTransactionalEmail } from '@/lib/email/emailService';
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
-    const secret = process.env.WOOVI_WEBHOOK_SECRET;
+    let secret = process.env.WOOVI_WEBHOOK_SECRET ?? '';
+
+    // Se não houver secret em variável de ambiente, tenta buscar do PaymentConfig (Admin > APIs de Pagamento).
+    if (!secret) {
+      try {
+        const { getPaymentConfig } = await import('@/lib/payment-config');
+        const config = await getPaymentConfig();
+        secret = config.wooviWebhookSecret ?? '';
+      } catch {
+        // se der erro aqui, tratamos como não configurado
+      }
+    }
+
     if (!secret) {
       return NextResponse.json({ error: 'Webhook Woovi nao configurado' }, { status: 503 });
     }
     const signature = request.headers.get('x-hub-signature-256') ?? request.headers.get('x-webhook-signature') ?? '';
-    if (!verifyWooviWebhookSignature(rawBody, signature)) {
+    if (!verifyWooviWebhookSignature(rawBody, signature, secret)) {
       return NextResponse.json({ error: 'Assinatura invalida' }, { status: 401 });
     }
     const body = JSON.parse(rawBody);
