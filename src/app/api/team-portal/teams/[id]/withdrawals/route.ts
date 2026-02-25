@@ -3,6 +3,35 @@ import { getTeamAccess } from '@/lib/team-portal-auth';
 import { prisma } from '@/lib/db';
 import { getAvailableAt } from '@/lib/payoutRules';
 
+/** Lista saques do time (para painel do time). */
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: teamId } = await params;
+
+  if (!(await getTeamAccess(teamId))) {
+    return NextResponse.json({ error: 'Acesso negado a este time' }, { status: 403 });
+  }
+
+  const withdrawals = await prisma.teamWithdrawal.findMany({
+    where: { teamId },
+    orderBy: { requestedAt: 'desc' },
+  });
+
+  return NextResponse.json(
+    withdrawals.map((w) => ({
+      id: w.id,
+      amountCents: w.amountCents,
+      status: w.status,
+      requestedAt: w.requestedAt.toISOString(),
+      paidAt: w.paidAt?.toISOString() ?? null,
+      paymentReference: w.paymentReference,
+      receiptUrl: w.receiptUrl,
+    }))
+  );
+}
+
 /** Cria um pedido de saque para o time (planos + patrocínios liberados). */
 export async function POST(
   _req: NextRequest,

@@ -3,6 +3,32 @@ import { getApprovedPartner } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/db';
 import { getAvailableAt } from '@/lib/payoutRules';
 
+/** Lista saques do parceiro logado. */
+export async function GET() {
+  const partner = await getApprovedPartner();
+  if (!partner) {
+    return NextResponse.json({ error: 'Acesso apenas para parceiros aprovados' }, { status: 403 });
+  }
+
+  const withdrawals = await prisma.partnerWithdrawal.findMany({
+    where: { partnerId: partner.id },
+    orderBy: { requestedAt: 'desc' },
+  });
+
+  return NextResponse.json(
+    withdrawals.map((w) => ({
+      id: w.id,
+      amountCents: w.amountCents,
+      status: w.status,
+      requestedAt: w.requestedAt.toISOString(),
+      paidAt: w.paidAt?.toISOString() ?? null,
+      paymentReference: w.paymentReference,
+      receiptUrl: w.receiptUrl,
+    }))
+  );
+}
+
+/** Cria um novo saque com base nas comissões liberadas. */
 export async function POST() {
   const partner = await getApprovedPartner();
   if (!partner) {

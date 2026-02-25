@@ -18,6 +18,7 @@ export async function GET() {
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,
+      sourceId: true,
       sourceType: true,
       amountCents: true,
       commissionPercent: true,

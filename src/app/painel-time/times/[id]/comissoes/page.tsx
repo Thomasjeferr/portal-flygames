@@ -51,6 +51,9 @@ export default function PainelTimeComissoesPage() {
   const [error, setError] = useState('');
   const [requesting, setRequesting] = useState(false);
   const [success, setSuccess] = useState('');
+  const [withdrawals, setWithdrawals] = useState<
+    { id: string; amountCents: number; status: string; requestedAt: string; paidAt: string | null; receiptUrl: string | null }[]
+  >([]);
 
   const loadData = async () => {
     setError('');
@@ -75,6 +78,12 @@ export default function PainelTimeComissoesPage() {
 
   useEffect(() => {
     void loadData();
+    fetch(`/api/team-portal/teams/${id}/withdrawals`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (Array.isArray(json)) setWithdrawals(json);
+      })
+      .catch(() => {});
   }, [id]);
 
   const handleSolicitarSaque = async () => {
@@ -210,6 +219,62 @@ export default function PainelTimeComissoesPage() {
                         {formatDate(e.paidAt)}
                         {e.paymentReference && ` · ${e.paymentReference}`}
                       </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <h2 className="text-lg font-semibold text-white mt-10 mb-4">Histórico de saques</h2>
+      {withdrawals.length === 0 ? (
+        <p className="text-futvar-light text-sm">Nenhum saque solicitado ainda.</p>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-white/10 bg-futvar-dark mt-2">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-white/5 text-futvar-light">
+              <tr>
+                <th className="px-4 py-3 font-medium">Solicitado em</th>
+                <th className="px-4 py-3 font-medium">Valor</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Pago em</th>
+                <th className="px-4 py-3 font-medium">Recibo</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {withdrawals.map((w) => (
+                <tr key={w.id}>
+                  <td className="px-4 py-3 text-futvar-light">
+                    {formatDate(w.requestedAt)}
+                  </td>
+                  <td className="px-4 py-3 text-white font-medium">
+                    {formatPrice(w.amountCents)}
+                  </td>
+                  <td className="px-4 py-3 text-futvar-light">
+                    {w.status === 'paid'
+                      ? 'Pago'
+                      : w.status === 'processing'
+                      ? 'Em processamento'
+                      : w.status === 'canceled'
+                      ? 'Cancelado'
+                      : 'Solicitado'}
+                  </td>
+                  <td className="px-4 py-3 text-futvar-light text-sm">
+                    {w.paidAt ? formatDate(w.paidAt) : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-futvar-light text-xs">
+                    {w.receiptUrl ? (
+                      <a
+                        href={w.receiptUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-futvar-green hover:underline"
+                      >
+                        Ver recibo
+                      </a>
+                    ) : (
+                      '—'
                     )}
                   </td>
                 </tr>

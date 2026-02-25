@@ -31,12 +31,21 @@ export default function ParceiroComissoesPage() {
   const [requesting, setRequesting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [withdrawals, setWithdrawals] = useState<
+    { id: string; amountCents: number; status: string; requestedAt: string; paidAt: string | null; receiptUrl: string | null }[]
+  >([]);
 
   useEffect(() => {
     fetch('/api/partner/ganhos')
       .then((r) => (r.ok ? r.json() : null))
       .then(setData)
       .finally(() => setLoading(false));
+    fetch('/api/partner/withdrawals')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (Array.isArray(json)) setWithdrawals(json);
+      })
+      .catch(() => {});
   }, []);
 
   if (loading) {
@@ -167,6 +176,63 @@ export default function ParceiroComissoesPage() {
                   </td>
                   <td className="px-4 py-3 text-futvar-light text-xs">
                     {row.paidAt ? new Date(row.paidAt).toLocaleDateString('pt-BR') : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <h2 className="text-lg font-semibold text-white mt-10 mb-3">Histórico de saques</h2>
+      {withdrawals.length === 0 ? (
+        <p className="text-futvar-light text-sm">Nenhum saque solicitado ainda.</p>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-white/10 bg-futvar-dark mt-2">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wider text-futvar-light">
+                <th className="px-4 py-3">Solicitado em</th>
+                <th className="px-4 py-3">Valor</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Pago em</th>
+                <th className="px-4 py-3">Recibo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {withdrawals.map((w) => (
+                <tr key={w.id} className="border-b border-white/5">
+                  <td className="px-4 py-3 text-futvar-light">
+                    {new Date(w.requestedAt).toLocaleDateString('pt-BR')}
+                  </td>
+                  <td className="px-4 py-3 text-futvar-green font-medium">
+                    {formatMoney(w.amountCents)}
+                  </td>
+                  <td className="px-4 py-3 text-futvar-light">
+                    {w.status === 'paid'
+                      ? 'Pago'
+                      : w.status === 'processing'
+                      ? 'Em processamento'
+                      : w.status === 'canceled'
+                      ? 'Cancelado'
+                      : 'Solicitado'}
+                  </td>
+                  <td className="px-4 py-3 text-futvar-light text-xs">
+                    {w.paidAt ? new Date(w.paidAt).toLocaleDateString('pt-BR') : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-futvar-light text-xs">
+                    {w.receiptUrl ? (
+                      <a
+                        href={w.receiptUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-futvar-green hover:underline"
+                      >
+                        Ver recibo
+                      </a>
+                    ) : (
+                      '—'
+                    )}
                   </td>
                 </tr>
               ))}

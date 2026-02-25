@@ -732,6 +732,7 @@ model PartnerWithdrawal {
   paidAt           DateTime? @map("paid_at")
   paymentReference String?  @map("payment_reference")
   createdAt        DateTime @default(now()) @map("created_at")
+  receiptUrl       String?  @map("receipt_url")
 
   partner Partner               @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   items   PartnerWithdrawalItem[]
@@ -774,6 +775,7 @@ model TeamWithdrawal {
   paidAt           DateTime? @map("paid_at")
   paymentReference String?  @map("payment_reference")
   createdAt        DateTime @default(now()) @map("created_at")
+  receiptUrl       String?  @map("receipt_url")
 
   team               Team                          @relation(fields: [teamId], references: [id], onDelete: Cascade)
   planItems          TeamWithdrawalPlanItem[]

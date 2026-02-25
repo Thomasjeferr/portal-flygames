@@ -19,6 +19,7 @@ const menuItems = [
   { href: '/admin/sponsor-orders', label: 'Pedidos de patrocínio', icon: 'receipt' },
   { href: '/admin/patrocinios-por-time', label: 'Patrocínios por time', icon: 'chart' },
   { href: '/admin/partners', label: 'Parceiros', icon: 'users' },
+  { href: '/admin/saques', label: 'Saques', icon: 'receipt' },
   { href: '/admin/usuarios', label: 'Usuários', icon: 'users' },
   { href: '/admin/planos', label: 'Planos', icon: 'clipboard' },
   { href: '/admin/pagamentos', label: 'APIs de Pagamento', icon: 'card' },
