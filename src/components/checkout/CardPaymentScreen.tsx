@@ -46,9 +46,6 @@ function PaymentForm({ planPrice, onBack }: { planPrice: string; onBack: () => v
         <PaymentElement
           options={{
             layout: 'tabs',
-            defaultCollapsed: false,
-            radios: true,
-            spacedAccordionItems: false,
           }}
         />
       </div>
