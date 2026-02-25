@@ -9,6 +9,14 @@ function maskValue(val: string | null): string {
   return '••••••••' + val.slice(-4);
 }
 
+/** Evita sobrescrever chave real com valor mascarado (ex: "••••••••xyz1") quando o admin salva sem alterar o campo. */
+function isMaskedOrPlaceholder(val: string | undefined): boolean {
+  if (!val || !val.trim()) return true;
+  if (val.startsWith('••••') || val.startsWith('****')) return true;
+  if (val.length < 10) return true; // chaves reais costumam ser longas
+  return false;
+}
+
 export async function GET() {
   const session = await getSession();
   if (!session || session.role !== 'admin') {
@@ -64,11 +72,31 @@ export async function PATCH(request: NextRequest) {
     const existing = await prisma.paymentConfig.findFirst({ orderBy: { createdAt: 'desc' } });
 
     const updateData: Record<string, string | null> = {};
-    if (data.wooviApiKey !== undefined) updateData.wooviApiKey = data.wooviApiKey.trim() || null;
-    if (data.wooviWebhookSecret !== undefined) updateData.wooviWebhookSecret = data.wooviWebhookSecret.trim() || null;
-    if (data.stripeSecretKey !== undefined) updateData.stripeSecretKey = data.stripeSecretKey.trim() || null;
-    if (data.stripeWebhookSecret !== undefined) updateData.stripeWebhookSecret = data.stripeWebhookSecret.trim() || null;
-    if (data.stripePublishableKey !== undefined) updateData.stripePublishableKey = data.stripePublishableKey.trim() || null;
+    if (data.wooviApiKey !== undefined && !isMaskedOrPlaceholder(data.wooviApiKey)) {
+      updateData.wooviApiKey = data.wooviApiKey.trim() || null;
+    } else if (data.wooviApiKey !== undefined && data.wooviApiKey.trim() === '') {
+      updateData.wooviApiKey = null;
+    }
+    if (data.wooviWebhookSecret !== undefined && !isMaskedOrPlaceholder(data.wooviWebhookSecret)) {
+      updateData.wooviWebhookSecret = data.wooviWebhookSecret.trim() || null;
+    } else if (data.wooviWebhookSecret !== undefined && data.wooviWebhookSecret.trim() === '') {
+      updateData.wooviWebhookSecret = null;
+    }
+    if (data.stripeSecretKey !== undefined && !isMaskedOrPlaceholder(data.stripeSecretKey)) {
+      updateData.stripeSecretKey = data.stripeSecretKey.trim() || null;
+    } else if (data.stripeSecretKey !== undefined && data.stripeSecretKey.trim() === '') {
+      updateData.stripeSecretKey = null;
+    }
+    if (data.stripeWebhookSecret !== undefined && !isMaskedOrPlaceholder(data.stripeWebhookSecret)) {
+      updateData.stripeWebhookSecret = data.stripeWebhookSecret.trim() || null;
+    } else if (data.stripeWebhookSecret !== undefined && data.stripeWebhookSecret.trim() === '') {
+      updateData.stripeWebhookSecret = null;
+    }
+    if (data.stripePublishableKey !== undefined && !isMaskedOrPlaceholder(data.stripePublishableKey)) {
+      updateData.stripePublishableKey = data.stripePublishableKey.trim() || null;
+    } else if (data.stripePublishableKey !== undefined && data.stripePublishableKey.trim() === '') {
+      updateData.stripePublishableKey = null;
+    }
 
     let config;
     if (existing) {

@@ -56,6 +56,23 @@ export default function PlanosPage() {
         plans[0].id
       : null;
 
+  // Coloca o plano "Mais escolhido" no meio dos cards; os outros à esquerda e à direita
+  const displayPlans =
+    plans.length > 0 && recommendedPlanId
+      ? (() => {
+          const recommended = plans.find((p) => p.id === recommendedPlanId);
+          const others = plans.filter((p) => p.id !== recommendedPlanId);
+          const centerIndex = Math.floor(plans.length / 2);
+          const leftCount = centerIndex;
+          if (!recommended) return plans;
+          return [
+            ...others.slice(0, leftCount),
+            recommended,
+            ...others.slice(leftCount),
+          ];
+        })()
+      : plans;
+
   return (
     <div className="pt-24 pb-16 px-4 lg:px-12 min-h-screen bg-futvar-darker">
       <div className="max-w-5xl mx-auto">
@@ -85,7 +102,7 @@ export default function PlanosPage() {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {plans.map((plan) => (
+            {displayPlans.map((plan) => (
               <div
                 key={plan.id}
                 className={`bg-gradient-to-b from-futvar-dark to-black/70 border rounded-2xl p-6 flex flex-col transition-all ${
@@ -146,7 +163,11 @@ export default function PlanosPage() {
                 <div className="mt-auto">
                   <Link
                     href={`/checkout?planId=${plan.id}${plan.type === 'unitario' ? '&gameId=' : ''}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}`}
-                    className="block w-full py-3 rounded-lg bg-futvar-green text-futvar-darker font-bold text-center hover:bg-futvar-green-light transition-colors"
+                    className={`block w-full py-3 rounded-lg font-bold text-center transition-colors ${
+                      plan.id === recommendedPlanId
+                        ? 'bg-futvar-green text-futvar-darker hover:bg-futvar-green-light'
+                        : 'border-2 border-futvar-green/60 text-futvar-green bg-transparent hover:bg-futvar-green/10'
+                    }`}
                   >
                     {plan.type === 'unitario' ? 'Comprar este jogo' : 'Patrocinar'}
                   </Link>

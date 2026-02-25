@@ -41,6 +41,7 @@ function CheckoutContent() {
   const [isTeamManager, setIsTeamManager] = useState(false);
   const [pixQr, setPixQr] = useState<{ qrCode?: string; qrCodeImage?: string } | null>(null);
   const [stripeSecret, setStripeSecret] = useState<string | null>(null);
+  const [paymentAvailability, setPaymentAvailability] = useState<{ pix: boolean; card: boolean } | null>(null);
 
   useEffect(() => {
     if (!planId) {
@@ -54,8 +55,12 @@ function CheckoutContent() {
       fetch('/api/plans').then((r) => r.json()),
       fetch('/api/games').then((r) => r.json()),
       fetch('/api/public/teams', { cache: 'no-store' }).then((r) => r.json()),
+      fetch('/api/checkout/availability', { cache: 'no-store' }).then((r) => r.json()).catch(() => ({ pix: false, card: false })),
     ])
-      .then(async ([authData, plansData, gamesData, teamsData]) => {
+      .then(async ([authData, plansData, gamesData, teamsData, availability]) => {
+        setPaymentAvailability(
+          availability && typeof availability.pix === 'boolean' ? availability : { pix: false, card: false }
+        );
         const user = authData?.user;
         if (!user) {
           setRedirecting(true);
@@ -66,12 +71,14 @@ function CheckoutContent() {
         if (authData?.isTeamManager) setIsTeamManager(true);
         const p = Array.isArray(plansData) ? plansData.find((x: { id: string }) => x.id === planId) : null;
         setPlan(p ?? null);
+        const pixOk = availability?.pix === true;
+        const cardOk = availability?.card === true;
         // Ajusta forma de pagamento padrão:
-        // - Jogos avulsos (unitario): Pix por padrão
+        // - Jogos avulsos (unitario): Pix se disponível, senão cartão
         // - Planos mensais/anuais: apenas cartão
         if (p) {
           if (p.type === 'unitario') {
-            setMethod('pix');
+            setMethod(pixOk ? 'pix' : 'card');
           } else {
             setMethod('card');
           }
@@ -297,33 +304,58 @@ function CheckoutContent() {
             <label className="block text-sm font-medium text-futvar-light mb-2">Forma de pagamento</label>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               {plan.type === 'unitario' && (
-                <label className="flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border cursor-pointer border-futvar-green/30 hover:bg-futvar-green/10">
+                <label
+                  className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border ${
+                    paymentAvailability?.pix
+                      ? 'cursor-pointer border-futvar-green/30 hover:bg-futvar-green/10'
+                      : 'cursor-not-allowed border-white/10 opacity-60'
+                  }`}
+                >
                   <input
                     type="radio"
                     name="method"
                     value="pix"
                     checked={method === 'pix'}
-                    onChange={() => setMethod('pix')}
+                    onChange={() => paymentAvailability?.pix && setMethod('pix')}
+                    disabled={!paymentAvailability?.pix}
                     className="text-futvar-green"
                   />
                   <span className="text-white">Pix</span>
+                  {!paymentAvailability?.pix && (
+                    <span className="text-amber-400 text-xs">(indisponível)</span>
+                  )}
                 </label>
               )}
-              <label className="flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border cursor-pointer border-futvar-green/30 hover:bg-futvar-green/10">
+              <label
+                className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border ${
+                  paymentAvailability?.card
+                    ? 'cursor-pointer border-futvar-green/30 hover:bg-futvar-green/10'
+                    : 'cursor-not-allowed border-white/10 opacity-60'
+                }`}
+              >
                 <input
                   type="radio"
                   name="method"
                   value="card"
                   checked={method === 'card'}
-                  onChange={() => setMethod('card')}
+                  onChange={() => paymentAvailability?.card && setMethod('card')}
+                  disabled={!paymentAvailability?.card}
                   className="text-futvar-green"
                 />
                 <span className="text-white">Cartão</span>
+                {!paymentAvailability?.card && (
+                  <span className="text-amber-400 text-xs">(indisponível)</span>
+                )}
               </label>
             </div>
             {plan.type !== 'unitario' && (
               <p className="mt-2 text-xs text-futvar-light">
                 Para planos mensais ou anuais, o pagamento é feito apenas com cartão, processado com segurança pela Stripe.
+              </p>
+            )}
+            {paymentAvailability && !paymentAvailability.pix && !paymentAvailability.card && (
+              <p className="mt-2 text-amber-400 text-sm">
+                Nenhum método de pagamento configurado. Configure Woovi (Pix) ou Stripe (cartão) em Admin &gt; Pagamentos.
               </p>
             )}
           </div>
@@ -332,7 +364,12 @@ function CheckoutContent() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={
+              submitting ||
+              paymentAvailability === null ||
+              (method === 'pix' && !paymentAvailability?.pix) ||
+              (method === 'card' && !paymentAvailability?.card)
+            }
             className="w-full py-4 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light disabled:opacity-50 transition-colors"
           >
             {submitting ? 'Gerando pagamento...' : method === 'pix' ? 'Gerar QR Code Pix' : 'Pagar com cartão'}

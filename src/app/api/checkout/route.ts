@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { clearPaymentConfigCache } from '@/lib/payment-config';
 import { createWooviCharge } from '@/lib/payments/woovi';
 import { createStripePaymentIntent, createStripeSubscription } from '@/lib/payments/stripe';
 import { z } from 'zod';
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    clearPaymentConfigCache();
     const body = await request.json();
     const parsed = bodySchema.safeParse(body);
     if (!parsed.success) {
@@ -204,8 +206,12 @@ export async function POST(request: NextRequest) {
       where: { id: purchase.id },
       data: { paymentStatus: 'failed' },
     });
+    const msg =
+      method === 'pix'
+        ? 'Pix indisponível. Configure a chave da API Woovi em Admin > Pagamentos.'
+        : 'Cartão indisponível. Configure o Stripe em Admin > Pagamentos.';
     return NextResponse.json(
-      { error: 'Método de pagamento indisponível. Configure Woovi (Pix) ou Stripe (cartão) no servidor.' },
+      { error: msg },
       { status: 503 }
     );
   } catch (e) {
