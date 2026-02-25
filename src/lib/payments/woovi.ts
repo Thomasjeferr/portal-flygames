@@ -64,22 +64,45 @@ export async function createWooviCharge(input: WooviChargeInput): Promise<WooviC
   }
 }
 
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createVerify } from 'crypto';
 
 /**
  * Verifica assinatura do webhook Woovi/OpenPix.
- * Usa HMAC-SHA256 com o secret. Header esperado: x-hub-signature-256 (formato: sha256=hexdigest)
- * Se WOOVI_WEBHOOK_SECRET não estiver configurado, rejeita (fail closed).
+ *
+ * A Woovi fornece uma **chave pública** (RSA) para validar o webhook.
+ * O header pode vir como:
+ * - `x-webhook-signature`: assinatura base64 do payload
+ * - ou `x-hub-signature-256`: formato `sha256=BASE64_ASSINATURA`
  */
 export function verifyWooviWebhookSignature(payload: string, signatureHeader: string, secret?: string): boolean {
-  const s = secret ?? process.env.WOOVI_WEBHOOK_SECRET;
-  if (!s || !signatureHeader?.trim()) return false;
+  const rawSecret = secret ?? process.env.WOOVI_WEBHOOK_SECRET;
+  const sigHeader = signatureHeader?.trim();
+  if (!rawSecret || !sigHeader) return false;
+
   try {
-    const expected = createHmac('sha256', s).update(payload).digest('hex');
-    const received = signatureHeader.replace(/^sha256=/, '').trim().toLowerCase();
-    if (expected.length !== received.length) return false;
-    return timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(received, 'hex'));
+    // Normaliza a chave pública: aceita tanto PEM completo quanto base64 "seco".
+    let publicKeyPem: string;
+    if (rawSecret.includes('BEGIN PUBLIC KEY')) {
+      publicKeyPem = rawSecret;
+    } else {
+      const wrapped = rawSecret.replace(/\s+/g, '');
+      const lines = wrapped.match(/.{1,64}/g) ?? [wrapped];
+      publicKeyPem = `-----BEGIN PUBLIC KEY-----\n${lines.join('\n')}\n-----END PUBLIC KEY-----\n`;
+    }
+
+    // Extrai assinatura: se tiver "sha256=", tira o prefixo.
+    const base64Signature = sigHeader.startsWith('sha256=')
+      ? sigHeader.slice('sha256='.length).trim()
+      : sigHeader;
+    const signature = Buffer.from(base64Signature, 'base64');
+
+    const verifier = createVerify('sha256');
+    verifier.update(payload);
+    verifier.end();
+
+    return verifier.verify(publicKeyPem, signature);
   } catch {
     return false;
   }
 }
+
