@@ -1,5 +1,8 @@
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingRoot: path.join(__dirname),
   async headers() {
     const securityHeaders = [
       { key: 'X-Frame-Options', value: 'DENY' },

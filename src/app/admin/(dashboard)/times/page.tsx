@@ -71,7 +71,18 @@ export default function AdminTimesPage() {
       isActive ? '' : '\n\nEsta ação não pode ser desfeita e removerá o time definitivamente.';
     if (!confirm(`Tem certeza que deseja ${actionLabel} o time "${name}"?${extra}`)) return;
     const res = await fetch(`/api/admin/teams/${id}`, { method: 'DELETE' });
-    if (res.ok) load();
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      if (data.deleted === true) {
+        load();
+      } else {
+        // Primeiro clique: API só desativou (soft delete)
+        load();
+        alert('Time desativado. Clique em "Excluir" novamente para remover definitivamente da base.');
+      }
+      return;
+    }
+    alert(data?.error ?? 'Erro ao excluir time. Tente novamente.');
   };
 
   const cityState = (t: Team) => [t.city, t.state].filter(Boolean).join(' / ') || '—';

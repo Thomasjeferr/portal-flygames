@@ -135,7 +135,43 @@ npm run dev
 ```
 
 Abra no navegador: `http://localhost:3000`.  
-Navegue pelas páginas principais (home, login, admin, um jogo, etc.). Se algo quebrar (tela em branco, erro no console, página que não abre), anote onde foi e podemos ajustar.
+Use o **checklist abaixo** para não esquecer nada.
+
+### Checklist de testes manuais (após o upgrade Next 15)
+
+Marque conforme for testando.
+
+**Build e dev**
+- [ ] `npm run build` conclui sem erro.
+- [ ] `npm run dev` sobe e a home abre em `http://localhost:3000`.
+
+**Páginas públicas**
+- [ ] **Home** carrega (hero, conteúdo, rodapé).
+- [ ] **Seção de patrocinadores** na home: carrossel aparece, não dá erro de hydration no console, links (site/Instagram/WhatsApp) funcionam.
+- [ ] **Página de um jogo** (ex.: `/jogos/...`) abre e exibe dados.
+- [ ] **Outras páginas** que você usa (times, categorias, etc.) abrem normalmente.
+
+**Admin (área logada)**
+- [ ] **Login admin** (`/admin` ou rota de login): consegue entrar.
+- [ ] **Dashboard / analytics** (`/admin/analytics`): página abre, **mapa** carrega sem erro “Map container is already initialized”, troca de período (24h, 7 dias, etc.) recarrega dados e mapa.
+- [ ] **Listagens com paginação** (categorias, jogos, partners, planos, saques, sponsor-orders, sponsors, times, usuários): abrem, troca de página funciona, não dá erro no console.
+- [ ] **Criar/editar** algo no admin (ex.: um sponsor, um jogo): salva e redireciona/listagem atualiza.
+
+**Funções no site (fluxos que usam formulários e ações)**
+- [ ] **Cadastro** (`/cadastro`): preencher e enviar; confirmação/redirecionamento ou mensagem de erro esperada.
+- [ ] **Entrar** (`/entrar`): login com e-mail/senha; redireciona para conta ou painel.
+- [ ] **Recuperar senha** (`/recuperar-senha`): enviar e-mail; mensagem de confirmação ou erro.
+- [ ] **Listagem de jogos** (`/jogos`): filtros (categoria, data, etc.) funcionam; clicar em um jogo abre a página do jogo.
+- [ ] **Patrocinar** (`/patrocinar` ou `/patrocinar/comprar`): fluxo de escolha/compra até confirmação ou checkout (conforme existir no projeto).
+- [ ] **Painel do time** (se usar): login do time, ver dados, comissões ou súmulas (abrir e salvar).
+- [ ] **Admin – uma ação de criar**: ex.: novo jogo, nova categoria ou novo sponsor; preencher formulário, salvar; item aparece na listagem.
+- [ ] **Admin – uma ação de editar**: abrir um item existente, alterar um campo, salvar; alteração persiste ao recarregar.
+- [ ] **Admin – saques** (se usar): listar e, se houver, aprovar/rejeitar um saque; estado atualiza.
+
+**Console e erros**
+- [ ] Nenhum erro vermelho no console do navegador nas páginas que você testou (hydration, “Map container…”, etc.).
+
+Se algo quebrar (tela em branco, erro no console, página que não abre), anote **onde** e **a mensagem** (ou print) para corrigir antes de fazer merge na `main`.
 
 ---
 

@@ -1,18 +1,8 @@
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { getPublicSponsors } from '@/services/sponsorsService';
-
-const SponsorsCarousel = dynamic(
-  () => import('@/components/SponsorsCarousel').then((m) => m.SponsorsCarousel),
-  { ssr: false }
-);
+import { SponsorsCarouselWrapper } from '@/components/SponsorsCarouselWrapper';
 
 const TIER_ORDER = ['MASTER', 'OFICIAL', 'APOIO'] as const;
-const TIER_LABEL: Record<string, string> = {
-  MASTER: 'Patrocinador Master',
-  OFICIAL: 'Patrocinador Oficial',
-  APOIO: 'Apoio',
-};
 
 export async function SponsorsSection() {
   const sponsors = await getPublicSponsors();
@@ -20,10 +10,17 @@ export async function SponsorsSection() {
 
   const byTier = TIER_ORDER.reduce(
     (acc, tier) => {
-      acc[tier] = sponsors.filter((s) => s.tier === tier);
+      acc[tier] = sponsors.filter((s) => s.tier === tier).map((s) => ({
+        id: s.id,
+        name: s.name,
+        logoUrl: s.logoUrl,
+        websiteUrl: s.websiteUrl,
+        whatsapp: s.whatsapp ?? null,
+        instagram: s.instagram ?? null,
+      }));
       return acc;
     },
-    {} as Record<string, typeof sponsors>
+    {} as Record<string, Array<{ id: string; name: string; logoUrl: string; websiteUrl: string | null; whatsapp: string | null; instagram: string | null }>>
   );
 
   return (
@@ -49,28 +46,7 @@ export async function SponsorsSection() {
             </Link>
           </div>
         </div>
-        <div className="space-y-10">
-          {TIER_ORDER.map((tier) => {
-            const list = byTier[tier] ?? [];
-            if (list.length === 0) return null;
-            const sponsorsForCarousel = list.map((s) => ({
-              id: s.id,
-              name: s.name,
-              logoUrl: s.logoUrl,
-              websiteUrl: s.websiteUrl,
-              whatsapp: s.whatsapp ?? null,
-              instagram: s.instagram ?? null,
-            }));
-            return (
-              <div key={tier}>
-                <h3 className="text-sm font-medium text-futvar-light/80 tracking-wider mb-4">
-                  {TIER_LABEL[tier] ?? tier}
-                </h3>
-                <SponsorsCarousel sponsors={sponsorsForCarousel} />
-              </div>
-            );
-          })}
-        </div>
+        <SponsorsCarouselWrapper byTier={byTier} />
       </div>
     </section>
   );

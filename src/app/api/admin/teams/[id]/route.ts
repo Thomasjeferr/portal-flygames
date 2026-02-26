@@ -116,12 +116,16 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ ok: true, deleted: false });
     }
 
-    // Já está desativado: agora exclui definitivamente
+    // Já está desativado: agora exclui definitivamente (cascata remove membros, managers, etc.)
     await prisma.team.delete({ where: { id } });
     revalidatePath('/');
     return NextResponse.json({ ok: true, deleted: true });
   } catch (e) {
     console.error('DELETE /api/admin/teams/[id]', e);
-    return NextResponse.json({ error: 'Erro ao excluir time' }, { status: 500 });
+    const msg =
+      e && typeof e === 'object' && 'code' in e && (e as { code: string }).code === 'P2003'
+        ? 'Não foi possível excluir: existem registros vinculados a este time.'
+        : 'Erro ao excluir time. Tente novamente.';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

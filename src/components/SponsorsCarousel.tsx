@@ -96,19 +96,8 @@ export function SponsorsCarousel({
       >
         {valid.map((s) => {
           const logoUrl = s.logoUrl.trim();
-          const Wrapper = s.websiteUrl ? 'a' : 'div';
-          return (
-            <Wrapper
-              key={s.id}
-              {...(s.websiteUrl
-                ? {
-                    href: s.websiteUrl,
-                    target: '_blank',
-                    rel: 'noopener noreferrer',
-                  }
-                : {})}
-              className="flex-shrink-0 flex flex-col items-center justify-center gap-2 min-w-[140px] snap-start transition-opacity duration-300 hover:opacity-100 opacity-90"
-            >
+          const cardContent = (
+            <>
               <div className="flex items-center justify-center h-20 w-[180px]">
                 <Image
                   src={logoUrl}
@@ -122,6 +111,25 @@ export function SponsorsCarousel({
               <span className="text-sm text-white/80 font-medium text-center max-w-[160px] truncate">
                 {s.name}
               </span>
+            </>
+          );
+          return (
+            <div
+              key={s.id}
+              className="flex-shrink-0 flex flex-col items-center justify-center gap-2 min-w-[140px] snap-start transition-opacity duration-300 hover:opacity-100 opacity-90"
+            >
+              {s.websiteUrl ? (
+                <a
+                  href={s.websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center gap-2"
+                >
+                  {cardContent}
+                </a>
+              ) : (
+                cardContent
+              )}
               {((s.instagram != null && s.instagram.trim() !== '') || (s.whatsapp != null && String(s.whatsapp).trim() !== '')) && (
                 <div className="flex items-center justify-center gap-2 mt-0.5">
                   {s.instagram != null && s.instagram.trim() !== '' && (
@@ -129,7 +137,6 @@ export function SponsorsCarousel({
                       href={s.instagram.trim().startsWith('http') ? s.instagram.trim() : `https://instagram.com/${s.instagram.trim().replace(/^@/, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
                       className="text-white/70 hover:text-white transition-colors"
                       aria-label="Instagram"
                     >
@@ -145,7 +152,6 @@ export function SponsorsCarousel({
                       href={`https://wa.me/55${String(s.whatsapp).replace(/\D/g, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
                       className="text-white/70 hover:text-white transition-colors"
                       aria-label="WhatsApp"
                     >
@@ -156,7 +162,7 @@ export function SponsorsCarousel({
                   )}
                 </div>
               )}
-            </Wrapper>
+            </div>
           );
         })}
       </div>
