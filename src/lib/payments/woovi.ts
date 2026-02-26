@@ -116,7 +116,8 @@ export async function getWooviChargeStatus(idOrCorrelationId: string): Promise<W
   const trimmedAppId = appId.trim();
 
   try {
-    const res = await fetch(`${OPENPIX_API}/api/v1/charge/${encodeURIComponent(idOrCorrelationId)}`, {
+    // Mesmo base path da criação: /api/openpix/v1/charge (OpenPix/Woovi)
+    const res = await fetch(`${OPENPIX_API}/api/openpix/v1/charge/${encodeURIComponent(idOrCorrelationId)}`, {
       method: 'GET',
       headers: {
         Authorization: trimmedAppId,

@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
 
     const signature = request.headers.get('x-hub-signature-256') ?? request.headers.get('x-webhook-signature') ?? '';
     if (!isTestEvent && !verifyWooviWebhookSignature(rawBody, signature, secret)) {
+      console.warn('[Woovi webhook] Assinatura inválida (401). Verifique se o "Segredo do webhook" no Admin é a chave pública RSA da Woovi.');
       return NextResponse.json({ error: 'Assinatura invalida' }, { status: 401 });
     }
 
@@ -45,6 +46,15 @@ export async function POST(request: NextRequest) {
     const charge = body.charge ?? body.pix?.charge ?? body;
     const chargeStatus = (charge?.status as string | undefined) ?? (body.status as string | undefined);
 
+    // Log para diagnóstico em produção (sem dados sensíveis)
+    const logPayload = {
+      event: rawEvent,
+      chargeStatus,
+      hasCharge: !!charge,
+      chargeId: (charge as { id?: string })?.id ?? (body as { id?: string })?.id,
+    };
+    console.info('[Woovi webhook]', JSON.stringify(logPayload));
+
     const isCompletedEvent =
       (typeof rawEvent === 'string' && rawEvent.toUpperCase().includes('CHARGE_COMPLETED')) ||
       chargeStatus === 'COMPLETED';
@@ -53,14 +63,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    // Woovi envia charge.correlationID; aceitar também camelCase (correlationId) e no body
     const correlationId =
       (charge?.correlationID as string | undefined) ??
-      (body.correlationID as string | undefined);
+      (charge as { correlationId?: string })?.correlationId ??
+      (body.correlationID as string | undefined) ??
+      (body.correlationId as string | undefined);
 
     if (!correlationId) {
-      console.error('[Woovi webhook] correlationID ausente no payload');
+      console.error('[Woovi webhook] correlationID ausente no payload. body.event=', rawEvent, 'charge keys=', charge && typeof charge === 'object' ? Object.keys(charge) : 'n/a');
       return NextResponse.json({ error: 'correlationID missing' }, { status: 400 });
     }
+
+    console.info('[Woovi webhook] CHARGE_COMPLETED correlationID=', correlationId);
 
     // Pré-estreia: externalId = presale-{slotId}
     if (typeof correlationId === 'string' && correlationId.startsWith('presale-')) {
@@ -73,6 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     await markWooviPurchaseAsPaid(correlationId);
+    console.info('[Woovi webhook] Compra marcada como paga:', correlationId);
     return NextResponse.json({ received: true });
   } catch (e) {
     console.error('Woovi webhook error:', e);

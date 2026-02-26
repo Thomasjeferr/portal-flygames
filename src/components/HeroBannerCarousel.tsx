@@ -125,10 +125,11 @@ export function HeroBannerCarousel() {
   }
 
   const banner = data.banners[index];
-  const overlayStyle = {
-    backgroundColor: banner.overlayColorHex,
-    opacity: banner.overlayOpacity / 100,
-  };
+  const overlayOpacity = Number(banner.overlayOpacity) ?? 75;
+  const hasOverlay = overlayOpacity > 0;
+  const overlayStyle = hasOverlay
+    ? { backgroundColor: banner.overlayColorHex || '#000000', opacity: overlayOpacity / 100 }
+    : undefined;
 
   const useMobileMedia =
     isMobile &&
@@ -265,7 +266,7 @@ export function HeroBannerCarousel() {
       onMouseLeave={() => setHovering(false)}
     >
       {mediaEl}
-      <div className="absolute inset-0" style={overlayStyle} aria-hidden />
+      {hasOverlay && <div className="absolute inset-0" style={overlayStyle} aria-hidden />}
       <div className="relative max-w-[1920px] mx-auto z-10 flex flex-col lg:flex-row items-start lg:items-stretch justify-start lg:justify-between gap-6 sm:gap-8 w-full flex-1">
         <div className={`${hasJanelinha ? 'lg:max-w-[55%]' : ''} w-full max-w-2xl flex flex-col items-center lg:items-start justify-center text-center lg:text-left gap-3 sm:gap-4`}>
           {banner.badgeText && (
