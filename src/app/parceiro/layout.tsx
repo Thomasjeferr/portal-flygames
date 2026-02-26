@@ -29,24 +29,24 @@ export default function ParceiroLayout({
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-futvar-darker flex items-center justify-center">
-        <p className="text-futvar-light">Carregando...</p>
+      <div className="min-h-screen bg-[#1A202C] flex items-center justify-center">
+        <p className="text-white/80">Carregando...</p>
       </div>
     );
   }
 
   if (status === 'forbidden') {
     return (
-      <div className="min-h-screen bg-futvar-darker flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#1A202C] flex items-center justify-center px-4">
         <div className="max-w-md text-center">
           <h1 className="text-xl font-bold text-white mb-2">Acesso restrito</h1>
-          <p className="text-futvar-light mb-4">
+          <p className="text-white/80 mb-4">
             Esta área é apenas para parceiros aprovados. Faça login com uma conta vinculada a um parceiro aprovado ou solicite sua parceria.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link
               href="/entrar"
-              className="px-4 py-2 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
+              className="px-4 py-2 rounded-lg bg-[#34D399] text-white font-semibold hover:bg-[#6EE7B7]"
             >
               Entrar
             </Link>
@@ -56,7 +56,7 @@ export default function ParceiroLayout({
             >
               Solicitar parceria
             </Link>
-            <Link href="/" className="px-4 py-2 text-futvar-light hover:text-white text-sm">
+            <Link href="/" className="px-4 py-2 text-white/80 hover:text-white text-sm">
               Voltar ao início
             </Link>
           </div>
@@ -66,23 +66,25 @@ export default function ParceiroLayout({
   }
 
   const nav = [
+    { href: '/parceiro/como-funciona', label: 'Como funciona' },
     { href: '/parceiro/link', label: 'Meu link' },
     { href: '/parceiro/indicacoes', label: 'Indicações' },
     { href: '/parceiro/comissoes', label: 'Comissões' },
   ];
 
   return (
-    <div className="min-h-screen bg-futvar-darker pt-20 pb-12">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+    <div className="min-h-screen bg-[#1A202C] pt-20 pb-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        <h1 className="text-lg font-semibold text-white mb-4">Área do parceiro</h1>
         <nav className="flex flex-wrap gap-2 mb-8 border-b border-white/10 pb-4">
           {nav.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 pathname === href
-                  ? 'bg-futvar-green text-futvar-darker'
-                  : 'text-futvar-light hover:bg-white/10 hover:text-white'
+                  ? 'bg-[#34D399] text-white'
+                  : 'text-white/80 hover:bg-white/10 hover:text-white'
               }`}
             >
               {label}
