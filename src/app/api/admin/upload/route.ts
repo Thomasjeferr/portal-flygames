@@ -47,11 +47,10 @@ export async function POST(request: NextRequest) {
     if (!detectedExt || !ALLOWED_EXT.includes(detectedExt)) {
       return NextResponse.json({ error: 'Conteúdo do arquivo não corresponde à imagem.' }, { status: 400 });
     }
-    if (claimedExt !== detectedExt) {
-      return NextResponse.json({ error: 'Extensão do arquivo não confere com o conteúdo.' }, { status: 400 });
-    }
+    // Usa a extensão real do conteúdo (ex.: arquivo .jpg que na verdade é PNG) para evitar rejeitar recibos válidos
+    const extToUse = detectedExt;
 
-    const safeName = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}${claimedExt}`;
+    const safeName = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}${extToUse}`;
 
     // Em produção (Vercel): disco é read-only → usar Vercel Blob
     if (process.env.BLOB_READ_WRITE_TOKEN) {
