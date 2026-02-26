@@ -34,9 +34,9 @@ export default function EditLivePage() {
   });
 
   useEffect(() => {
-    fetch('/api/admin/teams')
+    fetch('/api/admin/teams?limit=100')
       .then((r) => r.json())
-      .then((data) => setTeams(Array.isArray(data) ? data : []))
+      .then((data) => setTeams(Array.isArray(data?.teams) ? data.teams : []))
       .catch(() => setTeams([]));
   }, []);
   useEffect(() => {

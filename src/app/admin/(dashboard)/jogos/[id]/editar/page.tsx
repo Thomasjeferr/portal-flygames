@@ -35,15 +35,15 @@ export default function EditGamePage() {
   });
 
   useEffect(() => {
-    fetch('/api/admin/categories')
+    fetch('/api/admin/categories?limit=100')
       .then((r) => r.json())
-      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .then((data) => setCategories(Array.isArray(data?.categories) ? data.categories : []))
       .catch(() => {});
   }, []);
   useEffect(() => {
-    fetch('/api/admin/teams')
+    fetch('/api/admin/teams?limit=100')
       .then((r) => r.json())
-      .then((data) => setTeams(Array.isArray(data) ? data : []))
+      .then((data) => setTeams(Array.isArray(data?.teams) ? data.teams : []))
       .catch(() => {});
   }, []);
 

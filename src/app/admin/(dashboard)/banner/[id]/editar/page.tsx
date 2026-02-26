@@ -19,7 +19,7 @@ export default function AdminBannerEditarPage() {
     if (!id) return;
     Promise.all([
       fetch(`/api/admin/home-banners/${id}`, { cache: 'no-store' }).then((r) => r.json()).then((d) => setBanner(d?.id ? d : null)),
-      fetch('/api/admin/games').then((r) => r.json()).then((d) => setGames(Array.isArray(d) ? d : [])),
+      fetch('/api/admin/games?limit=100').then((r) => r.json()).then((d) => setGames(Array.isArray(d?.games) ? d.games : [])),
       fetch('/api/admin/pre-sale-games').then((r) => r.json()).then((d) => setPreSales(Array.isArray(d) ? d : [])),
       fetch('/api/admin/lives').then((r) => r.json()).then((d) => setLives(Array.isArray(d) ? d : [])),
     ]).finally(() => setLoading(false));

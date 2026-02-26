@@ -78,8 +78,8 @@ export default function AdminPreEstreiaEditarPage() {
           Promise.resolve(g),
           fetch(`/api/admin/pre-sale-categories?type=SPECIAL&scope=${scope}`),
           fetch(`/api/admin/pre-sale-categories?type=NORMAL&scope=${scope}`),
-          fetch('/api/admin/categories?active=true'),
-          fetch('/api/admin/teams'),
+          fetch('/api/admin/categories?active=true&limit=100'),
+          fetch('/api/admin/teams?limit=100'),
         ]);
       })
       .then(async ([g, resSpecial, resNormal, resGrade, resTeams]) => {
@@ -90,8 +90,8 @@ export default function AdminPreEstreiaEditarPage() {
         setGame(g?.id ? g : null);
         setSpecialCategories(resSpecial.ok && Array.isArray(special) ? special : []);
         setNormalCategories(resNormal.ok && Array.isArray(normal) ? normal : []);
-        setGradeCategories(resGrade.ok && Array.isArray(grade) ? grade : []);
-        setTeams(resTeams.ok && Array.isArray(teamsData) ? teamsData : []);
+        setGradeCategories(resGrade.ok && Array.isArray(grade?.categories) ? grade.categories : []);
+        setTeams(resTeams.ok && Array.isArray(teamsData?.teams) ? teamsData.teams : []);
         if (g?.id) {
         setForm({
           title: g.title,

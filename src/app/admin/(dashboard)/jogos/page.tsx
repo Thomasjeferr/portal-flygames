@@ -45,7 +45,7 @@ export default function AdminGamesPage() {
   };
 
   useEffect(() => {
-    fetch('/api/admin/categories').then((r) => r.json()).then((d) => setCategories(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch('/api/admin/categories?limit=100').then((r) => r.json()).then((d) => setCategories(Array.isArray(d?.categories) ? d.categories : [])).catch(() => {});
   }, []);
 
   useEffect(() => setPage(1), [filterCategoryId]);

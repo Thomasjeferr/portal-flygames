@@ -56,12 +56,12 @@ export default function AdminPreEstreiaMetaNovoPage() {
     setCategoriesError('');
     Promise.all([
       fetch('/api/admin/pre-sale-categories?type=NORMAL&scope=META'),
-      fetch('/api/admin/categories?active=true'),
-      fetch('/api/admin/teams'),
+      fetch('/api/admin/categories?active=true&limit=100'),
+      fetch('/api/admin/teams?limit=100'),
     ]).then(async ([resNormal, resGrade, resTeams]) => {
       const normalData = (await safeJson(resNormal)) as { error?: string } | unknown[];
-      const gradeData = (await safeJson(resGrade)) as { error?: string } | unknown[];
-      const teamsData = (await safeJson(resTeams)) as { error?: string } | unknown[];
+      const gradeData = (await safeJson(resGrade)) as { categories?: GradeCategory[] } | unknown[];
+      const teamsData = (await safeJson(resTeams)) as { teams?: { id: string; name: string; shortName: string | null }[] } | unknown[];
       if (!resNormal.ok) {
         const msg =
           typeof normalData === 'object' && normalData !== null && 'error' in normalData
@@ -74,12 +74,10 @@ export default function AdminPreEstreiaMetaNovoPage() {
         setNormalCategories(list);
       }
       const gradeList =
-        resGrade.ok && Array.isArray(gradeData) ? (gradeData as GradeCategory[]) : [];
+        resGrade.ok && Array.isArray(gradeData?.categories) ? gradeData.categories : [];
       setGradeCategories(gradeList);
       const teamsList =
-        resTeams.ok && Array.isArray(teamsData)
-          ? (teamsData as { id: string; name: string; shortName: string | null }[])
-          : [];
+        resTeams.ok && Array.isArray(teamsData?.teams) ? teamsData.teams : [];
       setTeams(teamsList);
     }).catch((err) => {
       setCategoriesError(err?.message ? `Erro: ${err.message}` : 'Erro de conexão ao carregar categorias');

@@ -52,8 +52,8 @@ export default function AdminPreEstreiaNovoPage() {
     Promise.all([
       fetch('/api/admin/pre-sale-categories?type=SPECIAL&scope=CLUB'),
       fetch('/api/admin/pre-sale-categories?type=NORMAL&scope=CLUB'),
-      fetch('/api/admin/categories?active=true'),
-      fetch('/api/admin/teams'),
+      fetch('/api/admin/categories?active=true&limit=100'),
+      fetch('/api/admin/teams?limit=100'),
     ]).then(async ([resSpecial, resNormal, resGrade, resTeams]) => {
       const specialData = await resSpecial.json();
       const normalData = await resNormal.json();
@@ -70,9 +70,9 @@ export default function AdminPreEstreiaNovoPage() {
       } else {
         setNormalCategories(Array.isArray(normalData) ? normalData : []);
       }
-      setGradeCategories(resGrade.ok && Array.isArray(gradeData) ? gradeData : []);
+      setGradeCategories(resGrade.ok && Array.isArray(gradeData?.categories) ? gradeData.categories : []);
       const teamsData = await resTeams.json();
-      setTeams(resTeams.ok && Array.isArray(teamsData) ? teamsData : []);
+      setTeams(resTeams.ok && Array.isArray(teamsData?.teams) ? teamsData.teams : []);
     }).catch(() => {
       setCategoriesError('Erro de conexao ao carregar categorias');
       setSpecialCategories([]);
