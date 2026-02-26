@@ -66,6 +66,18 @@ function PatrocinarComprarContent() {
       });
   }, [planId]);
 
+  // Persiste ref do parceiro na sessão para não perder a indicação
+  const refFromUrl = searchParams.get('ref');
+  useEffect(() => {
+    if (refFromUrl && typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('portal_futvar_partner_ref', refFromUrl);
+      } catch {
+        // ignorar
+      }
+    }
+  }, [refFromUrl]);
+
   useEffect(() => {
     if (!planId) {
       setError('Plano não informado');
@@ -134,7 +146,7 @@ function PatrocinarComprarContent() {
           utmCampaign: searchParams.get('utm_campaign') || undefined,
           utmContent: searchParams.get('utm_content') || undefined,
           utmTerm: searchParams.get('utm_term') || undefined,
-          refCode: searchParams.get('ref') || undefined,
+          refCode: searchParams.get('ref') || (typeof window !== 'undefined' ? sessionStorage.getItem('portal_futvar_partner_ref') : null) || undefined,
         }),
       });
       const data = await res.json();

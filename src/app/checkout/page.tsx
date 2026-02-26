@@ -310,7 +310,7 @@ function CheckoutContent() {
           utmCampaign: searchParams.get('utm_campaign') || undefined,
           utmContent: searchParams.get('utm_content') || undefined,
           utmTerm: searchParams.get('utm_term') || undefined,
-          refCode: searchParams.get('ref') || undefined,
+          refCode: searchParams.get('ref') || (typeof window !== 'undefined' ? sessionStorage.getItem('portal_futvar_partner_ref') : null) || undefined,
         }),
       });
       const data = await res.json();

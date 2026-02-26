@@ -36,6 +36,17 @@ export default function PlanosPage() {
   const [loading, setLoading] = useState(true);
   const [isTeamManager, setIsTeamManager] = useState(false);
 
+  // Persiste ref do parceiro na sessão para não perder a indicação se a URL do checkout não tiver ref
+  useEffect(() => {
+    if (ref && typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('portal_futvar_partner_ref', ref);
+      } catch {
+        // ignorar se sessionStorage não disponível
+      }
+    }
+  }, [ref]);
+
   useEffect(() => {
     Promise.all([
       fetch('/api/plans', { cache: 'no-store' }).then((r) => r.json()),
