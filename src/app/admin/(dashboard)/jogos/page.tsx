@@ -235,38 +235,40 @@ export default function AdminGamesPage() {
           )}
         </div>
       ) : (
-        <div className="space-y-6">
-          {groupedGames ? (
-            (() => {
-              let globalIndex = 0;
-              return groupedGames.map((group) => (
-                <div key={group.label}>
-                  <h2 className="text-lg font-semibold text-white mb-3">{group.label}</h2>
-                  <div className="space-y-4">
-                    {group.games.map((game, i) => {
-                      const idx = globalIndex++;
-                      return renderGameRow(game, idx, filteredGames.length);
-                    })}
+        <>
+          <div className="space-y-6">
+            {groupedGames ? (
+              (() => {
+                let globalIndex = 0;
+                return groupedGames.map((group) => (
+                  <div key={group.label}>
+                    <h2 className="text-lg font-semibold text-white mb-3">{group.label}</h2>
+                    <div className="space-y-4">
+                      {group.games.map((game, i) => {
+                        const idx = globalIndex++;
+                        return renderGameRow(game, idx, filteredGames.length);
+                      })}
+                    </div>
                   </div>
-                </div>
-              ));
-            })()
-          ) : (
-            filteredGames.map((game, index) => renderGameRow(game, index, filteredGames.length))
-          )}
-        </div>
-        {totalPages > 1 && (
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
-            <p className="text-sm text-netflix-light">
-              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total} jogos
-            </p>
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
-              <span className="text-sm text-netflix-light px-2">Página {page} de {totalPages}</span>
-              <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
-            </div>
+                ));
+              })()
+            ) : (
+              filteredGames.map((game, index) => renderGameRow(game, index, filteredGames.length))
+            )}
           </div>
-        )}
+          {totalPages > 1 && (
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
+              <p className="text-sm text-netflix-light">
+                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total} jogos
+              </p>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+                <span className="text-sm text-netflix-light px-2">Página {page} de {totalPages}</span>
+                <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

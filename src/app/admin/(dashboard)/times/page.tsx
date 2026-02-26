@@ -117,110 +117,112 @@ export default function AdminTimesPage() {
           </Link>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-white/10 bg-netflix-dark">
-          <table className="w-full text-left">
-            <thead className="bg-white/5 text-netflix-light text-sm">
-              <tr>
-                <th className="px-4 py-3 font-medium">Escudo</th>
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">Cidade/UF</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Comissões</th>
-                <th className="px-4 py-3 font-medium text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {teams.map((t) => (
-                <tr key={t.id} className="hover:bg-white/5">
-                  <td className="px-4 py-3">
-                    <div className="relative w-12 h-12 rounded overflow-hidden bg-white/5 flex items-center justify-center">
-                      {isValidCrestUrl(t.crestUrl) && !crestErrors.has(t.id) ? (
-                        <Image
-                          src={t.crestUrl!.startsWith('/') ? t.crestUrl! : t.crestUrl!}
-                          alt={t.name}
-                          fill
-                          className="object-contain"
-                          sizes="48px"
-                          unoptimized={t.crestUrl!.startsWith('http')}
-                          onError={() => onCrestError(t.id)}
-                        />
-                      ) : (
-                        <span className="text-netflix-light text-xs">Escudo</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-white font-medium">
-                    {t.name}
-                    {t.shortName && <span className="text-netflix-light ml-2">({t.shortName})</span>}
-                  </td>
-                  <td className="px-4 py-3 text-netflix-light">{cityState(t)}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <span
-                      className={
-                        t.approvalStatus === 'approved'
-                          ? 'text-futvar-green'
-                          : t.approvalStatus === 'pending'
-                          ? 'text-amber-300'
-                          : 'text-netflix-light'
-                      }
-                    >
-                      {t.approvalStatus === 'approved'
-                        ? 'Aprovado'
-                        : t.approvalStatus === 'pending'
-                        ? 'Pendente'
-                        : 'Rejeitado'}
-                    </span>
-                    <span className="text-netflix-light text-xs block">
-                      Ativo: {t.isActive ? 'Sim' : 'Não'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/times/${t.id}/comissoes`}
-                      className="text-netflix-red hover:underline text-sm"
-                    >
-                      Ver comissões
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link
-                        href={`/admin/times/${t.id}/editar`}
-                        className="px-3 py-1.5 rounded bg-netflix-gray text-white text-sm hover:bg-white/20"
-                      >
-                        Editar
-                      </Link>
-                      <button
-                        onClick={() => handleToggle(t.id)}
-                        className="px-3 py-1.5 rounded bg-netflix-gray text-white text-sm hover:bg-white/20"
-                      >
-                        {t.isActive ? 'Desativar' : 'Ativar'}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(t.id, t.name, t.isActive)}
-                        className="px-3 py-1.5 rounded bg-red-900/30 text-red-400 text-sm hover:bg-red-900/50"
-                      >
-                        Excluir
-                      </button>
-                    </div>
-                  </td>
+        <>
+          <div className="overflow-x-auto rounded-lg border border-white/10 bg-netflix-dark">
+            <table className="w-full text-left">
+              <thead className="bg-white/5 text-netflix-light text-sm">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Escudo</th>
+                  <th className="px-4 py-3 font-medium">Nome</th>
+                  <th className="px-4 py-3 font-medium">Cidade/UF</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Comissões</th>
+                  <th className="px-4 py-3 font-medium text-right">Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {totalPages > 1 && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
-            <p className="text-sm text-netflix-light">
-              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total} times
-            </p>
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
-              <span className="text-sm text-netflix-light px-2">Página {page} de {totalPages}</span>
-              <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
-            </div>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {teams.map((t) => (
+                  <tr key={t.id} className="hover:bg-white/5">
+                    <td className="px-4 py-3">
+                      <div className="relative w-12 h-12 rounded overflow-hidden bg-white/5 flex items-center justify-center">
+                        {isValidCrestUrl(t.crestUrl) && !crestErrors.has(t.id) ? (
+                          <Image
+                            src={t.crestUrl!.startsWith('/') ? t.crestUrl! : t.crestUrl!}
+                            alt={t.name}
+                            fill
+                            className="object-contain"
+                            sizes="48px"
+                            unoptimized={t.crestUrl!.startsWith('http')}
+                            onError={() => onCrestError(t.id)}
+                          />
+                        ) : (
+                          <span className="text-netflix-light text-xs">Escudo</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-white font-medium">
+                      {t.name}
+                      {t.shortName && <span className="text-netflix-light ml-2">({t.shortName})</span>}
+                    </td>
+                    <td className="px-4 py-3 text-netflix-light">{cityState(t)}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span
+                        className={
+                          t.approvalStatus === 'approved'
+                            ? 'text-futvar-green'
+                            : t.approvalStatus === 'pending'
+                            ? 'text-amber-300'
+                            : 'text-netflix-light'
+                        }
+                      >
+                        {t.approvalStatus === 'approved'
+                          ? 'Aprovado'
+                          : t.approvalStatus === 'pending'
+                          ? 'Pendente'
+                          : 'Rejeitado'}
+                      </span>
+                      <span className="text-netflix-light text-xs block">
+                        Ativo: {t.isActive ? 'Sim' : 'Não'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/times/${t.id}/comissoes`}
+                        className="text-netflix-red hover:underline text-sm"
+                      >
+                        Ver comissões
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/admin/times/${t.id}/editar`}
+                          className="px-3 py-1.5 rounded bg-netflix-gray text-white text-sm hover:bg-white/20"
+                        >
+                          Editar
+                        </Link>
+                        <button
+                          onClick={() => handleToggle(t.id)}
+                          className="px-3 py-1.5 rounded bg-netflix-gray text-white text-sm hover:bg-white/20"
+                        >
+                          {t.isActive ? 'Desativar' : 'Ativar'}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(t.id, t.name, t.isActive)}
+                          className="px-3 py-1.5 rounded bg-red-900/30 text-red-400 text-sm hover:bg-red-900/50"
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
+          {totalPages > 1 && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
+              <p className="text-sm text-netflix-light">
+                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total} times
+              </p>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+                <span className="text-sm text-netflix-light px-2">Página {page} de {totalPages}</span>
+                <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
