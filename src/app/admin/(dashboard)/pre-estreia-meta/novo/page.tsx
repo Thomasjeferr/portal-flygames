@@ -60,8 +60,8 @@ export default function AdminPreEstreiaMetaNovoPage() {
       fetch('/api/admin/teams?limit=100'),
     ]).then(async ([resNormal, resGrade, resTeams]) => {
       const normalData = (await safeJson(resNormal)) as { error?: string } | unknown[];
-      const gradeData = (await safeJson(resGrade)) as { categories?: GradeCategory[] } | unknown[];
-      const teamsData = (await safeJson(resTeams)) as { teams?: { id: string; name: string; shortName: string | null }[] } | unknown[];
+      const gradeData = (await safeJson(resGrade)) as { categories?: GradeCategory[] };
+      const teamsData = (await safeJson(resTeams)) as { teams?: { id: string; name: string; shortName: string | null }[] };
       if (!resNormal.ok) {
         const msg =
           typeof normalData === 'object' && normalData !== null && 'error' in normalData
