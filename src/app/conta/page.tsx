@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { TeamPicker, TeamDisplay } from '@/components/account/TeamPicker';
+import { NaoEncontrouTimeCTA } from '@/components/account/NaoEncontrouTimeCTA';
 import type { TeamOption } from '@/components/account/TeamPicker';
 
 interface AccountUser {
@@ -554,6 +555,9 @@ export default function ContaPage() {
                   saving={savingFavoriteTeam}
                   placeholder="Buscar time..."
                 />
+                <p className="mt-2">
+                  <NaoEncontrouTimeCTA />
+                </p>
                 {showTeamPicker && (
                   <button
                     type="button"

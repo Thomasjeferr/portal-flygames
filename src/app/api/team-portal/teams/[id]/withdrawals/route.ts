@@ -32,9 +32,9 @@ export async function GET(
   );
 }
 
-/** Cria um pedido de saque para o time (planos + patrocínios liberados). */
+/** Cria um pedido de saque para o time (planos + patrocínios liberados). Aceita body opcional: { pixKey?, pixKeyType?, pixName? }. Se não enviado, usa PIX do cadastro do time. */
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: teamId } = await params;
@@ -43,7 +43,19 @@ export async function POST(
     return NextResponse.json({ error: 'Acesso negado a este time' }, { status: 403 });
   }
 
-  const [sponsorEarnings, planEarnings] = await Promise.all([
+  let bodyPix: { pixKey?: string; pixKeyType?: string; pixName?: string } = {};
+  try {
+    const body = await req.json().catch(() => ({}));
+    if (body && typeof body === 'object') {
+      if (typeof body.pixKey === 'string') bodyPix.pixKey = body.pixKey.trim() || undefined;
+      if (typeof body.pixKeyType === 'string') bodyPix.pixKeyType = body.pixKeyType.trim() || undefined;
+      if (typeof body.pixName === 'string') bodyPix.pixName = body.pixName.trim() || undefined;
+    }
+  } catch {
+    // body opcional
+  }
+
+  const [sponsorEarnings, planEarnings, team] = await Promise.all([
     prisma.teamSponsorshipEarning.findMany({
       where: { teamId, status: 'pending' },
       orderBy: { createdAt: 'asc' },
@@ -67,6 +79,10 @@ export async function POST(
           include: { withdrawal: { select: { status: true } } },
         },
       },
+    }),
+    prisma.team.findUnique({
+      where: { id: teamId },
+      select: { payoutPixKey: true, payoutName: true },
     }),
   ]);
 
@@ -108,12 +124,25 @@ export async function POST(
     );
   }
 
+  const pixKey = bodyPix.pixKey ?? team?.payoutPixKey ?? null;
+  const pixKeyType = bodyPix.pixKeyType ?? (team?.payoutPixKey ? 'aleatoria' : null);
+  const pixName = bodyPix.pixName ?? team?.payoutName ?? null;
+  if (!pixKey || !pixName) {
+    return NextResponse.json(
+      { error: 'Informe os dados PIX para receber o pagamento (chave e nome do titular).' },
+      { status: 400 }
+    );
+  }
+
   const withdrawal = await prisma.teamWithdrawal.create({
     data: {
       teamId,
       amountCents: totalCents,
       status: 'requested',
       requestedAt: now,
+      pixKey,
+      pixKeyType,
+      pixName,
       planItems: {
         create: availablePlanEarnings.map((e) => ({
           earningId: e.id,

@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useRef, Suspense } from 'react';
 import Image from 'next/image';
 import CardPaymentScreen from '@/components/checkout/CardPaymentScreen';
+import { NaoEncontrouTimeCTA } from '@/components/account/NaoEncontrouTimeCTA';
 
 interface Plan {
   id: string;
@@ -483,6 +484,9 @@ function CheckoutContent() {
               ))}
             </select>
             <p className="mt-1 text-xs text-futvar-light">Parte do valor pode ser repassada ao time que você apoia.</p>
+            <p className="mt-2">
+              <NaoEncontrouTimeCTA />
+            </p>
           </div>
 
           <div>

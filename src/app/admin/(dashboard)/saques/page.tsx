@@ -14,6 +14,9 @@ type PartnerWithdrawal = {
   paidAt: string | null;
   paymentReference: string | null;
   receiptUrl: string | null;
+  pixKey: string | null;
+  pixKeyType: string | null;
+  pixName: string | null;
 };
 
 type TeamWithdrawal = {
@@ -26,6 +29,9 @@ type TeamWithdrawal = {
   paidAt: string | null;
   paymentReference: string | null;
   receiptUrl: string | null;
+  pixKey: string | null;
+  pixKeyType: string | null;
+  pixName: string | null;
 };
 
 function formatMoney(cents: number) {
@@ -184,6 +190,7 @@ export default function AdminSaquesPage() {
                     <tr>
                       <th className="px-4 py-3 text-left">Parceiro</th>
                       <th className="px-4 py-3 text-right">Valor</th>
+                      <th className="px-4 py-3 text-left">Favorecido / PIX</th>
                       <th className="px-4 py-3 text-left">Status</th>
                       <th className="px-4 py-3 text-left">Solicitado em</th>
                       <th className="px-4 py-3 text-left">Pago em</th>
@@ -202,6 +209,16 @@ export default function AdminSaquesPage() {
                         </td>
                         <td className="px-4 py-3 text-right text-white font-semibold">
                           {formatMoney(w.amountCents)}
+                        </td>
+                        <td className="px-4 py-3 text-netflix-light text-xs max-w-[180px]">
+                          {w.pixName && <span className="block font-medium text-white">{w.pixName}</span>}
+                          {w.pixKey ? (
+                            <span className="text-netflix-light" title={w.pixKey}>
+                              {(w.pixKeyType && `${w.pixKeyType} • `) || ''}{w.pixKey}
+                            </span>
+                          ) : (
+                            <span className="opacity-60">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-netflix-light">
                           {w.status === 'paid'
@@ -269,6 +286,7 @@ export default function AdminSaquesPage() {
                     <tr>
                       <th className="px-4 py-3 text-left">Time</th>
                       <th className="px-4 py-3 text-right">Valor</th>
+                      <th className="px-4 py-3 text-left">Favorecido / PIX</th>
                       <th className="px-4 py-3 text-left">Status</th>
                       <th className="px-4 py-3 text-left">Solicitado em</th>
                       <th className="px-4 py-3 text-left">Pago em</th>
@@ -284,6 +302,16 @@ export default function AdminSaquesPage() {
                         </td>
                         <td className="px-4 py-3 text-right text-white font-semibold">
                           {formatMoney(w.amountCents)}
+                        </td>
+                        <td className="px-4 py-3 text-netflix-light text-xs max-w-[180px]">
+                          {w.pixName && <span className="block font-medium text-white">{w.pixName}</span>}
+                          {w.pixKey ? (
+                            <span className="text-netflix-light" title={w.pixKey}>
+                              {(w.pixKeyType && `${w.pixKeyType} • `) || ''}{w.pixKey}
+                            </span>
+                          ) : (
+                            <span className="opacity-60">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-netflix-light">
                           {w.status === 'paid'

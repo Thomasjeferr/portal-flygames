@@ -245,8 +245,19 @@ export function VideoPlayerCard({
 
     document.addEventListener('visibilitychange', onVisibilityChange);
 
+    const onWebkitBeginFullscreen = () => {
+      if (mountedRef.current) setIsFullscreen(true);
+    };
+    const onWebkitEndFullscreen = () => {
+      if (mountedRef.current) setIsFullscreen(false);
+    };
+    video.addEventListener('webkitbeginfullscreen', onWebkitBeginFullscreen);
+    video.addEventListener('webkitendfullscreen', onWebkitEndFullscreen);
+
     return () => {
       mountedRef.current = false;
+      video.removeEventListener('webkitbeginfullscreen', onWebkitBeginFullscreen);
+      video.removeEventListener('webkitendfullscreen', onWebkitEndFullscreen);
       if (saveIntervalRef.current !== null) {
         clearInterval(saveIntervalRef.current);
         saveIntervalRef.current = null;
@@ -267,10 +278,11 @@ export function VideoPlayerCard({
     };
   }, [videoSrc, isHlsSource, autoplay, saveProgress, updateBuffered]);
 
-  // Fullscreen helpers
+  // Fullscreen: em mobile (iOS) só funciona no elemento <video>; em desktop no container
   const handleToggleFullscreen = () => {
     const container = containerRef.current;
-    if (!container) return;
+    const video = videoRef.current;
+    if (!container && !video) return;
 
     const doc = document as Document & {
       webkitFullscreenElement?: Element | null;
@@ -285,37 +297,51 @@ export function VideoPlayerCard({
       doc.fullscreenElement ||
       doc.webkitFullscreenElement ||
       doc.mozFullScreenElement ||
-      doc.msFullscreenElement;
+      doc.msFullscreenElement ||
+      isFullscreen; // estado de fullscreen do vídeo (iOS)
+
+    const run = (p: void | Promise<void>) => {
+      if (p && typeof (p as Promise<void>).catch === 'function') {
+        (p as Promise<void>).catch(() => {});
+      }
+    };
 
     try {
       if (isFs) {
-        const exit =
+        // Sair: tentar documento e depois vídeo (iOS usa só o vídeo)
+        const exitDoc =
           doc.exitFullscreen ||
           doc.webkitExitFullscreen ||
           doc.mozCancelFullScreen ||
           doc.msExitFullscreen;
-        if (exit) {
-          const result = exit.call(doc);
-          if (result && typeof (result as Promise<void>).catch === 'function') {
-            (result as Promise<void>).catch(() => {});
-          }
-        }
+        if (exitDoc) run(exitDoc.call(doc) as void | Promise<void>);
+        const videoExit = video && (video as HTMLVideoElement & { webkitExitFullScreen?: () => void }).webkitExitFullScreen;
+        if (videoExit) videoExit.call(video);
       } else {
-        const anyContainer = container as HTMLElement & {
+        const isMobile = typeof window !== 'undefined' && ('ontouchstart' in window || window.innerWidth <= 768);
+        const videoFs = video && (
+          (video as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen ||
+          (video as HTMLVideoElement & { webkitEnterFullScreen?: () => void }).webkitEnterFullScreen ||
+          (video as HTMLVideoElement & { requestFullscreen?: () => void }).requestFullscreen
+        );
+        const containerFs = container && (container as HTMLElement & {
+          requestFullscreen?: () => void | Promise<void>;
           webkitRequestFullscreen?: () => void | Promise<void>;
           mozRequestFullScreen?: () => void | Promise<void>;
           msRequestFullscreen?: () => void | Promise<void>;
-        };
-        const request =
-          anyContainer.requestFullscreen ||
-          anyContainer.webkitRequestFullscreen ||
-          anyContainer.mozRequestFullScreen ||
-          anyContainer.msRequestFullscreen;
-        if (request) {
-          const result = request.call(anyContainer);
-          if (result && typeof (result as Promise<void>).catch === 'function') {
-            (result as Promise<void>).catch(() => {});
-          }
+        });
+        const requestContainer =
+          containerFs?.requestFullscreen ||
+          containerFs?.webkitRequestFullscreen ||
+          containerFs?.mozRequestFullScreen ||
+          containerFs?.msRequestFullscreen;
+
+        if (isMobile && videoFs) {
+          run(videoFs.call(video) as void | Promise<void>);
+        } else if (requestContainer) {
+          run(requestContainer.call(container) as void | Promise<void>);
+        } else if (videoFs) {
+          run(videoFs.call(video) as void | Promise<void>);
         }
       }
     } catch {

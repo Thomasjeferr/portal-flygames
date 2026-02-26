@@ -28,12 +28,29 @@ export async function GET() {
   );
 }
 
-/** Cria um novo saque com base nas comissões liberadas. */
-export async function POST() {
+/** Cria um novo saque com base nas comissões liberadas. Aceita body opcional: { pixKey?, pixKeyType?, pixName? }. Se não enviado, usa PIX do cadastro do parceiro. */
+export async function POST(request: Request) {
   const partner = await getApprovedPartner();
   if (!partner) {
     return NextResponse.json({ error: 'Acesso apenas para parceiros aprovados' }, { status: 403 });
   }
+
+  let bodyPix: { pixKey?: string; pixKeyType?: string; pixName?: string } = {};
+  try {
+    const body = await request.json().catch(() => ({}));
+    if (body && typeof body === 'object') {
+      if (typeof body.pixKey === 'string') bodyPix.pixKey = body.pixKey.trim() || undefined;
+      if (typeof body.pixKeyType === 'string') bodyPix.pixKeyType = body.pixKeyType.trim() || undefined;
+      if (typeof body.pixName === 'string') bodyPix.pixName = body.pixName.trim() || undefined;
+    }
+  } catch {
+    // body opcional
+  }
+
+  const partnerWithPix = await prisma.partner.findUnique({
+    where: { id: partner.id },
+    select: { pixKey: true, pixKeyType: true, name: true },
+  });
 
   const earnings = await prisma.partnerEarning.findMany({
     where: { partnerId: partner.id, status: 'pending' },
@@ -110,12 +127,25 @@ export async function POST() {
 
   const totalCents = availableEarnings.reduce((sum, e) => sum + e.amountCents, 0);
 
+  const pixKey = bodyPix.pixKey ?? partnerWithPix?.pixKey ?? null;
+  const pixKeyType = bodyPix.pixKeyType ?? partnerWithPix?.pixKeyType ?? null;
+  const pixName = bodyPix.pixName ?? partnerWithPix?.name ?? null;
+  if (!pixKey || !pixName) {
+    return NextResponse.json(
+      { error: 'Informe os dados PIX para receber o pagamento (chave e nome do titular).' },
+      { status: 400 }
+    );
+  }
+
   const withdrawal = await prisma.partnerWithdrawal.create({
     data: {
       partnerId: partner.id,
       amountCents: totalCents,
       status: 'requested',
       requestedAt: now,
+      pixKey,
+      pixKeyType,
+      pixName,
       items: {
         create: availableEarnings.map((e) => ({
           earningId: e.id,

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState, useRef } from 'react';
+import { NaoEncontrouTimeCTA } from '@/components/account/NaoEncontrouTimeCTA';
 
 const BILLING_LABEL: Record<string, string> = {
   monthly: 'mensal',
@@ -288,6 +289,9 @@ function PatrocinarComprarContent() {
                 </select>
               </div>
               <p className="mt-1 text-xs text-futvar-light">Parte do valor pode ser repassada ao time.</p>
+              <p className="mt-2">
+                <NaoEncontrouTimeCTA />
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-futvar-light mb-1">Logo da empresa *</label>

@@ -27,6 +27,9 @@ export async function GET() {
       paidAt: w.paidAt?.toISOString() ?? null,
       paymentReference: w.paymentReference,
       receiptUrl: w.receiptUrl,
+      pixKey: w.pixKey ?? null,
+      pixKeyType: w.pixKeyType ?? null,
+      pixName: w.pixName ?? null,
     }))
   );
 }

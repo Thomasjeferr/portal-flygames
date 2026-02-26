@@ -34,6 +34,7 @@ model User {
   favoriteTeam      Team?     @relation("UserFavoriteTeam", fields: [favoriteTeamId], references: [id], onDelete: SetNull)
   sponsorOrders     SponsorOrder[]
   watchProgress     WatchProgress[]
+  teamRequests      TeamRequest[]
 }
 
 model Session {
@@ -132,6 +133,18 @@ model TeamManager {
 
   @@unique([userId, teamId])
   @@map("team_managers")
+}
+
+// Solicitações de cadastro de time (torcedor não encontrou o time e pediu para o portal/responsável)
+model TeamRequest {
+  id        String   @id @default(cuid())
+  teamName  String?  @map("team_name")
+  userId    String?  @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("team_requests")
 }
 
 // Elenco / membros do time (jogadores, comissão técnica, staff)
@@ -734,6 +747,9 @@ model PartnerWithdrawal {
   paymentReference String?  @map("payment_reference")
   createdAt        DateTime @default(now()) @map("created_at")
   receiptUrl       String?  @map("receipt_url")
+  pixKey           String?  @map("pix_key")
+  pixKeyType       String?  @map("pix_key_type") // cpf | cnpj | email | phone | aleatoria
+  pixName          String?  @map("pix_name") // nome do titular / favorecido
 
   partner Partner               @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   items   PartnerWithdrawalItem[]
@@ -777,6 +793,9 @@ model TeamWithdrawal {
   paymentReference String?  @map("payment_reference")
   createdAt        DateTime @default(now()) @map("created_at")
   receiptUrl       String?  @map("receipt_url")
+  pixKey           String?  @map("pix_key")
+  pixKeyType       String?  @map("pix_key_type") // cpf | cnpj | email | phone | aleatoria
+  pixName          String?  @map("pix_name") // nome do titular / favorecido
 
   team               Team                          @relation(fields: [teamId], references: [id], onDelete: Cascade)
   planItems          TeamWithdrawalPlanItem[]

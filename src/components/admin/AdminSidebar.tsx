@@ -10,6 +10,7 @@ const menuItems = [
   { href: '/admin/jogos', label: 'Jogos', icon: 'play' },
   { href: '/admin/sumulas', label: 'Súmula', icon: 'clipboard' },
   { href: '/admin/times', label: 'Times', icon: 'team' },
+  { href: '/admin/team-requests', label: 'Solicitações de times', icon: 'mail' },
   { href: '/admin/lives', label: 'Lives', icon: 'broadcast' },
   { href: '/admin/pre-estreia', label: 'Pré-estreia Clubes', icon: 'film' },
   { href: '/admin/pre-estreia-meta', label: 'Pré-estreia Meta', icon: 'film' },

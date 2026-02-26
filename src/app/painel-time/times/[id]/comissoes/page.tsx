@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { WithdrawalPixModal, type WithdrawalPixPayload } from '@/components/withdrawal/WithdrawalPixModal';
 
 function formatPrice(cents: number) {
   return new Intl.NumberFormat('pt-BR', {
@@ -54,6 +55,7 @@ export default function PainelTimeComissoesPage() {
   const [withdrawals, setWithdrawals] = useState<
     { id: string; amountCents: number; status: string; requestedAt: string; paidAt: string | null; receiptUrl: string | null }[]
   >([]);
+  const [pixModalOpen, setPixModalOpen] = useState(false);
 
   const loadData = async () => {
     setError('');
@@ -86,20 +88,31 @@ export default function PainelTimeComissoesPage() {
       .catch(() => {});
   }, [id]);
 
-  const handleSolicitarSaque = async () => {
+  const handleConfirmPix = async (payload: WithdrawalPixPayload) => {
     if (!data || requesting || data.summary.availableCents <= 0) return;
     setError('');
     setSuccess('');
     setRequesting(true);
+    setPixModalOpen(false);
     try {
-      const res = await fetch(`/api/team-portal/teams/${id}/withdrawals`, { method: 'POST' });
-      const body = await res.json().catch(() => null);
-      if (!res.ok || !body?.ok) {
-        setError(body?.error || 'Erro ao solicitar saque.');
+      const body = payload.useProfile ? {} : { pixKey: payload.pixKey, pixKeyType: payload.pixKeyType, pixName: payload.pixName };
+      const res = await fetch(`/api/team-portal/teams/${id}/withdrawals`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const resBody = await res.json().catch(() => null);
+      if (!res.ok || !resBody?.ok) {
+        setError(resBody?.error || 'Erro ao solicitar saque.');
         return;
       }
       setSuccess('Saque solicitado com sucesso. Pagamento em até 3 dias úteis.');
       await loadData();
+      const wRes = await fetch(`/api/team-portal/teams/${id}/withdrawals`);
+      if (wRes.ok) {
+        const wJson = await wRes.json();
+        if (Array.isArray(wJson)) setWithdrawals(wJson);
+      }
     } catch {
       setError('Erro de conexão ao solicitar saque.');
     } finally {
@@ -152,12 +165,24 @@ export default function PainelTimeComissoesPage() {
         <div className="flex flex-col gap-1">
           <button
             type="button"
-            onClick={handleSolicitarSaque}
+            onClick={() => setPixModalOpen(true)}
             disabled={requesting || summary.availableCents <= 0}
             className="inline-flex items-center justify-center rounded-md bg-futvar-green px-5 py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {requesting ? 'Solicitando...' : 'Solicitar saque'}
           </button>
+          <WithdrawalPixModal
+            open={pixModalOpen}
+            onClose={() => setPixModalOpen(false)}
+            amountCents={summary.availableCents}
+            existingPix={
+              team.payoutPixKey
+                ? { key: team.payoutPixKey, keyType: null, name: team.payoutName }
+                : null
+            }
+            onSubmit={handleConfirmPix}
+            submitting={requesting}
+          />
           <p className="text-xs text-futvar-light">
             Após solicitar, o pagamento é realizado em até <span className="font-semibold">3 dias úteis</span>.
           </p>

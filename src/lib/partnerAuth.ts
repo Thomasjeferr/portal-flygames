@@ -14,6 +14,8 @@ export async function getApprovedPartner() {
       planCommissionPercent: true,
       gameCommissionPercent: true,
       sponsorCommissionPercent: true,
+      pixKey: true,
+      pixKeyType: true,
     },
   });
   return partner;

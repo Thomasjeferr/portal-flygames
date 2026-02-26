@@ -14,5 +14,7 @@ export async function GET() {
     planCommissionPercent: partner.planCommissionPercent,
     gameCommissionPercent: partner.gameCommissionPercent,
     sponsorCommissionPercent: partner.sponsorCommissionPercent,
+    pixKey: partner.pixKey ?? null,
+    pixKeyType: partner.pixKeyType ?? null,
   });
 }
