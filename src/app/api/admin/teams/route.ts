@@ -20,6 +20,9 @@ function toBody(data: Record<string, unknown>) {
   };
 }
 
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 100;
+
 export async function GET(request: NextRequest) {
   const session = await getSession();
   if (!session || session.role !== 'admin')
@@ -29,25 +32,39 @@ export async function GET(request: NextRequest) {
   const q = searchParams.get('q')?.trim();
   const activeOnly = searchParams.get('active') === 'true';
   const inactiveOnly = searchParams.get('active') === 'false';
+  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1);
+  const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(searchParams.get('limit') ?? String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT));
+  const skip = (page - 1) * limit;
 
   const where: Record<string, unknown> = {};
   if (activeOnly) where.isActive = true;
   if (inactiveOnly) where.isActive = false;
   if (q) {
-    // SQLite: contains sem mode (LIKE é case-insensitive para ASCII)
     where.OR = [
-      { name: { contains: q } },
-      { city: { contains: q } },
-      { state: { contains: q } },
-      { shortName: { contains: q } },
+      { name: { contains: q, mode: 'insensitive' } },
+      { city: { contains: q, mode: 'insensitive' } },
+      { state: { contains: q, mode: 'insensitive' } },
+      { shortName: { contains: q, mode: 'insensitive' } },
     ];
   }
 
-  const teams = await prisma.team.findMany({
-    where,
-    orderBy: [{ approvalStatus: 'asc' }, { isActive: 'desc' }, { name: 'asc' }],
+  const [total, teams] = await Promise.all([
+    prisma.team.count({ where }),
+    prisma.team.findMany({
+      where,
+      orderBy: [{ approvalStatus: 'asc' }, { isActive: 'desc' }, { name: 'asc' }],
+      skip,
+      take: limit,
+    }),
+  ]);
+
+  return NextResponse.json({
+    teams,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit) || 1,
   });
-  return NextResponse.json(teams);
 }
 
 export async function POST(request: NextRequest) {

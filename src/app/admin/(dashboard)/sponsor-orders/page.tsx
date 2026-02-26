@@ -23,6 +23,8 @@ interface Team {
   name: string;
 }
 
+const PAGE_SIZE = 10;
+
 export default function AdminSponsorOrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<SponsorOrder[]>([]);
@@ -30,12 +32,16 @@ export default function AdminSponsorOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     setLoading(true);
     setError('');
+    const params = new URLSearchParams({ missingTeam: 'true', page: String(page), limit: String(PAGE_SIZE) });
     Promise.all([
-      fetch('/api/admin/sponsor-orders?missingTeam=true'),
+      fetch(`/api/admin/sponsor-orders?${params}`),
       fetch('/api/public/teams', { cache: 'no-store' }),
     ])
       .then(async ([ordersRes, teamsRes]) => {
@@ -45,8 +51,10 @@ export default function AdminSponsorOrdersPage() {
         }
         const ordersData = await ordersRes.json();
         const teamsData = await teamsRes.json().catch(() => []);
-        if (Array.isArray(ordersData)) {
-          setOrders(ordersData);
+        if (ordersData?.orders) {
+          setOrders(ordersData.orders);
+          setTotal(ordersData.total ?? 0);
+          setTotalPages(ordersData.totalPages ?? 1);
         } else if (ordersData?.error) {
           setError(ordersData.error);
         }
@@ -56,7 +64,7 @@ export default function AdminSponsorOrdersPage() {
       })
       .catch(() => setError('Erro ao carregar pedidos de patrocínio.'))
       .finally(() => setLoading(false));
-  }, [router]);
+  }, [router, page]);
 
   const handleAssignTeam = async (orderId: string, teamId: string) => {
     if (!teamId) return;
@@ -169,6 +177,18 @@ export default function AdminSponsorOrdersPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {!loading && !error && orders.length > 0 && totalPages > 1 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
+          <p className="text-sm text-netflix-light">
+            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total} pedidos
+          </p>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+            <span className="text-sm text-netflix-light px-2">Página {page} de {totalPages}</span>
+            <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
+          </div>
         </div>
       )}
     </div>

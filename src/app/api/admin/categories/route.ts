@@ -10,6 +10,9 @@ const createSchema = z.object({
   active: z.boolean().optional(),
 });
 
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 100;
+
 export async function GET(request: NextRequest) {
   const session = await getSession();
   if (!session || session.role !== 'admin') {
@@ -18,11 +21,27 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const activeOnly = searchParams.get('active') === 'true';
   const where = activeOnly ? { active: true } : {};
-  const categories = await prisma.category.findMany({
-    where,
-    orderBy: [{ order: 'asc' }, { name: 'asc' }],
+  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1);
+  const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(searchParams.get('limit') ?? String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT));
+  const skip = (page - 1) * limit;
+
+  const [total, categories] = await Promise.all([
+    prisma.category.count({ where }),
+    prisma.category.findMany({
+      where,
+      orderBy: [{ order: 'asc' }, { name: 'asc' }],
+      skip,
+      take: limit,
+    }),
+  ]);
+
+  return NextResponse.json({
+    categories,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit) || 1,
   });
-  return NextResponse.json(categories);
 }
 
 export async function POST(request: NextRequest) {

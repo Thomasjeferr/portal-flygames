@@ -33,15 +33,26 @@ export default function AdminSponsorPlansPage() {
   const [toggling, setToggling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const PAGE_SIZE = 10;
+
   const load = () => {
-    fetch('/api/admin/sponsor-plans')
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+    fetch(`/api/admin/sponsor-plans?${params}`)
       .then((r) => r.json())
-      .then((d) => setPlans(Array.isArray(d) ? d : []))
-      .catch(() => setPlans([]))
+      .then((d) => {
+        setPlans(d.plans ?? []);
+        setTotal(d.total ?? 0);
+        setTotalPages(d.totalPages ?? 1);
+      })
+      .catch(() => { setPlans([]); setTotal(0); setTotalPages(1); })
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => load(), []);
+  useEffect(() => load(), [page]);
 
   const handleToggle = async (plan: SponsorPlan) => {
     setToggling(plan.id);
@@ -151,6 +162,18 @@ export default function AdminSponsorPlansPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {!loading && plans.length > 0 && totalPages > 1 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
+          <p className="text-sm text-netflix-light">
+            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total} planos
+          </p>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+            <span className="text-sm text-netflix-light px-2">Página {page} de {totalPages}</span>
+            <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
+          </div>
         </div>
       )}
     </div>

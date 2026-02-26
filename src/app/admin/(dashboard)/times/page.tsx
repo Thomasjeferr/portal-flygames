@@ -33,19 +33,32 @@ export default function AdminTimesPage() {
     setCrestErrors((prev) => new Set(prev).add(id));
   }, []);
 
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const PAGE_SIZE = 10;
+
   const load = () => {
+    setLoading(true);
     const params = new URLSearchParams();
     if (search.trim()) params.set('q', search.trim());
     if (filterActive === 'active') params.set('active', 'true');
     if (filterActive === 'inactive') params.set('active', 'false');
+    params.set('page', String(page));
+    params.set('limit', String(PAGE_SIZE));
     fetch(`/api/admin/teams?${params}`)
       .then((r) => r.json())
-      .then((d) => setTeams(Array.isArray(d) ? d : []))
-      .catch(() => setTeams([]))
+      .then((d) => {
+        setTeams(d.teams ?? []);
+        setTotal(d.total ?? 0);
+        setTotalPages(d.totalPages ?? 1);
+      })
+      .catch(() => { setTeams([]); setTotal(0); setTotalPages(1); })
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => load(), [search, filterActive]);
+  useEffect(() => setPage(1), [search, filterActive]);
+  useEffect(() => { load(); }, [search, filterActive, page]);
 
   const handleToggle = async (id: string) => {
     const res = await fetch(`/api/admin/teams/${id}/toggle`, { method: 'POST' });
@@ -196,6 +209,18 @@ export default function AdminTimesPage() {
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
+            <p className="text-sm text-netflix-light">
+              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total} times
+            </p>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+              <span className="text-sm text-netflix-light px-2">Página {page} de {totalPages}</span>
+              <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
+            </div>
+          </div>
+        )}
       )}
     </div>
   );

@@ -12,14 +12,36 @@ function toResponse(p: { benefits: unknown; featuresFlags: unknown } & Record<st
   };
 }
 
-export async function GET() {
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 100;
+
+export async function GET(request: NextRequest) {
   const session = await getSession();
   if (!session || session.role !== 'admin')
     return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
-  const plans = await prisma.sponsorPlan.findMany({
-    orderBy: { sortOrder: 'asc' },
+
+  const { searchParams } = new URL(request.url);
+  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1);
+  const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(searchParams.get('limit') ?? String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT));
+  const skip = (page - 1) * limit;
+
+  const [total, rawPlans] = await Promise.all([
+    prisma.sponsorPlan.count(),
+    prisma.sponsorPlan.findMany({
+      orderBy: { sortOrder: 'asc' },
+      skip,
+      take: limit,
+    }),
+  ]);
+  const plans = rawPlans.map(toResponse);
+
+  return NextResponse.json({
+    plans,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit) || 1,
   });
-  return NextResponse.json(plans.map(toResponse));
 }
 
 export async function POST(request: NextRequest) {

@@ -32,20 +32,47 @@ const createSchema = z.object({
   referee: z.string().optional().nullable(),
 });
 
-export async function GET() {
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 100;
+
+export async function GET(request: NextRequest) {
   const session = await getSession();
   if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
   }
-  const games = await prisma.game.findMany({
-    orderBy: [{ order: 'asc' }, { gameDate: 'desc' }],
-    include: {
-      category: { select: { id: true, name: true } },
-      homeTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
-      awayTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
-    },
+  const { searchParams } = new URL(request.url);
+  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1);
+  const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(searchParams.get('limit') ?? String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT));
+  const categoryParam = searchParams.get('categoryId')?.trim();
+  const skip = (page - 1) * limit;
+  const where =
+    categoryParam === '__none__' || categoryParam === 'none'
+      ? { categoryId: null }
+      : categoryParam
+        ? { categoryId: categoryParam }
+        : undefined;
+
+  const [total, games] = await Promise.all([
+    prisma.game.count({ where }),
+    prisma.game.findMany({
+      where,
+      orderBy: [{ order: 'asc' }, { gameDate: 'desc' }],
+      skip,
+      take: limit,
+      include: {
+        category: { select: { id: true, name: true } },
+        homeTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
+        awayTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
+      },
+    }),
+  ]);
+  return NextResponse.json({
+    games,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit) || 1,
   });
-  return NextResponse.json(games);
 }
 
 export async function POST(request: NextRequest) {

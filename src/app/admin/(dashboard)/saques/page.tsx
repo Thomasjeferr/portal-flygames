@@ -64,21 +64,32 @@ export default function AdminSaquesPage() {
   const [uploadContext, setUploadContext] = useState<{ kind: 'partner' | 'team'; id: string } | null>(
     null
   );
+  const PAGE_SIZE = 10;
+  const [pagePartner, setPagePartner] = useState(1);
+  const [pageTeam, setPageTeam] = useState(1);
+  const [totalPartner, setTotalPartner] = useState(0);
+  const [totalTeam, setTotalTeam] = useState(0);
+  const [totalPagesPartner, setTotalPagesPartner] = useState(1);
+  const [totalPagesTeam, setTotalPagesTeam] = useState(1);
 
   const loadAll = async () => {
     setLoading(true);
     setError('');
     try {
       const [pRes, tRes] = await Promise.all([
-        fetch('/api/admin/partner-withdrawals'),
-        fetch('/api/admin/team-withdrawals'),
+        fetch(`/api/admin/partner-withdrawals?page=${pagePartner}&limit=${PAGE_SIZE}`),
+        fetch(`/api/admin/team-withdrawals?page=${pageTeam}&limit=${PAGE_SIZE}`),
       ]);
       if (!pRes.ok || !tRes.ok) {
         throw new Error('Erro ao carregar saques');
       }
       const [pJson, tJson] = await Promise.all([pRes.json(), tRes.json()]);
-      setPartners(Array.isArray(pJson) ? pJson : []);
-      setTeams(Array.isArray(tJson) ? tJson : []);
+      setPartners(pJson.items ?? []);
+      setTeams(tJson.items ?? []);
+      setTotalPartner(pJson.total ?? 0);
+      setTotalTeam(tJson.total ?? 0);
+      setTotalPagesPartner(pJson.totalPages ?? 1);
+      setTotalPagesTeam(tJson.totalPages ?? 1);
     } catch (e) {
       setError((e as Error).message || 'Erro ao carregar saques');
     } finally {
@@ -88,7 +99,7 @@ export default function AdminSaquesPage() {
 
   useEffect(() => {
     void loadAll();
-  }, []);
+  }, [pagePartner, pageTeam]);
 
   const triggerUpload = (kind: 'partner' | 'team', id: string) => {
     setUploadContext({ kind, id });
@@ -273,6 +284,18 @@ export default function AdminSaquesPage() {
                 </table>
               </div>
             )}
+            {totalPagesPartner > 1 && (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-3">
+                <p className="text-sm text-netflix-light">
+                  {(pagePartner - 1) * PAGE_SIZE + 1}–{Math.min(pagePartner * PAGE_SIZE, totalPartner)} de {totalPartner} saques (parceiros)
+                </p>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setPagePartner((p) => Math.max(1, p - 1))} disabled={pagePartner <= 1} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+                  <span className="text-sm text-netflix-light px-2">Página {pagePartner} de {totalPagesPartner}</span>
+                  <button type="button" onClick={() => setPagePartner((p) => Math.min(totalPagesPartner, p + 1))} disabled={pagePartner >= totalPagesPartner} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
+                </div>
+              </div>
+            )}
           </section>
 
           <section className="space-y-4">
@@ -364,6 +387,18 @@ export default function AdminSaquesPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+            {totalPagesTeam > 1 && (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-3">
+                <p className="text-sm text-netflix-light">
+                  {(pageTeam - 1) * PAGE_SIZE + 1}–{Math.min(pageTeam * PAGE_SIZE, totalTeam)} de {totalTeam} saques (times)
+                </p>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setPageTeam((p) => Math.max(1, p - 1))} disabled={pageTeam <= 1} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+                  <span className="text-sm text-netflix-light px-2">Página {pageTeam} de {totalPagesTeam}</span>
+                  <button type="button" onClick={() => setPageTeam((p) => Math.min(totalPagesTeam, p + 1))} disabled={pageTeam >= totalPagesTeam} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
+                </div>
               </div>
             )}
           </section>

@@ -27,24 +27,33 @@ const periodLabel: Record<string, string> = {
   personalizado: 'Personalizado',
 };
 
+const PAGE_SIZE = 10;
+
 export default function AdminPlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchPlans = async () => {
-    const res = await fetch('/api/admin/plans');
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+    const res = await fetch(`/api/admin/plans?${params}`);
     if (res.ok) {
       const data = await res.json();
-      setPlans(data);
+      setPlans(data.plans ?? []);
+      setTotal(data.total ?? 0);
+      setTotalPages(data.totalPages ?? 1);
     }
     setLoading(false);
   };
 
   useEffect(() => {
     fetchPlans();
-  }, []);
+  }, [page]);
 
   const handleToggleActive = async (plan: Plan) => {
     setToggling(plan.id);
@@ -90,6 +99,7 @@ export default function AdminPlansPage() {
           Nenhum plano cadastrado. <Link href="/admin/planos/novo" className="text-netflix-red hover:underline">Criar o primeiro</Link>
         </div>
       ) : (
+        <>
         <div className="space-y-4">
           {plans.map((plan) => (
             <div
@@ -143,6 +153,19 @@ export default function AdminPlansPage() {
             </div>
           ))}
         </div>
+        {totalPages > 1 && (
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
+            <p className="text-sm text-netflix-light">
+              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total} planos
+            </p>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+              <span className="text-sm text-netflix-light px-2">Página {page} de {totalPages}</span>
+              <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
+            </div>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

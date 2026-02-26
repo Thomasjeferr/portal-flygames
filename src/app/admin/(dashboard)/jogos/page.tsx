@@ -25,21 +25,33 @@ export default function AdminGamesPage() {
   const [filterCategoryId, setFilterCategoryId] = useState<string>('');
   const [groupByCategory, setGroupByCategory] = useState(false);
 
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const PAGE_SIZE = 10;
+
   const fetchGames = async () => {
-    const res = await fetch('/api/admin/games');
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+    if (filterCategoryId && filterCategoryId !== '') params.set('categoryId', filterCategoryId);
+    const res = await fetch(`/api/admin/games?${params}`);
     if (res.ok) {
       const data = await res.json();
-      setGames(data);
+      setGames(data.games ?? []);
+      setTotal(data.total ?? 0);
+      setTotalPages(data.totalPages ?? 1);
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/admin/games').then((r) => r.json()).then((d) => { setGames(Array.isArray(d) ? d : []); setLoading(false); }),
-      fetch('/api/admin/categories').then((r) => r.json()).then((d) => setCategories(Array.isArray(d) ? d : [])),
-    ]).catch(() => setLoading(false));
+    fetch('/api/admin/categories').then((r) => r.json()).then((d) => setCategories(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
+
+  useEffect(() => setPage(1), [filterCategoryId]);
+  useEffect(() => {
+    fetchGames();
+  }, [page, filterCategoryId]);
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Excluir "${title}"?`)) return;
@@ -52,17 +64,7 @@ export default function AdminGamesPage() {
     }
   };
 
-  const filteredGames = useMemo(() => {
-    let list = games;
-    if (filterCategoryId) {
-      if (filterCategoryId === '__none__') {
-        list = games.filter((g) => !g.categoryId);
-      } else {
-        list = games.filter((g) => g.categoryId === filterCategoryId);
-      }
-    }
-    return list;
-  }, [games, filterCategoryId]);
+  const filteredGames = useMemo(() => games, [games]);
 
   const groupedGames = useMemo(() => {
     if (!groupByCategory) return null;
@@ -253,6 +255,18 @@ export default function AdminGamesPage() {
             filteredGames.map((game, index) => renderGameRow(game, index, filteredGames.length))
           )}
         </div>
+        {totalPages > 1 && (
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
+            <p className="text-sm text-netflix-light">
+              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total} jogos
+            </p>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+              <span className="text-sm text-netflix-light px-2">Página {page} de {totalPages}</span>
+              <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-4 py-2 rounded bg-netflix-gray text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
+            </div>
+          </div>
+        )}
       )}
     </div>
   );

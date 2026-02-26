@@ -43,15 +43,18 @@ export default function EditSponsorPage() {
   });
 
   useEffect(() => {
-    fetch('/api/admin/sponsor-plans')
+    fetch('/api/admin/sponsor-plans?limit=100')
       .then((r) => r.json())
-      .then((d) => setPlans(Array.isArray(d) ? d.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })) : []))
+      .then((d) => {
+        const list = d.plans ?? (Array.isArray(d) ? d : []);
+        setPlans(list.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })));
+      })
       .catch(() => {});
   }, []);
   useEffect(() => {
-    fetch('/api/admin/teams')
+    fetch('/api/admin/teams?limit=100')
       .then((r) => r.json())
-      .then((d) => setTeams(Array.isArray(d) ? d : []))
+      .then((d) => setTeams(d.teams ?? (Array.isArray(d) ? d : [])))
       .catch(() => {});
   }, []);
 
