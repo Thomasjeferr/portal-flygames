@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { sendEmailToMany } from '@/lib/email/emailService';
+import { normalizeAppBaseUrl } from '@/lib/email/emailService';
+import { getTeamResponsibleEmails } from '@/lib/email/teamEmails';
 import { z } from 'zod';
 
 const statsItemSchema = z.object({
@@ -121,11 +124,12 @@ export async function PATCH(
   const gameId = (await params).gameId;
   const game = await prisma.game.findUnique({
     where: { id: gameId },
-    select: { id: true, homeTeamId: true, awayTeamId: true },
+    select: { id: true, homeTeamId: true, awayTeamId: true, sumulaPublishedAt: true },
   });
   if (!game) {
     return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
   }
+  const wasAlreadyPublished = game.sumulaPublishedAt != null;
   if (!game.homeTeamId || !game.awayTeamId) {
     return NextResponse.json({ error: 'Jogo precisa ter mandante e visitante para preencher súmula' }, { status: 400 });
   }
@@ -198,6 +202,57 @@ export async function PATCH(
       update: { status: 'PENDENTE', rejectionReason: null, rejectedAt: null, approvedAt: null },
     });
   });
+
+  const gameWithTeams = await prisma.game.findUnique({
+    where: { id: gameId },
+    select: {
+      title: true,
+      homeTeamId: true,
+      awayTeamId: true,
+      homeTeam: { select: { name: true } },
+      awayTeam: { select: { name: true } },
+    },
+  });
+  if (gameWithTeams?.homeTeamId && gameWithTeams?.awayTeamId) {
+    const [homeEmails, awayEmails] = await Promise.all([
+      getTeamResponsibleEmails(gameWithTeams.homeTeamId),
+      getTeamResponsibleEmails(gameWithTeams.awayTeamId),
+    ]);
+    const allEmails = Array.from(new Set([...homeEmails, ...awayEmails]));
+    if (allEmails.length > 0) {
+      const settings = await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } });
+      const baseUrl = normalizeAppBaseUrl(settings?.appBaseUrl);
+      const painelUrl = `${baseUrl}/painel-time`;
+      const title = gameWithTeams.title || 'Jogo';
+      if (wasAlreadyPublished) {
+        const subject = `Súmula atualizada – ${title}`;
+        const html = `
+          <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto;">
+            <h2 style="color: #0C1222;">Súmula atualizada</h2>
+            <p>Olá,</p>
+            <p>A súmula do jogo <strong>${title}</strong> foi atualizada pelo organizador.</p>
+            <p>Por favor, acesse o painel do time para conferir e aprovar ou rejeitar.</p>
+            <p><a href="${painelUrl}" style="display: inline-block; padding: 12px 24px; background: #22C55E; color: #0C1222; text-decoration: none; font-weight: bold; border-radius: 8px;">Acessar painel do time</a></p>
+            <p>Atenciosamente,<br/>Fly Games</p>
+          </div>
+        `;
+        await sendEmailToMany(allEmails, subject, html).catch((e) => console.error('[Sumula] Email atualizada', e));
+      } else {
+        const subject = `Súmula disponível para aprovação – ${title}`;
+        const html = `
+          <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto;">
+            <h2 style="color: #0C1222;">Súmula disponível para aprovação</h2>
+            <p>Olá,</p>
+            <p>A súmula do jogo <strong>${title}</strong> está disponível para aprovação.</p>
+            <p>Acesse o painel do time para aprovar ou rejeitar.</p>
+            <p><a href="${painelUrl}" style="display: inline-block; padding: 12px 24px; background: #22C55E; color: #0C1222; text-decoration: none; font-weight: bold; border-radius: 8px;">Acessar painel do time</a></p>
+            <p>Atenciosamente,<br/>Fly Games</p>
+          </div>
+        `;
+        await sendEmailToMany(allEmails, subject, html).catch((e) => console.error('[Sumula] Email disponível', e));
+      }
+    }
+  }
 
   return NextResponse.json({ ok: true });
 }

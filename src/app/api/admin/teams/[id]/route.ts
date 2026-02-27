@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { hasAnyPurchaseAsCustomer } from '@/lib/access';
 import { uniqueSlug } from '@/lib/slug';
 import { teamUpdateSchema } from '@/lib/validators/teamSchema';
 
@@ -77,6 +78,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (d.payoutDocument !== undefined) update.payoutDocument = d.payoutDocument?.trim() || null;
     if (d.responsibleName !== undefined) update.responsibleName = d.responsibleName?.trim() || null;
     if (d.responsibleEmail !== undefined) update.responsibleEmail = d.responsibleEmail?.trim() || null;
+
+    if (d.responsibleEmail !== undefined && d.responsibleEmail.trim()) {
+      const newEmail = d.responsibleEmail.trim().toLowerCase();
+      const userWithEmail = await prisma.user.findFirst({
+        where: { email: { equals: newEmail, mode: 'insensitive' } },
+        select: { id: true, email: true },
+      });
+      if (userWithEmail && (await hasAnyPurchaseAsCustomer(userWithEmail.id, userWithEmail.email ?? ''))) {
+        return NextResponse.json(
+          {
+            error:
+              'Este e-mail já possui compras no portal (assinatura, jogo avulso ou patrocínio). O responsável do time deve usar outro e-mail que não tenha compras.',
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     if (d.name !== undefined && d.name !== current.name) {
       const existingSlugs = (await prisma.team.findMany({ where: { id: { not: id } }, select: { slug: true } })).map(

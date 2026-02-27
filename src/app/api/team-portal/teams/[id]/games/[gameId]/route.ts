@@ -106,6 +106,7 @@ export async function GET(
     myApprovalStatus: myApproval?.status ?? null,
     myRejectionReason: myApproval?.rejectionReason ?? null,
     otherTeamRejectionReason: otherApproval?.status === 'REJEITADA' ? otherApproval.rejectionReason : null,
+    otherTeamApproved: otherApproval?.status === 'APROVADA' ?? false,
     bothApproved,
   });
 }

@@ -10,6 +10,7 @@ type PlayerStat = {
   assists: number;
   yellow: boolean;
   red: boolean;
+  highlight: boolean;
 };
 
 type SumulaData = {
@@ -76,6 +77,7 @@ function StatsTable({
               <th scope="col" className="py-2 px-2 text-center font-semibold w-10">A</th>
               <th scope="col" className="py-2 px-2 text-center font-semibold w-10" title="Amarelo">🟨</th>
               <th scope="col" className="py-2 px-2 text-center font-semibold w-10" title="Vermelho">🟥</th>
+              <th scope="col" className="py-2 px-2 text-center font-semibold w-10" title="Jogador destaque">Destaque</th>
             </tr>
           </thead>
           <tbody>
@@ -89,6 +91,7 @@ function StatsTable({
                 <td className="py-2 px-2 text-center text-futvar-light">{s.assists}</td>
                 <td className="py-2 px-2 text-center">{s.yellow ? '✓' : '—'}</td>
                 <td className="py-2 px-2 text-center">{s.red ? '✓' : '—'}</td>
+                <td className="py-2 px-2 text-center" title={s.highlight ? 'Jogador destaque' : undefined}>{s.highlight ? '★' : '—'}</td>
               </tr>
             ))}
           </tbody>

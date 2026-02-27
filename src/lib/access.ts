@@ -27,6 +27,29 @@ export async function isTeamResponsible(userId: string): Promise<boolean> {
 }
 
 /**
+ * Indica se este usuário/e-mail já tem alguma compra no portal (assinatura, jogo avulso, patrocínio ou live).
+ * Usado para bloquear cadastro de time como responsável: quem já comprou deve usar outro e-mail para ser responsável.
+ */
+export async function hasAnyPurchaseAsCustomer(userId: string, email: string): Promise<boolean> {
+  const emailNorm = email?.trim().toLowerCase() ?? '';
+  const [purchaseCount, sponsorCount, liveCount] = await Promise.all([
+    prisma.purchase.count({
+      where: { userId, paymentStatus: 'paid' },
+    }),
+    prisma.sponsorOrder.count({
+      where: {
+        paymentStatus: 'paid',
+        OR: [{ userId }, ...(emailNorm ? [{ email: emailNorm }] : [])],
+      },
+    }),
+    prisma.livePurchase.count({
+      where: { userId, paymentStatus: 'paid' },
+    }),
+  ]);
+  return purchaseCount > 0 || sponsorCount > 0 || liveCount > 0;
+}
+
+/**
  * Verifica se o usuário pode assistir a qualquer jogo (assinatura ativa com acesso total).
  */
 export async function hasFullAccess(userId: string): Promise<boolean> {

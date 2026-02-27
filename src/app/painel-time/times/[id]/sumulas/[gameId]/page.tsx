@@ -36,6 +36,7 @@ type Game = {
   myApprovalStatus: string | null;
   myRejectionReason: string | null;
   otherTeamRejectionReason: string | null;
+  otherTeamApproved: boolean;
   bothApproved: boolean;
 };
 
@@ -159,6 +160,12 @@ export default function SumulaDetailPage() {
           {game.bothApproved && (
             <div className="rounded-lg bg-green-900/30 border border-green-500/40 px-3 py-2 text-green-300 text-sm font-medium">
               Súmula oficial (ambos os times aprovaram)
+            </div>
+          )}
+
+          {!game.bothApproved && game.otherTeamApproved && (
+            <div className="rounded-lg bg-green-900/20 border border-green-500/30 px-3 py-2 text-green-300 text-sm font-medium">
+              O outro time já aprovou a súmula. Aguardando sua aprovação.
             </div>
           )}
 

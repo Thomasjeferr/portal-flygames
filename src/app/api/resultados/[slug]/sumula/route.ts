@@ -46,6 +46,7 @@ export async function GET(
         assists: s.assists,
         yellow: s.yellowCard,
         red: s.redCard,
+        highlight: s.highlight,
       }));
 
     const awayStats = game.playerMatchStats
@@ -58,6 +59,7 @@ export async function GET(
         assists: s.assists,
         yellow: s.yellowCard,
         red: s.redCard,
+        highlight: s.highlight,
       }));
 
     return NextResponse.json({
