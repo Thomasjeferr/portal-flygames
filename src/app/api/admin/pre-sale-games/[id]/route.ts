@@ -81,7 +81,14 @@ export async function PATCH(
     if (data.homeTeamId !== undefined) updateData.homeTeamId = data.homeTeamId?.trim() || null;
     if (data.awayTeamId !== undefined) updateData.awayTeamId = data.awayTeamId?.trim() || null;
     if (data.metaEnabled !== undefined) updateData.metaEnabled = data.metaEnabled;
-    if (data.metaExtraPerTeam !== undefined) updateData.metaExtraPerTeam = data.metaExtraPerTeam;
+    if (data.metaExtraPerTeam !== undefined) {
+      updateData.metaExtraPerTeam = data.metaExtraPerTeam;
+      // Meta como total por time (igual à criação)
+      if (existing.metaEnabled && existing.homeTeamId && existing.awayTeamId && data.metaExtraPerTeam >= 1) {
+        (updateData as Record<string, number>).metaHomeTotal = data.metaExtraPerTeam;
+        (updateData as Record<string, number>).metaAwayTotal = data.metaExtraPerTeam;
+      }
+    }
     if (data.premiereAt !== undefined) {
       const raw = typeof data.premiereAt === 'string' ? data.premiereAt.trim() : '';
       updateData.premiereAt = raw ? (() => { const d = new Date(raw); return isNaN(d.getTime()) ? null : d; })() : null;

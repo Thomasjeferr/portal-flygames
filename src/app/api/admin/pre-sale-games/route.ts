@@ -59,16 +59,25 @@ export async function POST(request: NextRequest) {
     if (isMeta && metaExtra >= 1 && data.homeTeamId && data.awayTeamId) {
       const [homeCount, awayCount] = await Promise.all([
         prisma.subscription.count({
-          where: { active: true, user: { favoriteTeamId: data.homeTeamId } },
+          where: {
+            active: true,
+            user: { favoriteTeamId: data.homeTeamId },
+            plan: { type: 'recorrente' },
+          },
         }),
         prisma.subscription.count({
-          where: { active: true, user: { favoriteTeamId: data.awayTeamId } },
+          where: {
+            active: true,
+            user: { favoriteTeamId: data.awayTeamId },
+            plan: { type: 'recorrente' },
+          },
         }),
       ]);
       baselineHomeSubs = homeCount;
       baselineAwaySubs = awayCount;
-      metaHomeTotal = homeCount + metaExtra;
-      metaAwayTotal = awayCount + metaExtra;
+      // Exibição: meta sempre o mesmo número para os dois (ex.: 100). Não mostrar 1/101.
+      metaHomeTotal = metaExtra;
+      metaAwayTotal = metaExtra;
     }
 
     const specialCategoryId = data.specialCategoryId?.trim() || null;

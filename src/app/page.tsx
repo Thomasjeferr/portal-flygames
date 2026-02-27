@@ -88,22 +88,40 @@ async function getPreSaleWithMeta(): Promise<PreSaleMetaCard[]> {
     for (const g of games) {
       const homeId = g.homeTeamId!;
       const awayId = g.awayTeamId!;
-      const meta = g as { metaExtraPerTeam?: number | null; metaHomeTotal?: number | null; metaAwayTotal?: number | null };
+      const meta = g as {
+        metaExtraPerTeam?: number | null;
+        metaHomeTotal?: number | null;
+        metaAwayTotal?: number | null;
+        baselineHomeSubs?: number | null;
+        baselineAwaySubs?: number | null;
+      };
       if (!meta.metaExtraPerTeam) continue;
       const [homeCount, awayCount] = await Promise.all([
         prisma.subscription.count({
-          where: { active: true, user: { favoriteTeamId: homeId } },
+          where: {
+            active: true,
+            user: { favoriteTeamId: homeId },
+            plan: { type: 'recorrente' },
+          },
         }),
         prisma.subscription.count({
-          where: { active: true, user: { favoriteTeamId: awayId } },
+          where: {
+            active: true,
+            user: { favoriteTeamId: awayId },
+            plan: { type: 'recorrente' },
+          },
         }),
       ]);
+      const baselineHome = meta.baselineHomeSubs ?? 0;
+      const baselineAway = meta.baselineAwaySubs ?? 0;
+      const homeNew = Math.max(0, homeCount - baselineHome);
+      const awayNew = Math.max(0, awayCount - baselineAway);
       const [homeTeam, awayTeam] = await Promise.all([
         prisma.team.findUnique({ where: { id: homeId }, select: { name: true, shortName: true } }),
         prisma.team.findUnique({ where: { id: awayId }, select: { name: true, shortName: true } }),
       ]);
-      const homeTarget = meta.metaHomeTotal ?? homeCount + meta.metaExtraPerTeam;
-      const awayTarget = meta.metaAwayTotal ?? awayCount + meta.metaExtraPerTeam;
+      const homeTarget = meta.metaHomeTotal ?? meta.metaExtraPerTeam;
+      const awayTarget = meta.metaAwayTotal ?? meta.metaExtraPerTeam;
       cards.push({
         id: g.id,
         title: g.title,
@@ -111,9 +129,9 @@ async function getPreSaleWithMeta(): Promise<PreSaleMetaCard[]> {
         createdAt: g.createdAt.toISOString(),
         homeTeamName: homeTeam?.shortName || homeTeam?.name || null,
         awayTeamName: awayTeam?.shortName || awayTeam?.name || null,
-        homeCurrent: homeCount,
+        homeCurrent: homeNew,
         homeTarget,
-        awayCurrent: awayCount,
+        awayCurrent: awayNew,
         awayTarget,
       });
     }

@@ -194,7 +194,7 @@ export default function AdminPreEstreiaMetaEditarPage() {
         <div className="rounded-lg border border-futvar-green/30 bg-futvar-dark/60 p-3 text-xs text-futvar-light flex items-center justify-between gap-3">
           <span className="font-semibold text-white">Meta de assinantes por time</span>
           <span className="px-2 py-1 rounded-full bg-futvar-green/15 text-futvar-green text-[11px] font-semibold">
-            Meta extra: +{form.metaExtraPerTeam} assinantes/torcida
+            Meta: {form.metaExtraPerTeam} patrocinadores torcedores/time
           </span>
         </div>
         <div>
@@ -287,9 +287,9 @@ export default function AdminPreEstreiaMetaEditarPage() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-white mb-2">Meta extra por time (novos assinantes) *</label>
+          <label className="block text-sm font-medium text-white mb-2">Meta por time (total de patrocinadores torcedores) *</label>
           <input type="number" min={1} value={form.metaExtraPerTeam} onChange={(e) => setForm((f) => ({ ...f, metaExtraPerTeam: e.target.value }))} required className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white" />
-          <p className="text-xs text-netflix-light mt-1">Quantos assinantes a mais cada time precisa para liberar o jogo.</p>
+          <p className="text-xs text-netflix-light mt-1">Total de patrocinadores torcedores que cada time precisa para liberar o jogo.</p>
         </div>
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />

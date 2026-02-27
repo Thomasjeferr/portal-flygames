@@ -208,7 +208,7 @@ export default function AdminPreEstreiaMetaNovoPage() {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-white mb-2">Meta extra por time (novos assinantes) *</label>
+          <label className="block text-sm font-medium text-white mb-2">Meta por time (total de patrocinadores torcedores) *</label>
           <input
             type="number"
             min={1}
@@ -218,7 +218,7 @@ export default function AdminPreEstreiaMetaNovoPage() {
             className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
           />
           <p className="text-xs text-netflix-light mt-1">
-            Ex.: 10 → cada time precisa de <strong>+10 assinantes</strong> em relação ao que já tem hoje para liberar o jogo.
+            Ex.: 100 → cada time precisa de <strong>100 patrocinadores torcedores</strong> no total para liberar o jogo.
           </p>
         </div>
         <div>
