@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Modelo 1 – Entrada direta na copa</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; background: #0f1419; color: #e5e7eb; min-height: 100vh; }
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid rgba(34,197,94,0.2); }
+    .logo { font-weight: 800; color: #fff; }
+    nav { display: flex; gap: 1.5rem; font-size: 0.875rem; }
+    nav a { color: #9ca3af; text-decoration: none; }
+    nav a.active { color: #22c55e; }
+    .container { max-width: 56rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    .back { color: #22c55e; text-decoration: none; font-size: 0.875rem; font-weight: 600; margin-bottom: 1.5rem; display: inline-block; }
+    .hero { margin-bottom: 2rem; }
+    .hero h1 { font-size: 1.75rem; font-weight: 700; color: #fff; margin: 0 0 0.25rem 0; }
+    .hero .meta { color: #9ca3af; font-size: 0.875rem; }
+    .card { background: #1a2332; border: 1px solid rgba(34,197,94,0.25); border-radius: 1rem; padding: 1.25rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .card .pos { color: #9ca3af; font-weight: 700; width: 2rem; }
+    .card img { width: 2.5rem; height: 2.5rem; object-fit: contain; }
+    .card .info { flex: 1; min-width: 0; }
+    .card .name { font-weight: 600; color: #fff; }
+    .card .supporters { font-size: 0.8125rem; color: #22c55e; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1.25rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.875rem; text-decoration: none; background: #22c55e; color: #0f1419; }
+    .btn:hover { background: #4ade80; }
+    section h2 { font-size: 1.125rem; font-weight: 700; color: #fff; margin: 0 0 1rem 0; }
+    .intro { color: #9ca3af; font-size: 0.875rem; margin-bottom: 1rem; }
+    .intro strong { color: #22c55e; }
+    .empty { color: #9ca3af; font-size: 0.875rem; }
+    .badge { display: inline-block; background: rgba(34,197,94,0.2); color: #22c55e; font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 0.25rem; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <span class="logo">FLYGAMES</span>
+    <nav>
+      <a href="#">Início</a>
+      <a href="#">Cadastrar time</a>
+      <a href="#">Área do time</a>
+      <a href="#">Resultados</a>
+      <a href="#" class="active">Copa</a>
+      <a href="#">Administrador</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <a href="/" class="back">← Voltar ao início</a>
+
+    <div class="hero">
+      <h1>Primeira Copa Fly Games Vale do Cai</h1>
+      <p class="meta">2026 · 2 / 32 times</p>
+      <span class="badge">Modo meta – apoie e confirme seu time</span>
+    </div>
+
+    <section style="margin-bottom: 2rem;">
+      <h2>Ranking de ativação</h2>
+      <p class="intro">
+        Apoie um time com assinatura mensal de <strong>R$ 29,90/mês</strong>. Quando o time atingir 100 apoiadores, ele é confirmado na copa.
+      </p>
+      <div class="card">
+        <span class="pos">#1</span>
+        <img src="https://placehold.co/40x40/166534/fff?text=EC" alt="" />
+        <div class="info">
+          <p class="name">Esporte Clube Estância Velha</p>
+          <p class="supporters">0 / 100 apoiadores</p>
+        </div>
+        <a href="#" class="btn">Apoiar este time</a>
+      </div>
+      <div class="card">
+        <span class="pos">#2</span>
+        <img src="https://placehold.co/40x40/1e3a5f/fff?text=SC" alt="" />
+        <div class="info">
+          <p class="name">Esporte clube Sucata</p>
+          <p class="supporters">0 / 100 apoiadores</p>
+        </div>
+        <a href="#" class="btn">Apoiar este time</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Times confirmados</h2>
+      <p class="empty">Nenhum time confirmado ainda.</p>
+    </section>
+  </div>
+</body>
+</html>

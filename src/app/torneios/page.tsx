@@ -1,9 +1,15 @@
-import Link from 'next/link';
 import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth';
+import {
+  TorneiosListHero,
+  TorneiosListMetrics,
+  TorneiosListCard,
+  TorneiosListEmpty,
+} from '@/components/torneios-list';
 
 export const metadata = {
-  title: 'Copa Mata-Mata | Torneios',
-  description: 'Conheça as copas em andamento, ranking de ativação e times confirmados.',
+  title: 'Campeonatos Oficiais | FlyGames',
+  description: 'Acompanhe, apoie e participe dos campeonatos oficiais da sua região.',
 };
 
 export const dynamic = 'force-dynamic';
@@ -25,52 +31,39 @@ async function getPublishedTournaments() {
 }
 
 export default async function TorneiosListPage() {
-  const tournaments = await getPublishedTournaments();
+  const [tournaments, session] = await Promise.all([
+    getPublishedTournaments(),
+    getSession(),
+  ]);
+  const isAdmin = session?.role === 'admin';
+
+  const totalTeams = tournaments.reduce((acc, t) => acc + t._count.teams, 0);
+  const totalSlots = tournaments.reduce((acc, t) => acc + t.maxTeams, 0);
 
   return (
-    <div className="pt-24 pb-16 px-4 lg:px-12 min-h-screen bg-futvar-darker">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <Link href="/" className="text-futvar-green hover:text-futvar-green-light text-sm font-semibold inline-flex gap-2">
-            ← Voltar ao início
-          </Link>
-        </div>
+    <div className="min-h-screen bg-futvar-darker scroll-smooth">
+      <TorneiosListHero isAdmin={isAdmin} />
 
-        <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">Copa Mata-Mata</h1>
-        <p className="text-futvar-light mb-10">
-          Torneios publicados. Apoie seu time na meta ou acompanhe os confirmados.
-        </p>
+      <TorneiosListMetrics
+        totalTournaments={tournaments.length}
+        totalTeams={totalTeams}
+        totalSlots={totalSlots}
+      />
 
-        {tournaments.length === 0 ? (
-          <div className="bg-futvar-dark border border-futvar-green/20 rounded-2xl p-12 text-center">
-            <p className="text-futvar-light">Nenhum torneio publicado no momento.</p>
-            <Link href="/" className="inline-block mt-4 text-futvar-green hover:underline">
-              Voltar ao início
-            </Link>
+      {tournaments.length === 0 ? (
+        <TorneiosListEmpty isAdmin={isAdmin} />
+      ) : (
+        <section id="campeonatos" className="px-4 lg:px-12 py-12 scroll-mt-24">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-2xl font-bold text-white mb-8">Campeonatos em destaque</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              {tournaments.map((t) => (
+                <TorneiosListCard key={t.id} t={t} />
+              ))}
+            </div>
           </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {tournaments.map((t) => (
-              <Link
-                key={t.id}
-                href={`/torneios/${t.slug}`}
-                className="block bg-futvar-dark border border-futvar-green/20 rounded-xl p-6 hover:border-futvar-green/40 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)] transition-all"
-              >
-                <h2 className="text-lg font-bold text-white mb-1">{t.name}</h2>
-                {t.season && <p className="text-futvar-light text-sm">{t.season}</p>}
-                <p className="text-futvar-light text-sm mt-2">
-                  {t._count.teams} / {t.maxTeams} times
-                  {t.registrationMode === 'GOAL' && ' • Modo meta'}
-                  {t.registrationMode === 'PAID' && ' • Inscrição paga'}
-                </p>
-                <span className="inline-block mt-3 text-futvar-green font-semibold text-sm">
-                  Ver torneio →
-                </span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+        </section>
+      )}
     </div>
   );
 }

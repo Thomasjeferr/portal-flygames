@@ -25,10 +25,11 @@ export interface StripeSubscriptionInput {
 export interface StripeClient {
   paymentIntents: { create: (opts: unknown) => Promise<{ client_secret: string; id: string; invoice?: string }> };
   customers: { list: (opts: { email: string }) => Promise<{ data: { id: string }[] }>; create: (opts: { email: string }) => Promise<{ id: string }> };
+  products: { create: (opts: { name: string }) => Promise<{ id: string }> };
   subscriptions: {
     create: (opts: {
       customer: string;
-      items: { price_data: { currency: string; unit_amount: number; recurring: { interval: 'month' | 'year' }; product_data: { name: string } } }[];
+      items: { price_data: { currency: string; unit_amount: number; recurring: { interval: 'month' | 'year' }; product: string } }[];
       payment_behavior?: string;
       metadata: Record<string, string>;
       expand?: string[];
@@ -45,11 +46,12 @@ export interface StripeClient {
 let stripeInstance: StripeClient | null = null;
 
 async function getStripeKey(): Promise<string | null> {
-  const envKey = process.env.STRIPE_SECRET_KEY;
+  const envKey = process.env.STRIPE_SECRET_KEY?.trim();
   if (envKey) return envKey;
   const { getPaymentConfig } = await import('@/lib/payment-config');
   const config = await getPaymentConfig();
-  return config.stripeSecretKey;
+  const key = config.stripeSecretKey?.trim() ?? null;
+  return key || null;
 }
 
 /** Retorna a instância Stripe (para uso em webhooks que precisam de subscriptions.retrieve, etc.). */
@@ -60,11 +62,18 @@ export async function getStripe(): Promise<StripeClient | null> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const Stripe = require('stripe');
-    stripeInstance = new Stripe(key, { apiVersion: '2023-10-16' }) as unknown as StripeClient;
+    stripeInstance = new Stripe(key.trim(), { apiVersion: '2023-10-16' }) as unknown as StripeClient;
     return stripeInstance;
-  } catch {
+  } catch (e) {
+    console.error('Stripe init error (check secret key):', e instanceof Error ? e.message : e);
     return null;
   }
+}
+
+/** Verifica se a chave secreta do Stripe está configurada (env ou Admin > Pagamentos). */
+export async function isStripeConfigured(): Promise<boolean> {
+  const key = await getStripeKey();
+  return !!key;
 }
 
 const PERIODICITY_TO_INTERVAL: Record<string, 'month' | 'year'> = {
@@ -97,6 +106,8 @@ export async function createStripeSubscription(input: StripeSubscriptionInput): 
       customerId = customer.id;
     }
 
+    const product = await stripe.products.create({ name: input.planName });
+
     const sub = await stripe.subscriptions.create({
       customer: customerId,
       items: [
@@ -105,7 +116,7 @@ export async function createStripeSubscription(input: StripeSubscriptionInput): 
             currency: 'brl',
             unit_amount: input.amountCents,
             recurring: { interval },
-            product_data: { name: input.planName },
+            product: product.id,
           },
         },
       ],
@@ -137,7 +148,8 @@ export async function createStripeSubscription(input: StripeSubscriptionInput): 
       subscriptionId: sub.id,
     };
   } catch (e) {
-    console.error('Stripe createSubscription error:', e);
+    const msg = e && typeof e === 'object' && 'message' in e ? (e as { message: string }).message : String(e);
+    console.error('Stripe createSubscription error:', msg);
     return null;
   }
 }

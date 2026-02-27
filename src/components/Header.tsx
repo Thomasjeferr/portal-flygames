@@ -249,7 +249,7 @@ export function Header() {
               href="/torneios"
               className={`text-sm font-semibold ${pathname.startsWith('/torneios') ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
             >
-              Copa
+              Campeonatos
             </Link>
             {user ? (
               <div className="relative">
@@ -450,7 +450,7 @@ export function Header() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname.startsWith('/torneios') ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
               >
-                Copa
+                Campeonatos
               </Link>
               {user ? (
                 <>

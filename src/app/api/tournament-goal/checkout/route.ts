@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { createStripeSubscription } from '@/lib/payments/stripe';
+import { createStripeSubscription, isStripeConfigured } from '@/lib/payments/stripe';
 import { z } from 'zod';
 
 const bodySchema = z.object({
@@ -71,8 +71,13 @@ export async function POST(request: NextRequest) {
       },
     });
     if (!stripeResult) {
+      const configured = await isStripeConfigured();
       return NextResponse.json(
-        { error: 'Cartão indisponível. Configure o Stripe em Admin > Pagamentos.' },
+        {
+          error: configured
+            ? 'Não foi possível iniciar o pagamento com cartão. Tente novamente ou verifique sua conta Stripe (Admin > Pagamentos).'
+            : 'Cartão indisponível. Configure o Stripe em Admin > Pagamentos.',
+        },
         { status: 503 }
       );
     }
