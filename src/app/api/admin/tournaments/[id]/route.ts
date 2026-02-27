@@ -17,8 +17,16 @@ const updateSchema = z.object({
   registrationFeeAmount: z.number().min(0).optional().nullable(),
   goalRequiredSupporters: z.number().int().min(0).optional().nullable(),
   goalPricePerSupporter: z.number().min(0).optional().nullable(),
-  goalStartAt: z.string().datetime().optional().nullable(),
-  goalEndAt: z.string().datetime().optional().nullable(),
+  goalStartAt: z
+    .string()
+    .optional()
+    .nullable()
+    .refine((v) => !v || v.trim() === '' || !isNaN(Date.parse(v)), { message: 'Invalid datetime' }),
+  goalEndAt: z
+    .string()
+    .optional()
+    .nullable()
+    .refine((v) => !v || v.trim() === '' || !isNaN(Date.parse(v)), { message: 'Invalid datetime' }),
   lockConfirmationOnGoal: z.boolean().optional(),
   status: z.enum(STATUSES).optional(),
 });
