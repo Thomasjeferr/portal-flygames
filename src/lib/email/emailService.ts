@@ -17,7 +17,12 @@ export type EmailTemplateKey =
   | 'SPONSOR_CONFIRMATION'
   | 'LIVE_PURCHASE_CONFIRMATION'
   | 'PRE_SALE_CREDENTIALS'
-  | 'PRE_SALE_CREDENTIALS_NEW_PASSWORD';
+  | 'PRE_SALE_CREDENTIALS_NEW_PASSWORD'
+  | 'SUMULA_DISPONIVEL'
+  | 'SUMULA_ATUALIZADA'
+  | 'SUMULA_OUTRO_APROVOU'
+  | 'SUMULA_OUTRO_REJEITOU'
+  | 'SUMULA_APROVADA_AMBOS';
 
 /** Garante que links de e-mail usem o domínio canônico (flygames.app), nunca vercel.app. */
 export function normalizeAppBaseUrl(url: string | null | undefined): string {

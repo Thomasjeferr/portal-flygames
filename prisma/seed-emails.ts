@@ -138,6 +138,72 @@ async function main() {
 <p style="margin-top:24px;color:#666;font-size:12px">{{footer_text}}</p>
 </div></body></html>`,
     },
+    {
+      key: 'SUMULA_DISPONIVEL',
+      subject: 'Súmula disponível para aprovação – {{title}}',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<h2 style="color:#0C1222">Súmula disponível para aprovação</h2>
+<p>Olá,</p>
+<p>A súmula do jogo <strong>{{title}}</strong> está disponível para aprovação.</p>
+<p>Acesse o painel do time para aprovar ou rejeitar.</p>
+<p style="margin-top:24px"><a href="{{painel_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#0C1222!important;text-decoration:none;border-radius:8px;font-weight:600">Acessar painel do time</a></p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
+    {
+      key: 'SUMULA_ATUALIZADA',
+      subject: 'Súmula atualizada – {{title}}',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<h2 style="color:#0C1222">Súmula atualizada</h2>
+<p>Olá,</p>
+<p>A súmula do jogo <strong>{{title}}</strong> foi atualizada pelo organizador.</p>
+<p>Por favor, acesse o painel do time para conferir e aprovar ou rejeitar.</p>
+<p style="margin-top:24px"><a href="{{painel_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#0C1222!important;text-decoration:none;border-radius:8px;font-weight:600">Acessar painel do time</a></p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
+    {
+      key: 'SUMULA_OUTRO_APROVOU',
+      subject: 'Súmula aprovada pelo outro time – {{title}}',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<h2 style="color:#0C1222">Outro time aprovou a súmula</h2>
+<p>Olá,</p>
+<p>O time <strong>{{approving_team_name}}</strong> aprovou a súmula do jogo <strong>{{title}}</strong>.</p>
+<p>Aguardamos sua aprovação para que a súmula seja oficial.</p>
+<p style="margin-top:24px"><a href="{{painel_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#0C1222!important;text-decoration:none;border-radius:8px;font-weight:600">Acessar painel e aprovar</a></p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
+    {
+      key: 'SUMULA_OUTRO_REJEITOU',
+      subject: 'Súmula rejeitada pelo outro time – {{title}}',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<h2 style="color:#0C1222">Outro time rejeitou a súmula</h2>
+<p>Olá,</p>
+<p>O time <strong>{{rejecting_team_name}}</strong> rejeitou a súmula do jogo <strong>{{title}}</strong>.</p>
+<p><strong>Motivo:</strong> {{rejection_reason}}</p>
+<p>O organizador pode ajustar os dados. Quando republicar, você poderá aprovar ou rejeitar novamente no painel do time.</p>
+<p style="margin-top:24px"><a href="{{painel_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#0C1222!important;text-decoration:none;border-radius:8px;font-weight:600">Acessar painel do time</a></p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
+    {
+      key: 'SUMULA_APROVADA_AMBOS',
+      subject: 'Súmula aprovada por ambos os times – {{title}}',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<h2 style="color:#0C1222">Súmula aprovada</h2>
+<p>Olá,</p>
+<p>A súmula do jogo <strong>{{title}}</strong> foi aprovada por ambos os times.</p>
+<p>Ela já pode ser visualizada em <strong>Resultados aprovados</strong>.</p>
+<p style="margin-top:24px"><a href="{{resultados_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#0C1222!important;text-decoration:none;border-radius:8px;font-weight:600">Ver Resultados aprovados</a></p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
   ];
 
   for (const t of templates) {

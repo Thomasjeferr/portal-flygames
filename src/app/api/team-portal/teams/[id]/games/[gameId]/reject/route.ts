@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTeamAccess } from '@/lib/team-portal-auth';
 import { prisma } from '@/lib/db';
-import { sendEmailToMany } from '@/lib/email/emailService';
-import { normalizeAppBaseUrl } from '@/lib/email/emailService';
+import { sendTransactionalEmail, normalizeAppBaseUrl } from '@/lib/email/emailService';
 import { getTeamResponsibleEmails } from '@/lib/email/teamEmails';
 import { z } from 'zod';
 
@@ -87,24 +86,24 @@ export async function POST(
       const settings = await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } });
       const baseUrl = normalizeAppBaseUrl(settings?.appBaseUrl);
       const painelUrl = `${baseUrl}/painel-time/times/${otherTeamId}/sumulas`;
-      const subject = `Súmula rejeitada pelo outro time – ${title}`;
       const reasonEscaped = reason
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
-      const html = `
-        <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto;">
-          <h2 style="color: #0C1222;">Outro time rejeitou a súmula</h2>
-          <p>Olá,</p>
-          <p>O time <strong>${rejectingTeamName}</strong> rejeitou a súmula do jogo <strong>${title}</strong>.</p>
-          <p><strong>Motivo:</strong> ${reasonEscaped}</p>
-          <p>O organizador pode ajustar os dados. Quando republicar, você poderá aprovar ou rejeitar novamente no painel do time.</p>
-          <p><a href="${painelUrl}" style="display: inline-block; padding: 12px 24px; background: #22C55E; color: #0C1222; text-decoration: none; font-weight: bold; border-radius: 8px;">Acessar painel do time</a></p>
-          <p>Atenciosamente,<br/>Fly Games</p>
-        </div>
-      `;
-      await sendEmailToMany(otherEmails, subject, html).catch((e) => console.error('[Sumula] Email outro rejeitou', e));
+      const vars = {
+        title,
+        rejecting_team_name: rejectingTeamName,
+        rejection_reason: reasonEscaped,
+        painel_url: painelUrl,
+      };
+      await Promise.all(
+        otherEmails.map((to) =>
+          sendTransactionalEmail({ to, templateKey: 'SUMULA_OUTRO_REJEITOU', vars }).catch((e) =>
+            console.error('[Sumula] Email outro rejeitou', e)
+          )
+        )
+      );
     }
   }
 

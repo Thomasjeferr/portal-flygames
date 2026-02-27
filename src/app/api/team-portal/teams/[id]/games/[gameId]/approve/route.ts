@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getTeamAccess } from '@/lib/team-portal-auth';
 import { prisma } from '@/lib/db';
-import { sendEmailToMany } from '@/lib/email/emailService';
-import { normalizeAppBaseUrl } from '@/lib/email/emailService';
+import { sendTransactionalEmail, normalizeAppBaseUrl } from '@/lib/email/emailService';
 import { getTeamResponsibleEmails } from '@/lib/email/teamEmails';
 
 /**
@@ -63,18 +62,18 @@ export async function POST(
     const otherEmails = otherTeamId ? await getTeamResponsibleEmails(otherTeamId) : [];
     if (otherEmails.length > 0) {
       const painelUrl = `${baseUrl}/painel-time/times/${otherTeamId}/sumulas`;
-      const subject = `Súmula aprovada pelo outro time – ${title}`;
-      const html = `
-        <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto;">
-          <h2 style="color: #0C1222;">Outro time aprovou a súmula</h2>
-          <p>Olá,</p>
-          <p>O time <strong>${approvingTeamName}</strong> aprovou a súmula do jogo <strong>${title}</strong>.</p>
-          <p>Aguardamos sua aprovação para que a súmula seja oficial.</p>
-          <p><a href="${painelUrl}" style="display: inline-block; padding: 12px 24px; background: #22C55E; color: #0C1222; text-decoration: none; font-weight: bold; border-radius: 8px;">Acessar painel e aprovar</a></p>
-          <p>Atenciosamente,<br/>Fly Games</p>
-        </div>
-      `;
-      await sendEmailToMany(otherEmails, subject, html).catch((e) => console.error('[Sumula] Email outro aprovou', e));
+      const vars = {
+        title,
+        approving_team_name: approvingTeamName,
+        painel_url: painelUrl,
+      };
+      await Promise.all(
+        otherEmails.map((to) =>
+          sendTransactionalEmail({ to, templateKey: 'SUMULA_OUTRO_APROVOU', vars }).catch((e) =>
+            console.error('[Sumula] Email outro aprovou', e)
+          )
+        )
+      );
     }
 
     const bothApproved =
@@ -87,19 +86,18 @@ export async function POST(
       ]);
       const allEmails = Array.from(new Set([...homeEmails, ...awayEmails]));
       if (allEmails.length > 0) {
+        const settings = await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } });
+        const baseUrl = normalizeAppBaseUrl(settings?.appBaseUrl);
         const resultadosUrl = `${baseUrl}/resultados`;
-        const subject = `Súmula aprovada por ambos os times – ${title}`;
-        const html = `
-          <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto;">
-            <h2 style="color: #0C1222;">Súmula aprovada</h2>
-            <p>Olá,</p>
-            <p>A súmula do jogo <strong>${title}</strong> foi aprovada por ambos os times.</p>
-            <p>Ela já pode ser visualizada em <strong>Resultados aprovados</strong>.</p>
-            <p><a href="${resultadosUrl}" style="display: inline-block; padding: 12px 24px; background: #22C55E; color: #0C1222; text-decoration: none; font-weight: bold; border-radius: 8px;">Ver Resultados aprovados</a></p>
-            <p>Atenciosamente,<br/>Fly Games</p>
-          </div>
-        `;
-        await sendEmailToMany(allEmails, subject, html).catch((e) => console.error('[Sumula] Email ambos aprovaram', e));
+        const title = gameWithTeams.title || 'Jogo';
+        const vars = { title, resultados_url: resultadosUrl };
+        await Promise.all(
+          allEmails.map((to) =>
+            sendTransactionalEmail({ to, templateKey: 'SUMULA_APROVADA_AMBOS', vars }).catch((e) =>
+              console.error('[Sumula] Email ambos aprovaram', e)
+            )
+          )
+        );
       }
     }
   }

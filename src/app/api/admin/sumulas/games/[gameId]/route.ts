@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { sendEmailToMany } from '@/lib/email/emailService';
-import { normalizeAppBaseUrl } from '@/lib/email/emailService';
+import { sendTransactionalEmail, normalizeAppBaseUrl } from '@/lib/email/emailService';
 import { getTeamResponsibleEmails } from '@/lib/email/teamEmails';
 import { z } from 'zod';
 
@@ -224,33 +223,15 @@ export async function PATCH(
       const baseUrl = normalizeAppBaseUrl(settings?.appBaseUrl);
       const painelUrl = `${baseUrl}/painel-time`;
       const title = gameWithTeams.title || 'Jogo';
-      if (wasAlreadyPublished) {
-        const subject = `Súmula atualizada – ${title}`;
-        const html = `
-          <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto;">
-            <h2 style="color: #0C1222;">Súmula atualizada</h2>
-            <p>Olá,</p>
-            <p>A súmula do jogo <strong>${title}</strong> foi atualizada pelo organizador.</p>
-            <p>Por favor, acesse o painel do time para conferir e aprovar ou rejeitar.</p>
-            <p><a href="${painelUrl}" style="display: inline-block; padding: 12px 24px; background: #22C55E; color: #0C1222; text-decoration: none; font-weight: bold; border-radius: 8px;">Acessar painel do time</a></p>
-            <p>Atenciosamente,<br/>Fly Games</p>
-          </div>
-        `;
-        await sendEmailToMany(allEmails, subject, html).catch((e) => console.error('[Sumula] Email atualizada', e));
-      } else {
-        const subject = `Súmula disponível para aprovação – ${title}`;
-        const html = `
-          <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto;">
-            <h2 style="color: #0C1222;">Súmula disponível para aprovação</h2>
-            <p>Olá,</p>
-            <p>A súmula do jogo <strong>${title}</strong> está disponível para aprovação.</p>
-            <p>Acesse o painel do time para aprovar ou rejeitar.</p>
-            <p><a href="${painelUrl}" style="display: inline-block; padding: 12px 24px; background: #22C55E; color: #0C1222; text-decoration: none; font-weight: bold; border-radius: 8px;">Acessar painel do time</a></p>
-            <p>Atenciosamente,<br/>Fly Games</p>
-          </div>
-        `;
-        await sendEmailToMany(allEmails, subject, html).catch((e) => console.error('[Sumula] Email disponível', e));
-      }
+      const templateKey = wasAlreadyPublished ? 'SUMULA_ATUALIZADA' : 'SUMULA_DISPONIVEL';
+      const vars = { title, painel_url: painelUrl };
+      await Promise.all(
+        allEmails.map((to) =>
+          sendTransactionalEmail({ to, templateKey, vars }).catch((e) =>
+            console.error('[Sumula] Email disponível/atualizada', e)
+          )
+        )
+      );
     }
   }
 
