@@ -1,16 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { z } from 'zod';
-
-const updateSchema = z.object({
-  name: z.string().min(1, 'Nome obrigatório').optional().or(z.literal('')),
-  role: z.enum(['user', 'admin']).optional(),
-});
-
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
-import { prisma } from '@/lib/db';
 import { isTeamResponsible } from '@/lib/access';
 import { z } from 'zod';
 
