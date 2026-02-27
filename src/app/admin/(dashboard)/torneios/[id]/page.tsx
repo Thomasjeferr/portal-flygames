@@ -9,6 +9,7 @@ interface Team {
   name: string;
   slug: string;
   crestUrl: string | null;
+  shortName?: string | null;
 }
 
 interface TournamentTeam {
