@@ -20,12 +20,14 @@ interface User {
   emailVerified: boolean;
   createdAt: string;
   subscription: Subscription | null;
+  isTeamResponsible?: boolean;
 }
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'responsible' | 'common'>('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -34,6 +36,7 @@ export default function AdminUsersPage() {
     setLoading(true);
     const params = new URLSearchParams();
     if (search.trim()) params.set('q', search.trim());
+    if (typeFilter !== 'all') params.set('type', typeFilter);
     params.set('page', String(page));
     params.set('limit', String(PAGE_SIZE));
     const res = await fetch(`/api/admin/users?${params.toString()}`);
@@ -44,11 +47,11 @@ export default function AdminUsersPage() {
       setTotalPages(data.totalPages ?? 1);
     }
     setLoading(false);
-  }, [search, page]);
+  }, [search, typeFilter, page]);
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, typeFilter]);
 
   useEffect(() => {
     const timer = setTimeout(fetchUsers, 300);
@@ -70,13 +73,24 @@ export default function AdminUsersPage() {
     <div className="max-w-6xl mx-auto px-6 py-10">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <h1 className="text-3xl font-bold text-white">Usuários</h1>
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por email ou nome..."
-          className="w-full sm:w-72 px-4 py-2 rounded bg-netflix-dark border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as 'all' | 'responsible' | 'common')}
+            className="px-3 py-2 rounded bg-netflix-dark border border-white/20 text-white text-sm focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          >
+            <option value="all">Todos</option>
+            <option value="responsible">Só responsáveis de time</option>
+            <option value="common">Só usuários comuns</option>
+          </select>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por email ou nome..."
+            className="w-full sm:w-72 px-4 py-2 rounded bg-netflix-dark border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+          />
+        </div>
       </div>
 
       {loading ? (
@@ -115,6 +129,11 @@ export default function AdminUsersPage() {
                       >
                         {user.role === 'admin' ? 'Admin' : 'Usuário'}
                       </span>
+                      {user.isTeamResponsible && (
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-sky-900/50 text-sky-300">
+                          Responsável de time
+                        </span>
+                      )}
                       <span
                         className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
                           subActive ? 'bg-green-900/50 text-green-300' : 'bg-red-900/30 text-red-300'

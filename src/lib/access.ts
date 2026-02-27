@@ -1,6 +1,32 @@
 import { prisma } from '@/lib/db';
 
 /**
+ * Indica se o usuário é responsável por algum time (gestão no painel).
+ * Usado para bloquear compras com a conta de responsável.
+ * Considera: (1) vínculo em TeamManager ou (2) e-mail igual a Team.responsibleEmail de time aprovado.
+ */
+export async function isTeamResponsible(userId: string): Promise<boolean> {
+  const [managerCount, user] = await Promise.all([
+    prisma.teamManager.count({ where: { userId } }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    }),
+  ]);
+  if (managerCount > 0) return true;
+  const email = user?.email?.trim().toLowerCase();
+  if (!email) return false;
+  const rows = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT id FROM "Team"
+    WHERE approval_status = 'approved'
+      AND responsible_email IS NOT NULL
+      AND LOWER(TRIM(responsible_email)) = ${email}
+    LIMIT 1
+  `;
+  return rows.length > 0;
+}
+
+/**
  * Verifica se o usuário pode assistir a qualquer jogo (assinatura ativa com acesso total).
  */
 export async function hasFullAccess(userId: string): Promise<boolean> {

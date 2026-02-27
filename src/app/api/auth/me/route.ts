@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { hasFullAccess } from '@/lib/access';
+import { hasFullAccess, isTeamResponsible } from '@/lib/access';
 import { prisma } from '@/lib/db';
 
 export async function GET() {
@@ -9,13 +9,13 @@ export async function GET() {
     return NextResponse.json({ user: null }, { status: 200 });
   }
 
-  const [user, subscription, teamManagerCount, approvedPartner, fullAccess] = await Promise.all([
+  const [user, subscription, isTeamManager, approvedPartner, fullAccess] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.userId },
       select: { id: true, email: true, name: true, role: true, emailVerified: true, createdAt: true, favoriteTeamId: true, avatarUrl: true },
     }),
     prisma.subscription.findUnique({ where: { userId: session.userId } }),
-    prisma.teamManager.count({ where: { userId: session.userId } }),
+    isTeamResponsible(session.userId),
     prisma.partner.findFirst({
       where: { userId: session.userId, status: 'approved' },
       select: { id: true, refCode: true },
@@ -27,7 +27,6 @@ export async function GET() {
 
   const subscriptionActive =
     !!subscription?.active && subscription.endDate >= new Date();
-  const isTeamManager = teamManagerCount > 0;
 
   return NextResponse.json({
     user: {

@@ -11,6 +11,13 @@ interface Subscription {
   endDate: string;
 }
 
+interface ManagedTeam {
+  id: string;
+  name: string;
+  shortName: string | null;
+  role: string;
+}
+
 interface User {
   id: string;
   email: string;
@@ -21,6 +28,8 @@ interface User {
   updatedAt: string;
   subscription: Subscription | null;
   paidPurchasesCount?: number;
+  isTeamResponsible?: boolean;
+  managedTeams?: ManagedTeam[];
 }
 
 export default function AdminUserDetailPage() {
@@ -78,7 +87,7 @@ export default function AdminUserDetailPage() {
         setError(data.error || 'Erro ao atualizar');
         return;
       }
-      setUser(data);
+      await fetchUser();
     } catch {
       setError('Erro de conexão');
     } finally {
@@ -246,6 +255,37 @@ export default function AdminUserDetailPage() {
             </button>
           </form>
         </div>
+
+        {/* Conta de responsável de time */}
+        {(user.isTeamResponsible ?? false) && (
+          <div className="bg-sky-900/20 border border-sky-500/30 rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-sky-200 mb-2">Conta de responsável pelo time</h2>
+            <p className="text-sm text-netflix-light mb-4">
+              Esta conta é usada para gestão de time(s) no painel (comissões, elenco, súmulas). Ela não pode ser usada para comprar planos ou jogos no site — o responsável deve usar outra conta de cliente para isso.
+            </p>
+            {user.managedTeams && user.managedTeams.length > 0 ? (
+              <div>
+                <p className="text-sm font-medium text-white mb-2">Times vinculados:</p>
+                <ul className="space-y-2">
+                  {user.managedTeams.map((t) => (
+                    <li key={t.id}>
+                      <Link
+                        href={`/admin/times/${t.id}/editar`}
+                        className="text-sky-300 hover:text-sky-200 hover:underline text-sm"
+                      >
+                        {t.name}
+                        {t.shortName ? ` (${t.shortName})` : ''}
+                        {t.role ? ` · ${t.role}` : ''}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="text-sm text-netflix-light">Nenhum time vinculado (e-mail pode constar como responsável em time aprovado).</p>
+            )}
+          </div>
+        )}
 
         {/* Assinatura */}
         <div className="bg-netflix-dark border border-white/10 rounded-lg p-6">

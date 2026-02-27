@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { isTeamResponsible } from '@/lib/access';
 import { clearPaymentConfigCache } from '@/lib/payment-config';
 import { createWooviCharge } from '@/lib/payments/woovi';
 import { createStripePaymentIntent, createStripeSubscription } from '@/lib/payments/stripe';
@@ -34,8 +35,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const isTeamManager = await prisma.teamManager.count({ where: { userId: session.userId } }).then((n) => n > 0);
-  if (isTeamManager) {
+  const isResponsible = await isTeamResponsible(session.userId);
+  if (isResponsible) {
     return NextResponse.json(
       { error: 'Esta conta é de responsável pelo time e não pode realizar compras. Para assinar ou comprar jogos, saia e crie uma conta de cliente (cadastro).' },
       { status: 403 }

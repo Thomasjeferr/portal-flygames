@@ -8,6 +8,17 @@ const updateSchema = z.object({
   role: z.enum(['user', 'admin']).optional(),
 });
 
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { isTeamResponsible } from '@/lib/access';
+import { z } from 'zod';
+
+const updateSchema = z.object({
+  name: z.string().min(1, 'Nome obrigatório').optional().or(z.literal('')),
+  role: z.enum(['user', 'admin']).optional(),
+});
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,7 +29,7 @@ export async function GET(
   }
 
   const id = (await params).id;
-  const [user, paidPurchasesCount] = await Promise.all([
+  const [user, paidPurchasesCount, isResp, managerTeams, teamsByEmail] = await Promise.all([
     prisma.user.findUnique({
       where: { id },
       select: {
@@ -35,10 +46,46 @@ export async function GET(
     prisma.purchase.count({
       where: { userId: id, paymentStatus: 'paid' },
     }),
+    isTeamResponsible(id),
+    prisma.teamManager.findMany({
+      where: { userId: id },
+      include: { team: { select: { id: true, name: true, shortName: true } } },
+    }),
+    prisma.user.findUnique({ where: { id }, select: { email: true } }).then((u) => {
+      const email = u?.email?.trim().toLowerCase();
+      if (!email) return [] as { id: string; name: string; shortName: string | null }[];
+      return prisma.team.findMany({
+        where: { approvalStatus: 'approved', responsibleEmail: { not: null } },
+        select: { id: true, name: true, shortName: true, responsibleEmail: true },
+      }).then((teams) =>
+        teams
+          .filter((t) => t.responsibleEmail?.trim().toLowerCase() === email)
+          .map(({ id, name, shortName }) => ({ id, name, shortName }))
+      );
+    }),
   ]);
 
   if (!user) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
-  return NextResponse.json({ ...user, paidPurchasesCount });
+
+  const managerTeamIds = new Set(managerTeams.map((m) => m.team.id));
+  const managedTeams = [
+    ...managerTeams.map((m) => ({
+      id: m.team.id,
+      name: m.team.name,
+      shortName: m.team.shortName,
+      role: m.role,
+    })),
+    ...teamsByEmail
+      .filter((t) => !managerTeamIds.has(t.id))
+      .map((t) => ({ id: t.id, name: t.name, shortName: t.shortName, role: 'OWNER' as const })),
+  ];
+
+  return NextResponse.json({
+    ...user,
+    paidPurchasesCount,
+    isTeamResponsible: isResp,
+    managedTeams,
+  });
 }
 
 export async function PATCH(

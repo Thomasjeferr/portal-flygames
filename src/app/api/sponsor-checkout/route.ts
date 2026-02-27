@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { createStripePaymentIntent } from '@/lib/payments/stripe';
+import { isTeamResponsible } from '@/lib/access';
 import { sponsorOrderCheckoutSchema } from '@/lib/validators/sponsorOrderSchema';
 import { checkSponsorCheckoutRateLimit, incrementSponsorCheckoutRateLimit } from '@/lib/email/rateLimit';
 
@@ -33,6 +34,16 @@ export async function POST(request: NextRequest) {
     }
 
     const d = parsed.data;
+
+    if (session?.userId) {
+      const isResponsible = await isTeamResponsible(session.userId);
+      if (isResponsible) {
+        return NextResponse.json(
+          { error: 'Esta conta é de responsável pelo time e não pode realizar compras. Para patrocinar, use uma conta de cliente (cadastro).' },
+          { status: 403 }
+        );
+      }
+    }
 
     const plan = await prisma.sponsorPlan.findUnique({ where: { id: d.sponsorPlanId } });
     if (!plan || !plan.isActive) {
