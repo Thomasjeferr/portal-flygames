@@ -1,6 +1,30 @@
 import { prisma } from '@/lib/db';
 
 /**
+ * Indica se o usuário é gestor do time (TeamManager ou responsibleEmail).
+ * Usado para permitir pagar inscrição de torneio em nome do time.
+ */
+export async function isTeamManager(userId: string, teamId: string): Promise<boolean> {
+  const [mgr, user] = await Promise.all([
+    prisma.teamManager.findFirst({ where: { userId, teamId }, select: { id: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { email: true } }),
+  ]);
+  if (mgr) return true;
+  const email = user?.email?.trim().toLowerCase();
+  if (!email) return false;
+  const team = await prisma.team.findFirst({
+    where: {
+      id: teamId,
+      approvalStatus: 'approved',
+      responsibleEmail: { not: null },
+    },
+    select: { responsibleEmail: true },
+  });
+  if (!team?.responsibleEmail) return false;
+  return team.responsibleEmail.trim().toLowerCase() === email;
+}
+
+/**
  * Indica se o usuário é responsável por algum time (gestão no painel).
  * Usado para bloquear compras com a conta de responsável.
  * Considera: (1) vínculo em TeamManager ou (2) e-mail igual a Team.responsibleEmail de time aprovado.

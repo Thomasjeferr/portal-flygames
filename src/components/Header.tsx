@@ -245,6 +245,12 @@ export function Header() {
             >
               Resultados
             </Link>
+            <Link
+              href="/torneios"
+              className={`text-sm font-semibold ${pathname.startsWith('/torneios') ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
+            >
+              Copa
+            </Link>
             {user ? (
               <div className="relative">
                 <button
@@ -438,6 +444,13 @@ export function Header() {
                 className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname.startsWith('/resultados') ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
               >
                 Resultados
+              </Link>
+              <Link
+                href="/torneios"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname.startsWith('/torneios') ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
+              >
+                Copa
               </Link>
               {user ? (
                 <>

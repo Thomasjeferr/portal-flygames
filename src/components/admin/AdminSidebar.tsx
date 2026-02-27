@@ -15,6 +15,7 @@ const menuItems = [
   { href: '/admin/pre-estreia', label: 'Pré-estreia Clubes', icon: 'film' },
   { href: '/admin/pre-estreia-meta', label: 'Pré-estreia Meta', icon: 'film' },
   { href: '/admin/categorias', label: 'Categorias', icon: 'folder' },
+  { href: '/admin/torneios', label: 'Copa Mata-Mata', icon: 'trophy' },
   { href: '/admin/banner', label: 'Hero Banners', icon: 'image' },
   { href: '/admin/sponsors', label: 'Patrocinadores', icon: 'trophy' },
   { href: '/admin/sponsor-orders', label: 'Pedidos de patrocínio', icon: 'receipt' },
@@ -99,6 +100,8 @@ export function AdminSidebar() {
             isActive = (pathname === '/admin/pre-estreia' || pathname.startsWith('/admin/pre-estreia/')) && !pathname.startsWith('/admin/pre-estreia-meta');
           } else if (item.href === '/admin/pre-estreia-meta') {
             isActive = pathname === '/admin/pre-estreia-meta' || pathname.startsWith('/admin/pre-estreia-meta/');
+          } else if (item.href === '/admin/torneios') {
+            isActive = pathname === '/admin/torneios' || pathname.startsWith('/admin/torneios/');
           } else {
             isActive = pathname.startsWith(item.href);
           }

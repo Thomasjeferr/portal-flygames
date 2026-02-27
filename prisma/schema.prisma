@@ -35,6 +35,7 @@ model User {
   sponsorOrders     SponsorOrder[]
   watchProgress     WatchProgress[]
   teamRequests      TeamRequest[]
+  tournamentSubscriptions TournamentSubscription[]
 }
 
 model Session {
@@ -118,6 +119,11 @@ model Team {
   favoritedByUsers    User[]         @relation("UserFavoriteTeam")
   sumulaApprovals     GameSumulaApproval[]
   playerMatchStats    PlayerMatchStats[]
+  tournamentTeams     TournamentTeam[]
+  tournamentMatchesAsA TournamentMatch[] @relation("MatchTeamA")
+  tournamentMatchesAsB TournamentMatch[] @relation("MatchTeamB")
+  tournamentMatchesWon TournamentMatch[] @relation("MatchWinner")
+  tournamentSubscriptionsAsSupported TournamentSubscription[]
 }
 
 // Responsáveis pelo time (usuários que gerenciam o time no painel do clube)
@@ -899,6 +905,107 @@ model LivePurchase {
 }
 
 // ========== FIM LIVES ==========
+
+// ========== COPA MATA-MATA (TOURNAMENTS) ==========
+model Tournament {
+  id                        String    @id @default(cuid())
+  name                      String    @map("name")
+  slug                      String    @unique @map("slug")
+  season                    String?   @map("season")
+  region                    String?   @map("region")
+  format                    String    @default("SINGLE_ELIMINATION") @map("format")
+  maxTeams                  Int       @map("max_teams") // 1..32
+  registrationMode          String    @map("registration_mode") // FREE | PAID | GOAL
+  registrationFeeAmount     Float?    @map("registration_fee_amount")
+  goalRequiredSupporters    Int?      @map("goal_required_supporters")
+  goalPricePerSupporter     Float?    @map("goal_price_per_supporter")
+  goalStartAt               DateTime? @map("goal_start_at")
+  goalEndAt                  DateTime? @map("goal_end_at")
+  lockConfirmationOnGoal     Boolean   @default(true) @map("lock_confirmation_on_goal")
+  status                    String    @default("DRAFT") @map("status") // DRAFT | PUBLISHED | IN_PROGRESS | FINISHED
+  bracketStatus              String    @default("NONE") @map("bracket_status") // NONE | GENERATED
+  createdAt                 DateTime  @default(now()) @map("created_at")
+  updatedAt                 DateTime  @updatedAt @map("updated_at")
+
+  teams      TournamentTeam[]
+  matches   TournamentMatch[]
+  subscriptions TournamentSubscription[]
+}
+
+model TournamentTeam {
+  id                    String    @id @default(cuid())
+  tournamentId          String    @map("tournament_id")
+  teamId                String    @map("team_id")
+  registrationType      String    @map("registration_type") // FREE | PAID | GOAL
+  teamStatus            String    @map("team_status") // APPLIED | IN_GOAL | CONFIRMED | REJECTED | ELIMINATED
+  paymentStatus         String?   @map("payment_status") // pending | paid | failed (quando PAID)
+  paymentGateway        String?   @map("payment_gateway") // stripe | woovi
+  paymentExternalId     String?   @map("payment_external_id") // id do PaymentIntent, cobrança Woovi ou Stripe Subscription id
+  registrationStripeSubscriptionId String? @map("registration_stripe_subscription_id") // assinatura recorrente (pagador vira assinante)
+  goalStatus            String?   @map("goal_status") // PENDING | ACHIEVED | EXPIRED (quando GOAL)
+  goalCurrentSupporters Int       @default(0) @map("goal_current_supporters")
+  goalAchievedAt        DateTime? @map("goal_achieved_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team       Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, teamId])
+  @@map("tournament_teams")
+}
+
+model TournamentMatch {
+  id              String    @id @default(cuid())
+  tournamentId    String    @map("tournament_id")
+  round           Int       @map("round") // 32 | 16 | 8 | 4 | 2
+  matchNumber     Int       @map("match_number")
+  teamAId         String?   @map("team_a_id")
+  teamBId         String?   @map("team_b_id")
+  scheduledAt     DateTime? @map("scheduled_at")
+  location        String?   @map("location")
+  status          String    @default("SCHEDULED") @map("status") // SCHEDULED | LIVE | FINISHED
+  scoreA          Int?      @map("score_a")
+  scoreB          Int?      @map("score_b")
+  penaltiesA      Int?      @map("penalties_a")
+  penaltiesB      Int?      @map("penalties_b")
+  winnerTeamId    String?   @map("winner_team_id")
+  nextMatchId     String?   @map("next_match_id")
+  liveUrl         String?   @map("live_url")
+  replayUrl       String?   @map("replay_url")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tournament  Tournament    @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teamA       Team?         @relation("MatchTeamA", fields: [teamAId], references: [id], onDelete: SetNull)
+  teamB       Team?         @relation("MatchTeamB", fields: [teamBId], references: [id], onDelete: SetNull)
+  winnerTeam  Team?         @relation("MatchWinner", fields: [winnerTeamId], references: [id], onDelete: SetNull)
+  nextMatch   TournamentMatch?  @relation("MatchNext", fields: [nextMatchId], references: [id], onDelete: SetNull)
+  prevMatches TournamentMatch[] @relation("MatchNext")
+
+  @@map("tournament_matches")
+}
+
+model TournamentSubscription {
+  id                    String    @id @default(cuid())
+  userId                String    @map("user_id")
+  tournamentId          String    @map("tournament_id")
+  teamSupportedId       String    @map("team_supported_id")
+  stripeSubscriptionId  String?   @map("stripe_subscription_id")
+  startedAt             DateTime  @map("started_at")
+  endedAt               DateTime? @map("ended_at")
+  status                String    @map("status") // ACTIVE | CANCELED | PAST_DUE
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teamSupported Team      @relation(fields: [teamSupportedId], references: [id], onDelete: Cascade)
+
+  @@map("tournament_subscriptions")
+}
+
+// ========== FIM COPA MATA-MATA ==========
 
 model WebhookEvent {
   id        String   @id @default(cuid())

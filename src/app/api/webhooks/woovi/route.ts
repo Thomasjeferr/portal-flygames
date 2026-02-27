@@ -5,6 +5,7 @@ import { createClubViewerAccountForSlot } from '@/services/club-viewer.service';
 import { Provider } from '@/lib/pre-sale/enums';
 import { verifyWooviWebhookSignature } from '@/lib/payments/woovi';
 import { markWooviPurchaseAsPaid } from '@/lib/payments/wooviPurchaseHandler';
+import { markTournamentRegistrationAsPaidById } from '@/lib/tournamentRegistrationPayment';
 
 export async function POST(request: NextRequest) {
   try {
@@ -84,6 +85,19 @@ export async function POST(request: NextRequest) {
       createClubViewerAccountForSlot(slotId).catch((e) =>
         console.error('[Woovi] Erro ao criar conta clube:', e)
       );
+      return NextResponse.json({ received: true });
+    }
+
+    // Inscrição paga de torneio (Copa Mata-Mata): correlationID = id do TournamentTeam
+    const tournamentTeam = await prisma.tournamentTeam.findUnique({
+      where: { id: correlationId },
+      select: { id: true, paymentStatus: true, paymentGateway: true },
+    });
+    if (tournamentTeam?.paymentGateway === 'woovi' && tournamentTeam.paymentStatus === 'pending') {
+      const updated = await markTournamentRegistrationAsPaidById(correlationId);
+      if (updated) {
+        console.info('[Woovi webhook] Inscrição torneio confirmada:', correlationId);
+      }
       return NextResponse.json({ received: true });
     }
 

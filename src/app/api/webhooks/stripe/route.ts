@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { verifyStripeWebhook, getStripe } from '@/lib/payments/stripe';
 import { sendTransactionalEmail } from '@/lib/email/emailService';
+import { markTournamentRegistrationAsPaid } from '@/lib/tournamentRegistrationPayment';
+import { processTournamentGoalSubscriptionPaid, recalculateGoalSupportersAndConfirm } from '@/lib/tournamentGoalPayment';
 
 function addMonths(date: Date, months: number): Date {
   const d = new Date(date);
@@ -42,6 +44,22 @@ export async function POST(request: NextRequest) {
 
       const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
       const metadata = stripeSubscription.metadata || {};
+      const tournamentId = metadata.tournamentId;
+      const teamIdMeta = metadata.teamId;
+      const planIdMeta = metadata.planId;
+      if (tournamentId && teamIdMeta) {
+        // Inscrição paga de torneio: voltou a ser pagamento único (PaymentIntent); não usar invoice.paid.
+        // (bloco tournament-registration removido daqui)
+        if (planIdMeta === 'tournament-goal') {
+          const userId = metadata.userId;
+          if (userId) {
+            await processTournamentGoalSubscriptionPaid(userId, tournamentId, teamIdMeta, subscriptionId);
+            console.info('[Stripe] Apoio GOAL torneio registrado:', tournamentId, teamIdMeta);
+          }
+          return NextResponse.json({ received: true });
+        }
+      }
+
       const userId = metadata.userId;
       const planId = metadata.planId;
       if (!userId || !planId) return NextResponse.json({ received: true });
@@ -117,6 +135,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    if (event.type === 'customer.subscription.deleted') {
+      const sub = event.data.object as { id: string; metadata?: Record<string, string> };
+      const subscriptionId = sub.id;
+      const metadata = sub.metadata || {};
+      if (metadata.planId === 'tournament-goal' && metadata.tournamentId && metadata.teamId) {
+        const ts = await prisma.tournamentSubscription.findFirst({
+          where: { stripeSubscriptionId: subscriptionId },
+        });
+        if (ts) {
+          await prisma.tournamentSubscription.update({
+            where: { id: ts.id },
+            data: { status: 'CANCELED', endedAt: new Date() },
+          });
+          await recalculateGoalSupportersAndConfirm(metadata.tournamentId, metadata.teamId);
+          console.info('[Stripe] Assinatura GOAL cancelada, contagem atualizada:', metadata.tournamentId, metadata.teamId);
+        }
+      }
+      return NextResponse.json({ received: true });
+    }
+
     if (event.type === 'payment_intent.succeeded') {
       const obj = event.data.object as { id: string; metadata?: Record<string, string>; invoice?: string | null };
       const sponsorOrderId = obj.metadata?.sponsorOrderId;
@@ -124,6 +162,17 @@ export async function POST(request: NextRequest) {
 
       // Pagamento de assinatura Stripe (primeira fatura): tratado em invoice.paid, não aqui.
       if (obj.invoice) return NextResponse.json({ received: true });
+
+      // Inscrição paga de torneio (pagamento único com cartão): PaymentIntent com metadata tournamentId + teamId
+      const tournamentId = obj.metadata?.tournamentId;
+      const teamId = obj.metadata?.teamId;
+      if (tournamentId && teamId) {
+        const updated = await markTournamentRegistrationAsPaid(tournamentId, teamId);
+        if (updated) {
+          console.info('[Stripe] Inscrição torneio (cartão) confirmada:', tournamentId, teamId);
+        }
+        return NextResponse.json({ received: true });
+      }
 
       // Pedido de patrocínio (compra pelo site)
       if (sponsorOrderId) {
