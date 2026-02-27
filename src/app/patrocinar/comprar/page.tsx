@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState, useRef } from 'react';
 import { NaoEncontrouTimeCTA } from '@/components/account/NaoEncontrouTimeCTA';
+import { TeamSelectorWithConfirm, type TeamOption } from '@/components/checkout/TeamSelectorWithConfirm';
 
 const BILLING_LABEL: Record<string, string> = {
   monthly: 'mensal',
@@ -26,15 +27,13 @@ type Plan = {
   benefits?: string[];
 };
 
-type Team = { id: string; name: string; city?: string | null; state?: string | null; crestUrl?: string | null };
-
 function PatrocinarComprarContent() {
   const searchParams = useSearchParams();
   const planId = searchParams.get('planId');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [plan, setPlan] = useState<Plan | null>(null);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<TeamOption[]>([]);
   const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -93,7 +92,7 @@ function PatrocinarComprarContent() {
         const plans = Array.isArray(plansData) ? plansData : [];
         const p = plans.find((x: { id: string }) => x.id === planId) ?? null;
         setPlan(p);
-        setTeams(Array.isArray(teamsData) ? teamsData : []);
+        setTeams(Array.isArray(teamsData) ? (teamsData as TeamOption[]) : []);
         const wa = settingsData?.whatsappNumber;
         if (wa) {
           const num = String(wa).replace(/\D/g, '');
@@ -266,41 +265,13 @@ function PatrocinarComprarContent() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-futvar-light mb-1">Time (opcional)</label>
-              <div className="flex items-center gap-3">
-                {form.teamId && (() => {
-                  const selected = teams.find((t) => t.id === form.teamId);
-                  const crest = selected?.crestUrl;
-                  const initial = selected?.name?.trim().charAt(0)?.toUpperCase() ?? '?';
-                  return (
-                    <div className="h-10 w-10 shrink-0 rounded-full bg-futvar-dark border border-white/20 flex items-center justify-center overflow-hidden">
-                      {crest ? (
-                        <img
-                          src={crest.startsWith('http') ? crest : crest}
-                          alt=""
-                          className="h-full w-full object-contain"
-                        />
-                      ) : (
-                        <span className="text-sm font-bold text-futvar-green">{initial}</span>
-                      )}
-                    </div>
-                  );
-                })()}
-                <select
-                  value={form.teamId}
-                  onChange={(e) => setForm((f) => ({ ...f, teamId: e.target.value }))}
-                  className="flex-1 min-w-0 px-4 py-3 rounded bg-futvar-dark border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-futvar-green"
-                >
-                  <option value="">Nenhum</option>
-                  {teams.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                      {t.city || t.state ? ` — ${[t.city, t.state].filter(Boolean).join('/')}` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <p className="mt-1 text-xs text-futvar-light">Parte do valor pode ser repassada ao time.</p>
+              <TeamSelectorWithConfirm
+                label="Time (opcional)"
+                confirmMessage="Parte do valor do patrocínio será repassada ao time."
+                noneLabel="Não quero escolher um time"
+                selectedTeam={teams.find((t) => t.id === form.teamId) ?? null}
+                onSelect={(t) => setForm((f) => ({ ...f, teamId: t?.id ?? '' }))}
+              />
               <p className="mt-2">
                 <NaoEncontrouTimeCTA />
               </p>

@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useRef, Suspense } from 'react';
 import Image from 'next/image';
 import CardPaymentScreen from '@/components/checkout/CardPaymentScreen';
+import { TeamSelectorWithConfirm, type TeamOption } from '@/components/checkout/TeamSelectorWithConfirm';
 import { NaoEncontrouTimeCTA } from '@/components/account/NaoEncontrouTimeCTA';
 
 interface Plan {
@@ -193,7 +194,7 @@ function CheckoutContent() {
 
   const [plan, setPlan] = useState<Plan | null>(null);
   const [games, setGames] = useState<Game[]>([]);
-  const [teams, setTeams] = useState<{ id: string; name: string; city?: string | null; state?: string | null }[]>([]);
+  const [teams, setTeams] = useState<TeamOption[]>([]);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(gameIdParam);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [method, setMethod] = useState<'pix' | 'card'>('pix');
@@ -255,7 +256,7 @@ function CheckoutContent() {
         }
         setGames(Array.isArray(gamesData) ? gamesData : []);
         const teamsList = Array.isArray(teamsData) ? teamsData : [];
-        setTeams(teamsList);
+        setTeams(teamsList as TeamOption[]);
         if (gameIdParam) setSelectedGameId(gameIdParam);
 
         // Pré-seleciona o time: preferir favoriteTeamId do usuário; senão último time de compras anteriores
@@ -470,20 +471,13 @@ function CheckoutContent() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-futvar-light mb-2">Time de coração (opcional)</label>
-            <select
-              value={selectedTeamId ?? ''}
-              onChange={(e) => setSelectedTeamId(e.target.value || null)}
-              className="w-full px-4 py-3 rounded-lg bg-futvar-darker border border-futvar-green/20 text-white focus:outline-none focus:ring-2 focus:ring-futvar-green"
-            >
-              <option value="">Nenhum</option>
-              {teams.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}{t.city || t.state ? ` — ${[t.city, t.state].filter(Boolean).join('/')}` : ''}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-futvar-light">Parte do valor pode ser repassada ao time que você apoia.</p>
+            <TeamSelectorWithConfirm
+              label="Time de coração (opcional)"
+              confirmMessage="Parte do valor da assinatura será repassada a ele."
+              noneLabel="Não quero escolher um time"
+              selectedTeam={teams.find((t) => t.id === selectedTeamId) ?? null}
+              onSelect={(t) => setSelectedTeamId(t?.id ?? null)}
+            />
             <p className="mt-2">
               <NaoEncontrouTimeCTA />
             </p>

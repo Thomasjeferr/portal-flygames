@@ -29,6 +29,8 @@ export async function POST(request: NextRequest) {
 
   try {
     // Cobrança de assinatura recorrente: tratada em invoice.paid (usa favoriteTeamId do usuário).
+    // Se no futuro houver renovação de patrocínio (Stripe Subscription com metadata sponsorPlanId + userId),
+    // usar o favoriteTeamId atual do usuário para a comissão; se favoriteTeamId for null, não criar TeamSponsorshipEarning.
     if (event.type === 'invoice.paid') {
       const invoice = event.data.object as { id: string; subscription?: string | { id: string }; amount_paid?: number };
       const sub = invoice.subscription;
@@ -166,6 +168,14 @@ export async function POST(request: NextRequest) {
                 amountCents: order.amountToTeamCents,
                 status: 'pending',
               },
+            });
+          }
+
+          // Marca o time do coração do usuário quando pagou patrocínio com time escolhido (igual ao plano)
+          if (order.userId && order.teamId) {
+            await prisma.user.update({
+              where: { id: order.userId },
+              data: { favoriteTeamId: order.teamId },
             });
           }
 
