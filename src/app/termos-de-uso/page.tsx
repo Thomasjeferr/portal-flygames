@@ -21,7 +21,7 @@ export default function TermosDeUsoPage() {
           <section>
             <h2 className="text-lg font-semibold text-white">2. Serviços Oferecidos</h2>
             <p>
-              A Fly Games oferece, dentre outros serviços, a transmissão e o replay de jogos de futebol amador,
+              A Fly Games oferece, dentre outros serviços, a transmissão e o replay de jogos de futebol de várzea,
               incluindo filmagens com drones e câmeras em campo, planos de assinatura e compras avulsas de conteúdos
               digitais. A disponibilidade de funcionalidades, planos e conteúdos pode variar ao longo do tempo, a
               critério exclusivo da Fly Games.

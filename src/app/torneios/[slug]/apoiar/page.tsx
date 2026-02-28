@@ -148,9 +148,15 @@ export default function ApoiarTimePublicPage() {
   }, []);
 
   const returnUrl = typeof window !== 'undefined' ? `${window.location.origin}/torneios/${slug}` : '';
+  const apoiarRedirect = typeof window !== 'undefined'
+    ? `/torneios/${slug}/apoiar?teamId=${teamId}`
+    : '/torneios';
   const loginRedirect = typeof window !== 'undefined'
-    ? `/entrar?redirect=${encodeURIComponent(`/torneios/${slug}/apoiar?teamId=${teamId}`)}`
+    ? `/entrar?redirect=${encodeURIComponent(apoiarRedirect)}`
     : '/entrar';
+  const cadastroRedirect = typeof window !== 'undefined'
+    ? `/cadastro?redirect=${encodeURIComponent(apoiarRedirect)}`
+    : '/cadastro';
 
   if (loading) {
     return (
@@ -183,17 +189,25 @@ export default function ApoiarTimePublicPage() {
     return (
       <div className="min-h-screen bg-futvar-darker flex items-center justify-center p-4 pt-24">
         <div className="bg-futvar-dark border border-futvar-green/20 rounded-2xl p-8 max-w-md w-full text-center">
-          <h1 className="text-xl font-bold text-white mb-2">Faça login para apoiar</h1>
+          <h1 className="text-xl font-bold text-white mb-2">Cadastro obrigatório</h1>
           <p className="text-futvar-light text-sm mb-6">
-            Você precisa estar logado para assinar e apoiar um time na meta.
+            Para apoiar um time na meta você precisa ter uma conta no portal. Faça login ou cadastre-se para continuar.
           </p>
-          <Link
-            href={loginRedirect}
-            className="inline-block px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light transition-colors"
-          >
-            Entrar
-          </Link>
-          <Link href={`/torneios/${slug}`} className="block mt-4 text-sm text-futvar-light hover:text-futvar-green">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href={loginRedirect}
+              className="inline-block px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light transition-colors"
+            >
+              Já tenho conta – Entrar
+            </Link>
+            <Link
+              href={cadastroRedirect}
+              className="inline-block px-6 py-3 rounded-lg bg-white/10 text-white font-bold border border-white/20 hover:bg-white/20 transition-colors"
+            >
+              Criar conta
+            </Link>
+          </div>
+          <Link href={`/torneios/${slug}`} className="block mt-6 text-sm text-futvar-light hover:text-futvar-green">
             Voltar ao torneio
           </Link>
         </div>

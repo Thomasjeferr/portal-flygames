@@ -25,6 +25,7 @@ export default function CadastrarTimePage() {
     instagram: '',
     whatsapp: '',
     description: '',
+    acceptTerms: false,
   });
 
   useEffect(() => {
@@ -85,6 +86,10 @@ export default function CadastrarTimePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.acceptTerms) {
+      setError('Você precisa aceitar os Termos de Uso e condições para cadastrar o time.');
+      return;
+    }
     setError('');
     setSuccess('');
     setLoading(true);
@@ -131,6 +136,7 @@ export default function CadastrarTimePage() {
         instagram: '',
         whatsapp: '',
         description: '',
+        acceptTerms: false,
       });
     } catch {
       setError('Erro de conexão. Tente novamente.');
@@ -370,10 +376,26 @@ export default function CadastrarTimePage() {
             />
           </div>
 
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.acceptTerms}
+              onChange={(e) => setForm((f) => ({ ...f, acceptTerms: e.target.checked }))}
+              className="mt-1 rounded border-white/30 text-futvar-green focus:ring-futvar-green"
+            />
+            <span className="text-sm text-futvar-light">
+              Li e aceito os{' '}
+              <Link href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-futvar-green hover:underline">
+                Termos de Uso
+              </Link>
+              {' '}e condições do Fly Games para cadastro de time.
+            </span>
+          </label>
+
           <button
             type="submit"
-            disabled={loading}
-            className="w-full sm:w-auto px-6 py-3 rounded bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light disabled:opacity-50"
+            disabled={loading || !form.acceptTerms}
+            className="w-full sm:w-auto px-6 py-3 rounded bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Enviando...' : 'Enviar para aprovação'}
           </button>

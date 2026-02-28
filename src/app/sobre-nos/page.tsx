@@ -6,7 +6,7 @@ export default function SobreNosPage() {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">Sobre o Fly Games</h1>
         <p className="text-futvar-light mb-8 leading-relaxed">
-          O Fly Games nasceu de uma demanda simples e ignorada por muito tempo: assistir e registrar o futebol amador com
+          O Fly Games nasceu de uma demanda simples e ignorada por muito tempo: assistir e registrar o futebol de várzea com
           qualidade, como ela merece. A gente viu clubes lotando campos, atletas se destacando e famílias querendo
           acompanhar — mas sem transmissão estável, sem replay organizado e sem uma vitrine real para patrocinadores.
         </p>
@@ -27,14 +27,14 @@ export default function SobreNosPage() {
         <section className="mb-10">
           <h2 className="text-xl font-bold text-white mb-2">Missão</h2>
           <p className="text-futvar-light leading-relaxed">
-            Levar o futebol amador para mais gente, com qualidade, organização e monetização justa.
+            Levar o futebol de várzea para mais gente, com qualidade, organização e monetização justa.
           </p>
         </section>
 
         <section className="mb-10">
           <h2 className="text-xl font-bold text-white mb-2">Visão</h2>
           <p className="text-futvar-light leading-relaxed">
-            Ser a principal plataforma regional de transmissão e acervo do futebol amador.
+            Ser a principal plataforma regional de transmissão e acervo do futebol de várzea.
           </p>
         </section>
 

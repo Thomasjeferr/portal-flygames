@@ -7,7 +7,7 @@ Documento gerado a partir da análise do repositório. Descreve stack, estrutura
 ## 1. Visão geral
 
 **Nome:** Portal Futvar / Fly Games  
-**Tipo:** Plataforma de streaming de futebol amador (vídeos filmados com drones), com assinaturas, lives, pré-estreias, patrocínios e programa de parceiros.
+**Tipo:** Plataforma de streaming de futebol de várzea (vídeos filmados com drones), com assinaturas, lives, pré-estreias, patrocínios e programa de parceiros.
 
 **Stack principal:**
 - **Next.js 14** (App Router), **React 18**, **TypeScript**

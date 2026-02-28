@@ -176,7 +176,7 @@ export default function NewGamePage() {
             value={form.championship}
             onChange={(e) => setForm((f) => ({ ...f, championship: e.target.value }))}
             required
-            placeholder="Ex: Liga Municipal, Copa de Futebol Amador"
+            placeholder="Ex: Liga Municipal, Copa de Futebol de Várzea"
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
         </div>

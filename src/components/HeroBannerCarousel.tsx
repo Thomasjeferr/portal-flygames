@@ -370,7 +370,7 @@ function HeroFallback(props?: {
   secondaryCta?: { text: string; url: string };
 }) {
   const badge = props?.badgeText ?? 'FILMAGEM COM DRONES';
-  const headline = props?.headline ?? 'Futebol Amador';
+  const headline = props?.headline ?? 'Futebol de Várzea';
   const subheadline = props?.subheadline ?? 'visão aérea';
   const desc = props?.description ?? 'Assista às melhores partidas filmadas com drones. Cada lance com a emoção de quem está em campo — do céu.';
   const primary = props?.primaryCta ?? { text: 'Começar a assistir', url: '/cadastro' };

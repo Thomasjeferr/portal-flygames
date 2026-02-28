@@ -100,7 +100,7 @@ export default function PlanosPage() {
             Escolha como assistir aos seus jogos
           </h1>
           <p className="text-futvar-light text-lg max-w-2xl mx-auto">
-            Veja o futebol amador com filmagem em drone, replays e acesso fácil pelo celular, TV ou computador.
+            Veja o futebol de várzea com filmagem em drone, replays e acesso fácil pelo celular, TV ou computador.
           </p>
         </div>
 

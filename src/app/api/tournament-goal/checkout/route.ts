@@ -70,6 +70,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const isManagerOfTeam = await prisma.teamManager.findUnique({
+      where: { userId_teamId: { userId: session.userId, teamId } },
+      select: { id: true },
+    });
+    if (isManagerOfTeam) {
+      return NextResponse.json(
+        {
+          error:
+            'O responsável ou gestor do time não pode participar da meta do próprio time. Apoie outro time ou peça a outro torcedor para apoiar.',
+        },
+        { status: 400 }
+      );
+    }
+
     const stripeResult = await createStripeSubscription({
       customerEmail: session.email ?? '',
       userId: session.userId,

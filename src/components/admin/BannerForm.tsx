@@ -407,7 +407,7 @@ export function BannerForm({ games, preSales, lives, initialData, onSubmit }: Ba
           type="text"
           value={form.headline}
           onChange={(e) => setForm((f) => ({ ...f, headline: e.target.value }))}
-          placeholder="Ex: Futebol Amador"
+          placeholder="Ex: Futebol de Várzea"
           className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
         />
       </div>
