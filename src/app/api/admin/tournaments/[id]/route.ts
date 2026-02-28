@@ -29,6 +29,20 @@ const updateSchema = z.object({
     .refine((v) => !v || v.trim() === '' || !isNaN(Date.parse(v)), { message: 'Invalid datetime' }),
   lockConfirmationOnGoal: z.boolean().optional(),
   status: z.enum(STATUSES).optional(),
+  // Premiação (todos opcionais)
+  premiacaoTipo: z.string().optional().nullable(),
+  premioPrimeiro: z.number().min(0).optional().nullable(),
+  premioSegundo: z.number().min(0).optional().nullable(),
+  premioTerceiro: z.number().min(0).optional().nullable(),
+  premioQuarto: z.number().min(0).optional().nullable(),
+  trofeuCampeao: z.boolean().optional(),
+  trofeuVice: z.boolean().optional(),
+  trofeuTerceiro: z.boolean().optional(),
+  trofeuQuarto: z.boolean().optional(),
+  trofeuArtilheiro: z.boolean().optional(),
+  craqueDaCopa: z.boolean().optional(),
+  regulamentoUrl: z.string().optional().nullable(),
+  regulamentoTexto: z.string().optional().nullable(),
 });
 
 export async function GET(
@@ -71,6 +85,19 @@ export async function PATCH(
       goalPricePerSupporter: body.goalPricePerSupporter != null ? Number(body.goalPricePerSupporter) : undefined,
       goalStartAt: body.goalStartAt ?? undefined,
       goalEndAt: body.goalEndAt ?? undefined,
+      premiacaoTipo: body.premiacaoTipo !== undefined ? body.premiacaoTipo : undefined,
+      premioPrimeiro: body.premioPrimeiro != null ? Number(body.premioPrimeiro) : undefined,
+      premioSegundo: body.premioSegundo != null ? Number(body.premioSegundo) : undefined,
+      premioTerceiro: body.premioTerceiro != null ? Number(body.premioTerceiro) : undefined,
+      premioQuarto: body.premioQuarto != null ? Number(body.premioQuarto) : undefined,
+      trofeuCampeao: body.trofeuCampeao,
+      trofeuVice: body.trofeuVice,
+      trofeuTerceiro: body.trofeuTerceiro,
+      trofeuQuarto: body.trofeuQuarto,
+      trofeuArtilheiro: body.trofeuArtilheiro,
+      craqueDaCopa: body.craqueDaCopa,
+      regulamentoUrl: body.regulamentoUrl !== undefined ? body.regulamentoUrl : undefined,
+      regulamentoTexto: body.regulamentoTexto !== undefined ? body.regulamentoTexto : undefined,
     });
     if (!parsed.success) {
       return NextResponse.json(
@@ -100,6 +127,19 @@ export async function PATCH(
     }
     if (data.lockConfirmationOnGoal !== undefined) update.lockConfirmationOnGoal = data.lockConfirmationOnGoal;
     if (data.status !== undefined) update.status = data.status;
+    if (data.premiacaoTipo !== undefined) update.premiacaoTipo = data.premiacaoTipo;
+    if (data.premioPrimeiro !== undefined) update.premioPrimeiro = data.premioPrimeiro;
+    if (data.premioSegundo !== undefined) update.premioSegundo = data.premioSegundo;
+    if (data.premioTerceiro !== undefined) update.premioTerceiro = data.premioTerceiro;
+    if (data.premioQuarto !== undefined) update.premioQuarto = data.premioQuarto;
+    if (data.trofeuCampeao !== undefined) update.trofeuCampeao = data.trofeuCampeao;
+    if (data.trofeuVice !== undefined) update.trofeuVice = data.trofeuVice;
+    if (data.trofeuTerceiro !== undefined) update.trofeuTerceiro = data.trofeuTerceiro;
+    if (data.trofeuQuarto !== undefined) update.trofeuQuarto = data.trofeuQuarto;
+    if (data.trofeuArtilheiro !== undefined) update.trofeuArtilheiro = data.trofeuArtilheiro;
+    if (data.craqueDaCopa !== undefined) update.craqueDaCopa = data.craqueDaCopa;
+    if (data.regulamentoUrl !== undefined) update.regulamentoUrl = data.regulamentoUrl && data.regulamentoUrl.trim() ? data.regulamentoUrl.trim() : null;
+    if (data.regulamentoTexto !== undefined) update.regulamentoTexto = data.regulamentoTexto && data.regulamentoTexto.trim() ? data.regulamentoTexto.trim() : null;
 
     const tournament = await prisma.tournament.update({
       where: { id },

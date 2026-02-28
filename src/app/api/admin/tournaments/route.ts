@@ -29,6 +29,20 @@ const createSchema = z.object({
     .refine((v) => !v || v.trim() === '' || !isNaN(Date.parse(v)), { message: 'Invalid datetime' }),
   lockConfirmationOnGoal: z.boolean().optional(),
   status: z.enum(STATUSES).optional(),
+  // Premiação (todos opcionais)
+  premiacaoTipo: z.string().optional().nullable(),
+  premioPrimeiro: z.number().min(0).optional().nullable(),
+  premioSegundo: z.number().min(0).optional().nullable(),
+  premioTerceiro: z.number().min(0).optional().nullable(),
+  premioQuarto: z.number().min(0).optional().nullable(),
+  trofeuCampeao: z.boolean().optional(),
+  trofeuVice: z.boolean().optional(),
+  trofeuTerceiro: z.boolean().optional(),
+  trofeuQuarto: z.boolean().optional(),
+  trofeuArtilheiro: z.boolean().optional(),
+  craqueDaCopa: z.boolean().optional(),
+  regulamentoUrl: z.string().optional().nullable(),
+  regulamentoTexto: z.string().optional().nullable(),
 });
 
 const DEFAULT_LIMIT = 10;
@@ -86,6 +100,19 @@ export async function POST(request: NextRequest) {
       goalEndAt: body.goalEndAt || null,
       lockConfirmationOnGoal: body.lockConfirmationOnGoal ?? true,
       status: body.status ?? 'DRAFT',
+      premiacaoTipo: body.premiacaoTipo ?? null,
+      premioPrimeiro: body.premioPrimeiro != null ? Number(body.premioPrimeiro) : null,
+      premioSegundo: body.premioSegundo != null ? Number(body.premioSegundo) : null,
+      premioTerceiro: body.premioTerceiro != null ? Number(body.premioTerceiro) : null,
+      premioQuarto: body.premioQuarto != null ? Number(body.premioQuarto) : null,
+      trofeuCampeao: body.trofeuCampeao ?? false,
+      trofeuVice: body.trofeuVice ?? false,
+      trofeuTerceiro: body.trofeuTerceiro ?? false,
+      trofeuQuarto: body.trofeuQuarto ?? false,
+      trofeuArtilheiro: body.trofeuArtilheiro ?? false,
+      craqueDaCopa: body.craqueDaCopa ?? false,
+      regulamentoUrl: body.regulamentoUrl && body.regulamentoUrl.trim() ? body.regulamentoUrl.trim() : null,
+      regulamentoTexto: body.regulamentoTexto && body.regulamentoTexto.trim() ? body.regulamentoTexto.trim() : null,
     });
     if (!parsed.success) {
       return NextResponse.json(
@@ -113,6 +140,19 @@ export async function POST(request: NextRequest) {
         goalEndAt: data.registrationMode === 'GOAL' ? (data.goalEndAt ? new Date(data.goalEndAt) : null) : null,
         lockConfirmationOnGoal: data.lockConfirmationOnGoal ?? true,
         status: data.status ?? 'DRAFT',
+        premiacaoTipo: data.premiacaoTipo ?? null,
+        premioPrimeiro: data.premioPrimeiro ?? null,
+        premioSegundo: data.premioSegundo ?? null,
+        premioTerceiro: data.premioTerceiro ?? null,
+        premioQuarto: data.premioQuarto ?? null,
+        trofeuCampeao: data.trofeuCampeao ?? false,
+        trofeuVice: data.trofeuVice ?? false,
+        trofeuTerceiro: data.trofeuTerceiro ?? false,
+        trofeuQuarto: data.trofeuQuarto ?? false,
+        trofeuArtilheiro: data.trofeuArtilheiro ?? false,
+        craqueDaCopa: data.craqueDaCopa ?? false,
+        regulamentoUrl: data.regulamentoUrl != null && data.regulamentoUrl !== '' ? data.regulamentoUrl : null,
+        regulamentoTexto: data.regulamentoTexto != null && data.regulamentoTexto !== '' ? data.regulamentoTexto : null,
       },
     });
     return NextResponse.json(tournament);

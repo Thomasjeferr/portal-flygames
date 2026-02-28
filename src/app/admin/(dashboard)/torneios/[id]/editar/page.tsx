@@ -31,6 +31,19 @@ interface Tournament {
   goalEndAt: string | null;
   lockConfirmationOnGoal: boolean;
   status: string;
+  premiacaoTipo: string | null;
+  premioPrimeiro: number | null;
+  premioSegundo: number | null;
+  premioTerceiro: number | null;
+  premioQuarto: number | null;
+  trofeuCampeao: boolean;
+  trofeuVice: boolean;
+  trofeuTerceiro: boolean;
+  trofeuQuarto: boolean;
+  trofeuArtilheiro: boolean;
+  craqueDaCopa: boolean;
+  regulamentoUrl: string | null;
+  regulamentoTexto: string | null;
 }
 
 export default function EditTournamentPage() {
@@ -54,6 +67,19 @@ export default function EditTournamentPage() {
     goalEndAt: '',
     lockConfirmationOnGoal: true,
     status: 'DRAFT',
+    premiacaoTipo: '',
+    premioPrimeiro: '',
+    premioSegundo: '',
+    premioTerceiro: '',
+    premioQuarto: '',
+    trofeuCampeao: false,
+    trofeuVice: false,
+    trofeuTerceiro: false,
+    trofeuQuarto: false,
+    trofeuArtilheiro: false,
+    craqueDaCopa: false,
+    regulamentoUrl: '',
+    regulamentoTexto: '',
   });
 
   useEffect(() => {
@@ -80,6 +106,19 @@ export default function EditTournamentPage() {
         goalEndAt: t.goalEndAt ? t.goalEndAt.slice(0, 16) : '',
         lockConfirmationOnGoal: t.lockConfirmationOnGoal,
         status: t.status,
+        premiacaoTipo: t.premiacaoTipo ?? '',
+        premioPrimeiro: t.premioPrimeiro != null ? String(t.premioPrimeiro) : '',
+        premioSegundo: t.premioSegundo != null ? String(t.premioSegundo) : '',
+        premioTerceiro: t.premioTerceiro != null ? String(t.premioTerceiro) : '',
+        premioQuarto: t.premioQuarto != null ? String(t.premioQuarto) : '',
+        trofeuCampeao: t.trofeuCampeao ?? false,
+        trofeuVice: t.trofeuVice ?? false,
+        trofeuTerceiro: t.trofeuTerceiro ?? false,
+        trofeuQuarto: t.trofeuQuarto ?? false,
+        trofeuArtilheiro: t.trofeuArtilheiro ?? false,
+        craqueDaCopa: t.craqueDaCopa ?? false,
+        regulamentoUrl: t.regulamentoUrl ?? '',
+        regulamentoTexto: t.regulamentoTexto ?? '',
       });
       setLoadData(false);
     })();
@@ -109,6 +148,19 @@ export default function EditTournamentPage() {
         body.goalStartAt = form.goalStartAt || null;
         body.goalEndAt = form.goalEndAt || null;
       }
+      body.premiacaoTipo = form.premiacaoTipo.trim() || null;
+      body.premioPrimeiro = form.premioPrimeiro !== '' ? Number(form.premioPrimeiro) : null;
+      body.premioSegundo = form.premioSegundo !== '' ? Number(form.premioSegundo) : null;
+      body.premioTerceiro = form.premioTerceiro !== '' ? Number(form.premioTerceiro) : null;
+      body.premioQuarto = form.premioQuarto !== '' ? Number(form.premioQuarto) : null;
+      body.trofeuCampeao = form.trofeuCampeao;
+      body.trofeuVice = form.trofeuVice;
+      body.trofeuTerceiro = form.trofeuTerceiro;
+      body.trofeuQuarto = form.trofeuQuarto;
+      body.trofeuArtilheiro = form.trofeuArtilheiro;
+      body.craqueDaCopa = form.craqueDaCopa;
+      body.regulamentoUrl = form.regulamentoUrl.trim() || null;
+      body.regulamentoTexto = form.regulamentoTexto.trim() || null;
       const res = await fetch(`/api/admin/tournaments/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -210,6 +262,88 @@ export default function EditTournamentPage() {
             ))}
           </select>
         </div>
+
+        <div className="border-t border-white/10 pt-5 mt-5">
+          <h2 className="text-lg font-semibold text-white mb-4">Premiação</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-netflix-light mb-2">Tipo de premiação</label>
+              <input
+                type="text"
+                value={form.premiacaoTipo}
+                onChange={(e) => setForm((f) => ({ ...f, premiacaoTipo: e.target.value }))}
+                placeholder="Ex: Premiação em dinheiro e troféus"
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-netflix-light mb-2">Prêmios em dinheiro (R$)</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs text-netflix-light mb-1">1º Lugar</label>
+                  <input type="number" min={0} step={1} value={form.premioPrimeiro} onChange={(e) => setForm((f) => ({ ...f, premioPrimeiro: e.target.value }))} placeholder="0" className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red" />
+                </div>
+                <div>
+                  <label className="block text-xs text-netflix-light mb-1">2º Lugar</label>
+                  <input type="number" min={0} step={1} value={form.premioSegundo} onChange={(e) => setForm((f) => ({ ...f, premioSegundo: e.target.value }))} placeholder="0" className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red" />
+                </div>
+                <div>
+                  <label className="block text-xs text-netflix-light mb-1">3º Lugar</label>
+                  <input type="number" min={0} step={1} value={form.premioTerceiro} onChange={(e) => setForm((f) => ({ ...f, premioTerceiro: e.target.value }))} placeholder="0" className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red" />
+                </div>
+                <div>
+                  <label className="block text-xs text-netflix-light mb-1">4º Lugar</label>
+                  <input type="number" min={0} step={1} value={form.premioQuarto} onChange={(e) => setForm((f) => ({ ...f, premioQuarto: e.target.value }))} placeholder="0" className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-netflix-light mb-2">Troféus e premiações especiais</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  { key: 'trofeuCampeao', label: 'Troféu Campeão' },
+                  { key: 'trofeuVice', label: 'Troféu Vice-campeão' },
+                  { key: 'trofeuTerceiro', label: 'Troféu 3º lugar' },
+                  { key: 'trofeuQuarto', label: 'Troféu 4º lugar' },
+                  { key: 'trofeuArtilheiro', label: 'Troféu Artilheiro' },
+                  { key: 'craqueDaCopa', label: 'Craque da Copa' },
+                ].map(({ key, label }) => (
+                  <label key={key} className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={form[key as keyof typeof form] as boolean} onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.checked }))} className="rounded border-white/30 text-netflix-red" />
+                    <span className="text-sm text-netflix-light">{label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-white/10 pt-5 mt-5">
+          <h2 className="text-lg font-semibold text-white mb-4">Regulamento</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-netflix-light mb-2">URL do regulamento</label>
+              <input
+                type="url"
+                value={form.regulamentoUrl}
+                onChange={(e) => setForm((f) => ({ ...f, regulamentoUrl: e.target.value }))}
+                placeholder="https://..."
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-netflix-light mb-2">Texto do regulamento</label>
+              <textarea
+                value={form.regulamentoTexto}
+                onChange={(e) => setForm((f) => ({ ...f, regulamentoTexto: e.target.value }))}
+                placeholder="Texto do regulamento (opcional)"
+                rows={4}
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="flex gap-3">
           <button type="submit" disabled={loading} className="px-6 py-3 rounded bg-netflix-red text-white font-semibold disabled:opacity-50">{loading ? 'Salvando...' : 'Salvar'}</button>
           <Link href="/admin/torneios" className="px-6 py-3 rounded bg-netflix-gray text-white font-semibold">Cancelar</Link>

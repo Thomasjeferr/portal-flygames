@@ -954,6 +954,20 @@ model Tournament {
   lockConfirmationOnGoal     Boolean   @default(true) @map("lock_confirmation_on_goal")
   status                    String    @default("DRAFT") @map("status") // DRAFT | PUBLISHED | IN_PROGRESS | FINISHED
   bracketStatus              String    @default("NONE") @map("bracket_status") // NONE | GENERATED
+  // Premiação (todos opcionais)
+  premiacaoTipo              String?   @map("premiacao_tipo")
+  premioPrimeiro             Float?    @map("premio_primeiro")
+  premioSegundo              Float?    @map("premio_segundo")
+  premioTerceiro             Float?   @map("premio_terceiro")
+  premioQuarto               Float?   @map("premio_quarto")
+  trofeuCampeao              Boolean   @default(false) @map("trofeu_campeao")
+  trofeuVice                 Boolean   @default(false) @map("trofeu_vice")
+  trofeuTerceiro             Boolean   @default(false) @map("trofeu_terceiro")
+  trofeuQuarto               Boolean   @default(false) @map("trofeu_quarto")
+  trofeuArtilheiro           Boolean   @default(false) @map("trofeu_artilheiro")
+  craqueDaCopa               Boolean   @default(false) @map("craque_da_copa")
+  regulamentoUrl             String?   @map("regulamento_url")
+  regulamentoTexto           String?   @map("regulamento_texto")
   createdAt                 DateTime  @default(now()) @map("created_at")
   updatedAt                 DateTime  @updatedAt @map("updated_at")
 
