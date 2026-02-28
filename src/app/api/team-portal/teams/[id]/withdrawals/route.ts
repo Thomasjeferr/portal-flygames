@@ -55,7 +55,7 @@ export async function POST(
     // body opcional
   }
 
-  const [sponsorEarnings, planEarnings, team] = await Promise.all([
+  const [sponsorEarnings, planEarnings, goalEarnings, team] = await Promise.all([
     prisma.teamSponsorshipEarning.findMany({
       where: { teamId, status: 'pending' },
       orderBy: { createdAt: 'asc' },
@@ -76,6 +76,15 @@ export async function POST(
           select: { createdAt: true, paymentGateway: true },
         },
         withdrawalPlanItems: {
+          include: { withdrawal: { select: { status: true } } },
+        },
+      },
+    }),
+    prisma.teamTournamentGoalEarning.findMany({
+      where: { teamId, status: 'pending' },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        withdrawalGoalItems: {
           include: { withdrawal: { select: { status: true } } },
         },
       },
@@ -110,9 +119,19 @@ export async function POST(
     return availableAt <= now;
   });
 
+  const availableGoalEarnings = goalEarnings.filter((e) => {
+    const hasActiveWithdrawal = e.withdrawalGoalItems.some(
+      (item) => item.withdrawal.status !== 'canceled'
+    );
+    if (hasActiveWithdrawal) return false;
+    const availableAt = getAvailableAt(e.createdAt, 'stripe');
+    return availableAt <= now;
+  });
+
   const totalCents =
     availableSponsorEarnings.reduce((sum, e) => sum + e.amountCents, 0) +
-    availablePlanEarnings.reduce((sum, e) => sum + e.amountCents, 0);
+    availablePlanEarnings.reduce((sum, e) => sum + e.amountCents, 0) +
+    availableGoalEarnings.reduce((sum, e) => sum + e.amountCents, 0);
 
   if (totalCents <= 0) {
     return NextResponse.json(
@@ -155,10 +174,17 @@ export async function POST(
           amountCents: e.amountCents,
         })),
       },
+      goalItems: {
+        create: availableGoalEarnings.map((e) => ({
+          earningId: e.id,
+          amountCents: e.amountCents,
+        })),
+      },
     },
     include: {
       planItems: true,
       sponsorshipItems: true,
+      goalItems: true,
     },
   });
 
@@ -166,7 +192,7 @@ export async function POST(
     ok: true,
     withdrawalId: withdrawal.id,
     amountCents: withdrawal.amountCents,
-    itemsCount: withdrawal.planItems.length + withdrawal.sponsorshipItems.length,
+    itemsCount: withdrawal.planItems.length + withdrawal.sponsorshipItems.length + withdrawal.goalItems.length,
   });
 }
 

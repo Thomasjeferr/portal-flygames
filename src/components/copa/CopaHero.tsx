@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import type { CopaHeroProps } from './types';
 
+const SUBSCRIBER_MESSAGE =
+  'Você já é assinante do portal. O apoio por meta é voltado a novos torcedores. Obrigado por fazer parte da família!';
+
 export function CopaHero({
   name,
   season,
@@ -10,7 +13,7 @@ export function CopaHero({
   goalPrice,
   isGoalMode,
   slug,
-  firstTeamInGoalId,
+  isAlreadySubscriber = false,
 }: CopaHeroProps) {
   const priceFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(goalPrice);
 
@@ -59,13 +62,19 @@ export function CopaHero({
         </div>
 
         <div className="flex flex-wrap justify-center gap-3">
-          {isGoalMode && firstTeamInGoalId ? (
-            <Link
-              href={`/torneios/${slug}/apoiar?teamId=${firstTeamInGoalId}`}
-              className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-futvar-green text-futvar-darker font-bold text-base sm:text-lg hover:bg-futvar-green-light transition-all duration-200 shadow-lg shadow-futvar-green/20 hover:shadow-futvar-green/30 hover:scale-[1.02]"
-            >
-              Apoiar um time
-            </Link>
+          {isGoalMode ? (
+            isAlreadySubscriber ? (
+              <p className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-futvar-green/10 border border-futvar-green/30 text-futvar-green/90 text-sm font-medium max-w-md">
+                {SUBSCRIBER_MESSAGE}
+              </p>
+            ) : (
+              <a
+                href="#ranking"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-futvar-green text-futvar-darker font-bold text-base sm:text-lg hover:bg-futvar-green-light transition-all duration-200 shadow-lg shadow-futvar-green/20 hover:shadow-futvar-green/30 hover:scale-[1.02]"
+              >
+                Apoiar um time
+              </a>
+            )
           ) : (
             <span className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-futvar-gray text-futvar-light font-semibold cursor-not-allowed">
               Apoiar um time

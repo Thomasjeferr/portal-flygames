@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { hasFullAccess } from '@/lib/access';
 import { prisma } from '@/lib/db';
 import { createStripeSubscription, isStripeConfigured } from '@/lib/payments/stripe';
 import { z } from 'zod';
@@ -18,6 +19,17 @@ export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: 'Faça login para continuar' }, { status: 401 });
+  }
+
+  const alreadySubscriber = await hasFullAccess(session.userId);
+  if (alreadySubscriber) {
+    return NextResponse.json(
+      {
+        error:
+          'Você já é assinante do portal. O apoio por meta é voltado a novos torcedores. Obrigado por fazer parte da família!',
+      },
+      { status: 400 }
+    );
   }
 
   try {

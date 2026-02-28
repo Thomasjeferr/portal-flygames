@@ -23,6 +23,9 @@ export async function PATCH(
       sponsorshipItems: {
         include: { earning: true },
       },
+      goalItems: {
+        include: { earning: true },
+      },
     },
   });
 
@@ -66,6 +69,14 @@ export async function PATCH(
     if (sponsorshipEarningIds.length) {
       await tx.teamSponsorshipEarning.updateMany({
         where: { id: { in: sponsorshipEarningIds } },
+        data: { status: 'paid', paidAt, paymentReference },
+      });
+    }
+
+    const goalEarningIds = withdrawal.goalItems.map((item) => item.earningId);
+    if (goalEarningIds.length) {
+      await tx.teamTournamentGoalEarning.updateMany({
+        where: { id: { in: goalEarningIds } },
         data: { status: 'paid', paidAt, paymentReference },
       });
     }

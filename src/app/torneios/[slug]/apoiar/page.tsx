@@ -76,6 +76,7 @@ export default function ApoiarTimePublicPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [needsLogin, setNeedsLogin] = useState(false);
+  const [alreadySubscriber, setAlreadySubscriber] = useState(false);
 
   useEffect(() => {
     if (!slug || !teamId) {
@@ -89,6 +90,11 @@ export default function ApoiarTimePublicPage() {
         const meData = await meRes.json();
         if (!meData?.user) {
           setNeedsLogin(true);
+          setLoading(false);
+          return;
+        }
+        if (meData.hasFullAccess) {
+          setAlreadySubscriber(true);
           setLoading(false);
           return;
         }
@@ -150,6 +156,25 @@ export default function ApoiarTimePublicPage() {
     return (
       <div className="min-h-screen bg-futvar-darker flex items-center justify-center p-4 pt-24">
         <p className="text-futvar-light">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (alreadySubscriber) {
+    return (
+      <div className="min-h-screen bg-futvar-darker flex items-center justify-center p-4 pt-24">
+        <div className="bg-futvar-dark border border-futvar-green/20 rounded-2xl p-8 max-w-md w-full text-center">
+          <h1 className="text-xl font-bold text-white mb-2">Você já é assinante</h1>
+          <p className="text-futvar-light text-sm mb-6">
+            O apoio por meta é voltado a novos torcedores. Obrigado por fazer parte da família!
+          </p>
+          <Link
+            href={`/torneios/${slug}`}
+            className="inline-block px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light transition-colors"
+          >
+            Voltar ao campeonato
+          </Link>
+        </div>
       </div>
     );
   }
@@ -219,8 +244,11 @@ export default function ApoiarTimePublicPage() {
         </Link>
         <div className="bg-futvar-dark border border-futvar-green/20 rounded-2xl p-6">
           <h1 className="text-xl font-bold text-white mb-1">Apoiar time (meta)</h1>
-          <p className="text-futvar-light text-sm mb-6">
-            {tournamentName} — {teamName} — {planPrice}/mês (cobrança recorrente)
+          <p className="text-futvar-light text-sm mb-2">
+            {tournamentName} — {planPrice}/mês (cobrança recorrente)
+          </p>
+          <p className="text-sm font-semibold text-futvar-green mb-6" role="status">
+            Você está apoiando: <span className="text-white">{teamName}</span>
           </p>
           <Elements stripe={stripePromise} options={options}>
             <GoalPaymentForm

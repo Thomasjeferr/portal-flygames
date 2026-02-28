@@ -3,7 +3,12 @@ import { prisma } from '@/lib/db';
 import { verifyStripeWebhook, getStripe } from '@/lib/payments/stripe';
 import { sendTransactionalEmail } from '@/lib/email/emailService';
 import { markTournamentRegistrationAsPaid } from '@/lib/tournamentRegistrationPayment';
-import { processTournamentGoalSubscriptionPaid, recalculateGoalSupportersAndConfirm } from '@/lib/tournamentGoalPayment';
+import {
+  processTournamentGoalSubscriptionPaid,
+  recalculateGoalSupportersAndConfirm,
+  ensurePortalSubscriptionForGoalSupporter,
+  deactivatePortalSubscriptionByStripeId,
+} from '@/lib/tournamentGoalPayment';
 
 function addMonths(date: Date, months: number): Date {
   const d = new Date(date);
@@ -52,8 +57,17 @@ export async function POST(request: NextRequest) {
         // (bloco tournament-registration removido daqui)
         if (planIdMeta === 'tournament-goal') {
           const userId = metadata.userId;
+          const amountCents =
+            typeof invoice.amount_paid === 'number' ? Math.round(invoice.amount_paid) : undefined;
           if (userId) {
-            await processTournamentGoalSubscriptionPaid(userId, tournamentId, teamIdMeta, subscriptionId);
+            await processTournamentGoalSubscriptionPaid(
+              userId,
+              tournamentId,
+              teamIdMeta,
+              subscriptionId,
+              amountCents
+            );
+            await ensurePortalSubscriptionForGoalSupporter(userId, subscriptionId);
             console.info('[Stripe] Apoio GOAL torneio registrado:', tournamentId, teamIdMeta);
           }
           return NextResponse.json({ received: true });
@@ -149,6 +163,7 @@ export async function POST(request: NextRequest) {
             data: { status: 'CANCELED', endedAt: new Date() },
           });
           await recalculateGoalSupportersAndConfirm(metadata.tournamentId, metadata.teamId);
+          await deactivatePortalSubscriptionByStripeId(subscriptionId);
           console.info('[Stripe] Assinatura GOAL cancelada, contagem atualizada:', metadata.tournamentId, metadata.teamId);
         }
       }

@@ -21,10 +21,11 @@ export async function GET(
 
   let sponsorEarnings: any[] = [];
   let planEarnings: any[] = [];
+  let goalEarnings: any[] = [];
 
   try {
-    [sponsorEarnings, planEarnings] = await Promise.all([
-      await prisma.teamSponsorshipEarning.findMany({
+    [sponsorEarnings, planEarnings, goalEarnings] = await Promise.all([
+      prisma.teamSponsorshipEarning.findMany({
         where: { teamId },
         include: {
           sponsorOrder: {
@@ -33,7 +34,7 @@ export async function GET(
         },
         orderBy: { createdAt: 'desc' },
       }),
-      await prisma.teamPlanEarning.findMany({
+      prisma.teamPlanEarning.findMany({
         where: { teamId },
         include: {
           purchase: {
@@ -43,6 +44,10 @@ export async function GET(
             },
           },
         },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.teamTournamentGoalEarning.findMany({
+        where: { teamId },
         orderBy: { createdAt: 'desc' },
       }),
     ]);
@@ -88,7 +93,25 @@ export async function GET(
     };
   });
 
-  const earnings = [...sponsorItems, ...planItems].sort(
+  const goalItems = goalEarnings.map((e) => {
+    const orderCreatedAt = e.createdAt;
+    const availableAt = getAvailableAt(orderCreatedAt, 'stripe');
+    return {
+      id: e.id,
+      source: 'goal' as const,
+      amountCents: e.amountCents,
+      status: e.status,
+      paidAt: e.paidAt,
+      paymentReference: e.paymentReference,
+      createdAt: e.createdAt,
+      description: 'Apoio (meta campeonato)',
+      subDescription: '',
+      orderCreatedAt,
+      availableAt,
+    };
+  });
+
+  const earnings = [...sponsorItems, ...planItems, ...goalItems].sort(
     (a, b) => new Date(b.orderCreatedAt).getTime() - new Date(a.orderCreatedAt).getTime()
   );
 

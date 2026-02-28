@@ -124,6 +124,7 @@ model Team {
   tournamentMatchesAsB TournamentMatch[] @relation("MatchTeamB")
   tournamentMatchesWon TournamentMatch[] @relation("MatchWinner")
   tournamentSubscriptionsAsSupported TournamentSubscription[]
+  goalEarnings                       TeamTournamentGoalEarning[]
 }
 
 // Responsáveis pelo time (usuários que gerenciam o time no painel do clube)
@@ -806,6 +807,7 @@ model TeamWithdrawal {
   team               Team                          @relation(fields: [teamId], references: [id], onDelete: Cascade)
   planItems          TeamWithdrawalPlanItem[]
   sponsorshipItems   TeamWithdrawalSponsorshipItem[]
+  goalItems          TeamWithdrawalGoalItem[]
 }
 
 model TeamWithdrawalPlanItem {
@@ -826,6 +828,34 @@ model TeamWithdrawalSponsorshipItem {
 
   withdrawal TeamWithdrawal        @relation(fields: [withdrawalId], references: [id], onDelete: Cascade)
   earning    TeamSponsorshipEarning @relation(fields: [earningId], references: [id], onDelete: Cascade)
+}
+
+// Ganho do time com apoio por meta (tournament-goal); preservado ao excluir campeonato (tournamentSubscriptionId SetNull)
+model TeamTournamentGoalEarning {
+  id                      String    @id @default(cuid())
+  teamId                  String    @map("team_id")
+  tournamentSubscriptionId String?  @map("tournament_subscription_id") // opcional; SetNull ao excluir campeonato
+  amountCents             Int       @map("amount_cents")
+  status                  String    @default("pending") @map("status") // pending | paid
+  paidAt                  DateTime? @map("paid_at")
+  paymentReference        String?   @map("payment_reference")
+  createdAt               DateTime  @default(now()) @map("created_at")
+
+  team                   Team                     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  tournamentSubscription TournamentSubscription?   @relation(fields: [tournamentSubscriptionId], references: [id], onDelete: SetNull)
+  withdrawalGoalItems    TeamWithdrawalGoalItem[]
+
+  @@map("team_tournament_goal_earnings")
+}
+
+model TeamWithdrawalGoalItem {
+  id           String @id @default(cuid())
+  withdrawalId String @map("withdrawal_id")
+  earningId    String @map("earning_id")
+  amountCents  Int    @map("amount_cents")
+
+  withdrawal TeamWithdrawal           @relation(fields: [withdrawalId], references: [id], onDelete: Cascade)
+  earning    TeamTournamentGoalEarning @relation(fields: [earningId], references: [id], onDelete: Cascade)
 }
 
 // ========== DASHBOARD / ANALYTICS ==========
@@ -945,6 +975,7 @@ model TournamentTeam {
   goalStatus            String?   @map("goal_status") // PENDING | ACHIEVED | EXPIRED (quando GOAL)
   goalCurrentSupporters Int       @default(0) @map("goal_current_supporters")
   goalAchievedAt        DateTime? @map("goal_achieved_at")
+  goalPayoutPercent     Int       @default(0) @map("goal_payout_percent") // 0-100: % do valor de apoio que vai para o time
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
@@ -1001,6 +1032,7 @@ model TournamentSubscription {
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   teamSupported Team      @relation(fields: [teamSupportedId], references: [id], onDelete: Cascade)
+  goalEarnings  TeamTournamentGoalEarning[]
 
   @@map("tournament_subscriptions")
 }

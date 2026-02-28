@@ -38,7 +38,8 @@ export type CopaHeroProps = {
   goalPrice: number;
   isGoalMode: boolean;
   slug: string;
-  firstTeamInGoalId: string | null;
+  /** Se true, usuário já é assinante; mostrar aviso no lugar do botão "Apoiar um time". */
+  isAlreadySubscriber?: boolean;
 };
 
 export type CopaStatusCardsProps = {
@@ -55,6 +56,8 @@ export type CopaRankingLeaderboardProps = {
   goalRequired: number;
   goalPrice: number;
   slug: string;
+  /** Se true, usuário já é assinante; mostrar aviso no lugar dos botões de apoio. */
+  isAlreadySubscriber?: boolean;
 };
 
 export type CopaConfirmedTeamsProps = {

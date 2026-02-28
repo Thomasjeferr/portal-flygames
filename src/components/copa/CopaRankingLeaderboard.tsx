@@ -1,19 +1,34 @@
 import Link from 'next/link';
 import type { CopaRankingLeaderboardProps } from './types';
 
-export function CopaRankingLeaderboard({ teams, goalRequired, goalPrice, slug }: CopaRankingLeaderboardProps) {
+const SUBSCRIBER_MESSAGE =
+  'Você já é assinante do portal. O apoio por meta é voltado a novos torcedores. Obrigado por fazer parte da família!';
+
+export function CopaRankingLeaderboard({
+  teams,
+  goalRequired,
+  goalPrice,
+  slug,
+  isAlreadySubscriber = false,
+}: CopaRankingLeaderboardProps) {
   const priceFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(goalPrice);
 
   if (teams.length === 0) return null;
 
   return (
-    <section className="px-4 lg:px-12 py-12">
+    <section id="ranking" className="px-4 lg:px-12 py-12 scroll-mt-24">
       <div className="max-w-5xl mx-auto">
         <h2 className="text-2xl font-bold text-white mb-2">Ranking de ativação</h2>
-        <p className="text-futvar-light mb-8">
+        <p className="text-futvar-light mb-4">
           Apoie com assinatura de <strong className="text-futvar-green">{priceFormatted}/mês</strong>. Ao atingir{' '}
           {goalRequired} apoiadores, o time é confirmado.
         </p>
+        {isAlreadySubscriber && (
+          <p className="mb-8 rounded-xl bg-futvar-green/10 border border-futvar-green/30 text-futvar-green/90 text-sm font-medium px-4 py-3">
+            {SUBSCRIBER_MESSAGE}
+          </p>
+        )}
+        {!isAlreadySubscriber && <div className="mb-8" />}
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {teams.map((tt, index) => {
@@ -69,12 +84,18 @@ export function CopaRankingLeaderboard({ teams, goalRequired, goalPrice, slug }:
                     <p className="text-xs text-futvar-light mt-2">
                       Faltam {remaining} apoiador{remaining !== 1 ? 'es' : ''}
                     </p>
-                    <Link
-                      href={`/torneios/${slug}/apoiar?teamId=${tt.teamId}`}
-                      className="mt-4 inline-flex items-center justify-center w-full py-2.5 rounded-xl bg-futvar-green text-futvar-darker font-bold text-sm hover:bg-futvar-green-light transition-colors duration-200"
-                    >
-                      Apoiar
-                    </Link>
+                    {isAlreadySubscriber ? (
+                      <p className="mt-4 text-center text-sm text-futvar-light/80 py-2.5">
+                        Você já é assinante
+                      </p>
+                    ) : (
+                      <Link
+                        href={`/torneios/${slug}/apoiar?teamId=${tt.teamId}`}
+                        className="mt-4 inline-flex items-center justify-center w-full py-2.5 rounded-xl bg-futvar-green text-futvar-darker font-bold text-sm hover:bg-futvar-green-light transition-colors duration-200"
+                      >
+                        Quero apoiar este time
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

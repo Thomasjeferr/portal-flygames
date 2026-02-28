@@ -26,7 +26,7 @@ function formatDate(s: string) {
 
 type Earning = {
   id: string;
-  source: 'sponsor' | 'plan';
+  source: 'sponsor' | 'plan' | 'goal';
   amountCents: number;
   status: string;
   paidAt: string | null;
@@ -219,7 +219,7 @@ export default function PainelTimeComissoesPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-futvar-light text-sm">
-                      {e.source === 'sponsor' ? 'Patrocínio' : 'Plano/Jogo'}
+                      {e.source === 'sponsor' ? 'Patrocínio' : e.source === 'goal' ? 'Apoio (meta)' : 'Plano/Jogo'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-white">

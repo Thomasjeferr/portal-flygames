@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getSession } from '@/lib/auth';
+import { hasFullAccess } from '@/lib/access';
 import { prisma } from '@/lib/db';
 import {
   CopaHero,
@@ -58,8 +60,10 @@ const ROUND_LABEL: Record<number, string> = {
 
 export default async function TorneioPublicPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
-  const tournament = await getTournament(slug);
+  const [tournament, session] = await Promise.all([getTournament(slug), getSession()]);
   if (!tournament) notFound();
+
+  const isAlreadySubscriber = session ? await hasFullAccess(session.userId) : false;
 
   const matches =
     tournament.bracketStatus === 'GENERATED' ? await getTournamentMatches(tournament.id) : [];
@@ -74,7 +78,7 @@ export default async function TorneioPublicPage({ params }: { params: Promise<Pa
   const isGoalMode = tournament.registrationMode === 'GOAL';
   const confirmedCount = teamsConfirmed.length;
   const leaderTeam =
-    teamsInGoal.length > 0
+    teamsInGoal.length > 0 && teamsInGoal[0].goalCurrentSupporters > 0
       ? {
           name: teamsInGoal[0].team.name,
           supporters: teamsInGoal[0].goalCurrentSupporters,
@@ -92,7 +96,7 @@ export default async function TorneioPublicPage({ params }: { params: Promise<Pa
         goalPrice={goalPrice}
         isGoalMode={isGoalMode}
         slug={slug}
-        firstTeamInGoalId={teamsInGoal[0]?.teamId ?? null}
+        isAlreadySubscriber={isAlreadySubscriber}
       />
 
       <CopaStatusCards
@@ -115,6 +119,7 @@ export default async function TorneioPublicPage({ params }: { params: Promise<Pa
           goalRequired={goalRequired}
           goalPrice={goalPrice}
           slug={slug}
+          isAlreadySubscriber={isAlreadySubscriber}
         />
       )}
 

@@ -6,6 +6,7 @@ import { z } from 'zod';
 const createTeamSchema = z.object({
   teamId: z.string().min(1, 'Time obrigatório'),
   registrationType: z.enum(['FREE', 'PAID', 'GOAL']),
+  goalPayoutPercent: z.number().int().min(0).max(100).optional(),
 });
 
 export async function GET(
@@ -62,6 +63,8 @@ export async function POST(
   const registrationType = parsed.data.registrationType;
   const teamStatus = tournament.registrationMode === 'GOAL' ? 'IN_GOAL' : 'APPLIED';
   const goalStatus = tournament.registrationMode === 'GOAL' ? 'PENDING' : null;
+  const goalPayoutPercent =
+    parsed.data.goalPayoutPercent != null ? Math.min(100, Math.max(0, parsed.data.goalPayoutPercent)) : 0;
 
   const created = await prisma.tournamentTeam.create({
     data: {
@@ -70,6 +73,7 @@ export async function POST(
       registrationType,
       teamStatus,
       goalStatus,
+      goalPayoutPercent,
     },
     include: { team: true },
   });

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
 interface Team {
@@ -22,6 +22,7 @@ interface TournamentTeam {
   paymentGateway: string | null;
   goalStatus: string | null;
   goalCurrentSupporters: number;
+  goalPayoutPercent?: number;
   team: Team;
 }
 
@@ -134,6 +135,9 @@ export default function TournamentDetailPage() {
   const [adding, setAdding] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState('');
   const [registrationType, setRegistrationType] = useState<'FREE' | 'PAID' | 'GOAL'>('FREE');
+  const [goalPayoutPercentInput, setGoalPayoutPercentInput] = useState(0);
+  const [editingGoalPayoutTeamId, setEditingGoalPayoutTeamId] = useState<string | null>(null);
+  const [editingGoalPayoutValue, setEditingGoalPayoutValue] = useState(0);
   const [error, setError] = useState('');
   const [payModal, setPayModal] = useState<TournamentTeam | null>(null);
   const [payMethod, setPayMethod] = useState<'pix' | 'card' | null>(null);
@@ -148,6 +152,60 @@ export default function TournamentDetailPage() {
   const [matches, setMatches] = useState<TournamentMatch[]>([]);
   const [generatingBracket, setGeneratingBracket] = useState(false);
   const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
+  const [deletingTournament, setDeletingTournament] = useState(false);
+  const router = useRouter();
+
+  const handleDeleteTournament = async () => {
+    if (!confirm('Excluir este campeonato? Todos os times inscritos, partidas e assinaturas de apoio serão removidos. Esta ação não pode ser desfeita.')) return;
+    setDeletingTournament(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/tournaments/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        router.push('/admin/torneios');
+        return;
+      }
+      const data = await res.json();
+      setError(data.error || 'Erro ao excluir campeonato');
+    } finally {
+      setDeletingTournament(false);
+    }
+  };
+
+  const handleSaveGoalPayout = async (teamId: string, percent: number) => {
+    setUpdating(teamId);
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/tournaments/${id}/teams/${teamId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goalPayoutPercent: percent }),
+      });
+      if (res.ok) await fetchTeams();
+      else {
+        const data = await res.json();
+        setError(data.error || 'Erro ao salvar %');
+      }
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleRemoveTeam = async (teamId: string, teamName: string) => {
+    if (!confirm(`Remover "${teamName}" do campeonato? A inscrição e assinaturas de apoio deste time neste torneio serão removidas.`)) return;
+    setUpdating(teamId);
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/tournaments/${id}/teams/${teamId}`, { method: 'DELETE' });
+      if (res.ok) await fetchTeams();
+      else {
+        const data = await res.json();
+        setError(data.error || 'Erro ao remover time');
+      }
+    } finally {
+      setUpdating(null);
+    }
+  };
 
   const handleSaveMatchResult = async (matchId: string, scoreA: number, scoreB: number, penaltiesA: number | null, penaltiesB: number | null) => {
     setSavingMatchId(matchId);
@@ -209,6 +267,7 @@ export default function TournamentDetailPage() {
       setLoading(false);
     })();
   }, [id]);
+
 
   useEffect(() => {
     if (tournament?.bracketStatus === 'GENERATED') {
@@ -285,7 +344,11 @@ export default function TournamentDetailPage() {
       const res = await fetch(`/api/admin/tournaments/${id}/teams`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teamId: selectedTeamId, registrationType }),
+        body: JSON.stringify({
+          teamId: selectedTeamId,
+          registrationType,
+          ...(registrationType === 'GOAL' && { goalPayoutPercent: goalPayoutPercentInput }),
+        }),
       });
       if (res.ok) {
         await fetchTeams();
@@ -409,6 +472,14 @@ export default function TournamentDetailPage() {
           <Link href={`/admin/torneios/${id}/editar`} className="px-4 py-2 rounded bg-netflix-gray text-white font-semibold hover:bg-white/20">
             Editar torneio
           </Link>
+          <button
+            type="button"
+            onClick={handleDeleteTournament}
+            disabled={deletingTournament}
+            className="px-4 py-2 rounded bg-red-900/50 text-red-300 font-semibold hover:bg-red-900 disabled:opacity-50"
+          >
+            {deletingTournament ? 'Excluindo...' : 'Excluir campeonato'}
+          </button>
         </div>
       </div>
 
@@ -442,6 +513,19 @@ export default function TournamentDetailPage() {
               <option value="GOAL">Meta</option>
             </select>
           </div>
+          {registrationType === 'GOAL' && (
+            <div className="w-32">
+              <label className="block text-sm font-medium text-netflix-light mb-2">% repasse ao time</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={goalPayoutPercentInput}
+                onChange={(e) => setGoalPayoutPercentInput(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              />
+            </div>
+          )}
           <button type="submit" disabled={adding || !selectedTeamId} className="px-4 py-3 rounded bg-netflix-red text-white font-semibold disabled:opacity-50">
             {adding ? 'Inserindo...' : 'Inscrever'}
           </button>
@@ -468,7 +552,53 @@ export default function TournamentDetailPage() {
                   {tournament.registrationMode === 'PAID' && tt.paymentStatus && ` • Pagamento: ${tt.paymentStatus === 'paid' ? 'Pago' : 'Pendente'}`}
                   {tournament.registrationMode === 'GOAL' && tt.goalStatus && ` • ${tt.goalStatus}`}
                   {tournament.registrationMode === 'GOAL' && ` • ${tt.goalCurrentSupporters} apoiadores`}
+                  {tournament.registrationMode === 'GOAL' && (tt.goalPayoutPercent ?? 0) > 0 && ` • ${tt.goalPayoutPercent}% repasse`}
                 </p>
+                {tournament.registrationMode === 'GOAL' && (
+                  <div className="flex items-center gap-2 mt-2">
+                    {editingGoalPayoutTeamId === tt.teamId ? (
+                      <>
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={editingGoalPayoutValue}
+                          onChange={(e) => setEditingGoalPayoutValue(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+                          className="w-16 px-2 py-1 rounded bg-netflix-gray border border-white/20 text-white text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleSaveGoalPayout(tt.teamId, editingGoalPayoutValue);
+                            setEditingGoalPayoutTeamId(null);
+                          }}
+                          disabled={updating === tt.teamId}
+                          className="px-2 py-1 rounded bg-green-900/50 text-green-300 text-xs hover:bg-green-900 disabled:opacity-50"
+                        >
+                          Salvar %
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingGoalPayoutTeamId(null)}
+                          className="px-2 py-1 rounded bg-white/10 text-netflix-light text-xs"
+                        >
+                          Cancelar
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingGoalPayoutTeamId(tt.teamId);
+                          setEditingGoalPayoutValue(tt.goalPayoutPercent ?? 0);
+                        }}
+                        className="text-xs text-netflix-light hover:text-white"
+                      >
+                        Editar % repasse
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
               {(tt.teamStatus === 'APPLIED' || tt.teamStatus === 'IN_GOAL') && (
                 <div className="flex items-center gap-2">
@@ -504,6 +634,28 @@ export default function TournamentDetailPage() {
                     className="px-3 py-1.5 rounded bg-red-900/50 text-red-300 text-sm hover:bg-red-900 disabled:opacity-50"
                   >
                     {updating === tt.teamId ? '...' : 'Rejeitar'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTeam(tt.teamId, tt.team.name)}
+                    disabled={updating === tt.teamId}
+                    className="px-3 py-1.5 rounded bg-white/10 text-netflix-light text-sm hover:bg-white/20 disabled:opacity-50"
+                    title="Remover inscrição do torneio"
+                  >
+                    {updating === tt.teamId ? '...' : 'Remover do torneio'}
+                  </button>
+                </div>
+              )}
+              {(tt.teamStatus === 'CONFIRMED' || tt.teamStatus === 'REJECTED' || tt.teamStatus === 'ELIMINATED') && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTeam(tt.teamId, tt.team.name)}
+                    disabled={updating === tt.teamId}
+                    className="px-3 py-1.5 rounded bg-white/10 text-netflix-light text-sm hover:bg-white/20 disabled:opacity-50"
+                    title="Remover inscrição do torneio"
+                  >
+                    {updating === tt.teamId ? '...' : 'Remover do torneio'}
                   </button>
                 </div>
               )}
