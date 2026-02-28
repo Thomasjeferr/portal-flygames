@@ -5,6 +5,7 @@ import { hasFullAccess } from '@/lib/access';
 import { prisma } from '@/lib/db';
 import {
   CopaHero,
+  CopaPremiacao,
   CopaStatusCards,
   CopaRankingLeaderboard,
   CopaConfirmedTeams,
@@ -96,8 +97,6 @@ export default async function TorneioPublicPage({ params }: { params: Promise<Pa
   ].filter(Boolean) as string[];
   const hasPremiacao =
     premio1 != null || premio2 != null || premio3 != null || premio4 != null || trofeus.length > 0;
-  const formatPremio = (v: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v);
 
   const teamsInGoal = tournament.teams.filter(
     (tt) =>
@@ -129,6 +128,17 @@ export default async function TorneioPublicPage({ params }: { params: Promise<Pa
         slug={slug}
         isAlreadySubscriber={isAlreadySubscriber}
       />
+
+      {hasPremiacao && (
+        <CopaPremiacao
+          premiacaoTipo={premiacaoTipo}
+          premio1={premio1}
+          premio2={premio2}
+          premio3={premio3}
+          premio4={premio4}
+          trofeus={trofeus}
+        />
+      )}
 
       <CopaStatusCards
         confirmedCount={confirmedCount}
@@ -162,50 +172,6 @@ export default async function TorneioPublicPage({ params }: { params: Promise<Pa
           team: tt.team,
         }))}
       />
-
-      {hasPremiacao && (
-        <section className="px-4 lg:px-12 py-8">
-          <div className="max-w-5xl mx-auto">
-            <div className="rounded-2xl border border-futvar-green/20 bg-futvar-dark/90 backdrop-blur-sm p-6 shadow-card">
-              <h2 className="text-xl font-bold text-white mb-1">PREMIAÇÃO</h2>
-              {premiacaoTipo && (
-                <p className="text-futvar-light text-sm mb-4">{premiacaoTipo}</p>
-              )}
-              {(premio1 != null || premio2 != null || premio3 != null || premio4 != null) && (
-                <>
-                  <p className="text-futvar-light text-sm font-medium mb-3">Prêmios em dinheiro</p>
-                  <ul className="space-y-2 mb-4">
-                    {premio1 != null && (
-                      <li className="text-white font-medium">1º Lugar – {formatPremio(premio1)}</li>
-                    )}
-                    {premio2 != null && (
-                      <li className="text-white font-medium">2º Lugar – {formatPremio(premio2)}</li>
-                    )}
-                    {premio3 != null && (
-                      <li className="text-white font-medium">3º Lugar – {formatPremio(premio3)}</li>
-                    )}
-                    {premio4 != null && (
-                      <li className="text-white font-medium">4º Lugar – {formatPremio(premio4)}</li>
-                    )}
-                  </ul>
-                </>
-              )}
-              {trofeus.length > 0 && (
-                <>
-                  <p className="text-futvar-light text-sm font-medium mb-2">Troféus</p>
-                  <ul className="space-y-1">
-                    {trofeus.map((nome) => (
-                      <li key={nome} className="text-white flex items-center gap-2">
-                        <span aria-hidden>🏆</span> {nome}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
 
       <CopaBracket
         matches={matches.map((m) => ({

@@ -43,33 +43,164 @@ function formatPremio(v: number | null): string {
   }).format(v);
 }
 
-function PremiacaoResumo({ t }: { t: TournamentItem }) {
-  const hasMoney =
-    t.premioPrimeiro != null ||
-    t.premioSegundo != null ||
-    t.premioTerceiro != null ||
-    t.premioQuarto != null;
+const MEDAL_CONFIG = [
+  { key: 'premioPrimeiro' as const, label: 'Ouro', sublabel: '1º', bg: 'from-amber-400 via-yellow-500 to-amber-600', border: 'border-amber-400/50' },
+  { key: 'premioSegundo' as const, label: 'Prata', sublabel: '2º', bg: 'from-slate-300 via-slate-400 to-slate-500', border: 'border-slate-400/50' },
+  { key: 'premioTerceiro' as const, label: 'Bronze', sublabel: '3º', bg: 'from-amber-600 via-amber-700 to-amber-800', border: 'border-amber-700/50' },
+  { key: 'premioQuarto' as const, label: '4º Lugar', sublabel: '4º', bg: 'from-rose-700 via-rose-800 to-rose-900', border: 'border-rose-600/50' },
+];
+
+function TournamentCard({
+  t,
+  teamApproved,
+  participatingId,
+  onParticipar,
+  onVerRegras,
+  hasRegulamento,
+}: {
+  t: TournamentItem;
+  teamApproved: boolean;
+  participatingId: string | null;
+  onParticipar: (id: string) => void;
+  onVerRegras: (tournament: TournamentItem) => void;
+  hasRegulamento: (tournament: TournamentItem) => boolean;
+}) {
+  const filled = t.maxTeams - t.spotsLeft;
+  const progressPercent = t.maxTeams > 0 ? (filled / t.maxTeams) * 100 : 0;
   const trofeus = [
     t.trofeuCampeao && 'Campeão',
-    t.trofeuVice && 'Vice',
-    t.trofeuTerceiro && '3º',
-    t.trofeuQuarto && '4º',
+    t.trofeuVice && 'Vice-campeão',
+    t.trofeuTerceiro && '3º lugar',
+    t.trofeuQuarto && '4º lugar',
     t.trofeuArtilheiro && 'Artilheiro',
     t.craqueDaCopa && 'Craque da Copa',
   ].filter(Boolean) as string[];
-  if (!hasMoney && trofeus.length === 0) return null;
+
+  const premios = MEDAL_CONFIG.map((m) => ({
+    ...m,
+    value: t[m.key],
+  })).filter((p) => p.value != null) as (typeof MEDAL_CONFIG[0] & { value: number })[];
+
   return (
-    <div className="text-sm text-futvar-light mt-2 space-y-1">
-      {t.premiacaoTipo && <p>{t.premiacaoTipo}</p>}
-      {hasMoney && (
-        <p>
-          {t.premioPrimeiro != null && `1º ${formatPremio(t.premioPrimeiro)}`}
-          {t.premioSegundo != null && ` · 2º ${formatPremio(t.premioSegundo)}`}
-          {t.premioTerceiro != null && ` · 3º ${formatPremio(t.premioTerceiro)}`}
-          {t.premioQuarto != null && ` · 4º ${formatPremio(t.premioQuarto)}`}
+    <div className="relative rounded-2xl border border-white/10 bg-futvar-dark/95 overflow-hidden">
+      {/* Fundo sutil: linhas/brilho */}
+      <div className="absolute inset-0 pointer-events-none opacity-30">
+        <div className="absolute bottom-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-futvar-green/10 rounded-full blur-2xl" />
+      </div>
+
+      <div className="relative p-6 sm:p-8">
+        {/* Vagas + barra de progresso com efeito de brilho */}
+        <div className="mb-6">
+          <p className="text-white text-sm font-medium mb-2">
+            Vagas {filled}/{t.maxTeams} preenchidas
+          </p>
+          <div className="h-2.5 rounded-full bg-white/10 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-futvar-green to-emerald-400 shadow-[0_0_12px_rgba(34,197,94,0.5)]"
+              style={{ width: `${Math.max(2, progressPercent)}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Título do campeonato + tagline */}
+        <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white uppercase tracking-tight mb-2">
+          {t.name}
+        </h3>
+        <p className="text-futvar-light font-semibold text-base mb-6">
+          Garanta sua vaga na Copa
         </p>
-      )}
-      {trofeus.length > 0 && <p>Trofeus: {trofeus.join(', ')}</p>}
+
+        {/* Badge INSCRIÇÕES ABERTAS (quando pode inscrever) */}
+        {t.canEnroll && teamApproved && !t.enrolled && (
+          <div className="inline-flex items-center px-4 py-2 rounded-lg bg-pink-500/20 border border-pink-400/50 text-pink-200 font-bold text-sm uppercase tracking-wide shadow-[0_0_20px_rgba(236,72,153,0.3)] mb-6">
+            Inscrições abertas
+          </div>
+        )}
+
+        {/* Medalhas de prêmio em dinheiro */}
+        {(premios.length > 0 || trofeus.length > 0) && (
+          <div className="flex flex-col lg:flex-row gap-6 mb-6">
+            {premios.length > 0 && (
+              <div className="flex flex-wrap gap-3">
+                {premios.map((p) => (
+                  <div
+                    key={p.key}
+                    className={`flex flex-col items-center rounded-xl border-2 ${p.border} bg-futvar-darker/80 px-4 py-3 min-w-[100px]`}
+                  >
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${p.bg} flex items-center justify-center text-white font-black text-sm mb-1`}>
+                      {p.sublabel}
+                    </div>
+                    <span className="text-futvar-light text-xs font-medium">{p.label}</span>
+                    <span className="text-white font-bold text-sm">{formatPremio(p.value)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {trofeus.length > 0 && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                {trofeus.map((nome) => (
+                  <span key={nome} className="flex items-center gap-2 text-white text-sm">
+                    <span className="text-futvar-gold" aria-hidden>🏆</span>
+                    {nome}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Ações */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          {t.enrolled ? (
+            <span className="inline-flex items-center px-5 py-3 rounded-xl bg-futvar-green/20 text-futvar-green font-semibold">
+              {t.enrollment?.paymentStatus === 'paid' || t.enrollment?.teamStatus === 'CONFIRMED'
+                ? '✓ Inscrito'
+                : t.enrollment?.teamStatus === 'IN_GOAL'
+                  ? 'Na meta'
+                  : 'Aguardando pagamento'}
+            </span>
+          ) : t.canEnroll && teamApproved ? (
+            <button
+              type="button"
+              onClick={() => onParticipar(t.id)}
+              disabled={participatingId === t.id}
+              className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-futvar-green text-futvar-darker font-bold text-base uppercase tracking-wide hover:bg-futvar-green-light disabled:opacity-50 shadow-[0_0_24px_rgba(34,197,94,0.4)] transition-all duration-200"
+            >
+              {participatingId === t.id ? 'Inscrevendo...' : 'Participar agora'}
+            </button>
+          ) : !teamApproved ? (
+            <span className="text-futvar-light text-sm">Time não aprovado</span>
+          ) : (
+            <span className="text-futvar-light text-sm">Vagas esgotadas</span>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/torneios/${t.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/20"
+            >
+              Ver página do campeonato
+            </Link>
+            {hasRegulamento(t) && (
+              <button
+                type="button"
+                onClick={() => onVerRegras(t)}
+                className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/20"
+              >
+                Ver regras
+              </button>
+            )}
+          </div>
+        </div>
+
+        {t.registrationMode === 'PAID' && t.registrationFeeAmount != null && t.registrationFeeAmount > 0 && (
+          <p className="text-futvar-light text-xs mt-3">
+            Inscrição: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.registrationFeeAmount)}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -166,98 +297,40 @@ export default function CampeonatosPage() {
   }
 
   return (
-    <div>
-      <h2 className="text-lg font-semibold text-white mb-4">Campeonatos</h2>
-      <p className="text-futvar-light text-sm mb-6">
-        Veja os campeonatos abertos e inscreva seu time. Prêmios e regulamento em cada card.
+    <div className="relative">
+      <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Campeonatos</h2>
+      <p className="text-futvar-light text-sm mb-8">
+        Veja os campeonatos abertos e inscreva seu time.
       </p>
 
       {!teamApproved && (
-        <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm">
-          Apenas times aprovados podem se inscrever em campeonatos. Conclua o cadastro e aguarde a aprovação.
+        <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm">
+          Apenas times aprovados podem se inscrever. Conclua o cadastro e aguarde a aprovação.
         </div>
       )}
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
           {error}
         </div>
       )}
 
       {tournaments.length === 0 ? (
-        <div className="rounded-xl border border-white/10 bg-futvar-dark p-8 text-center">
-          <p className="text-futvar-light">Nenhum campeonato publicado no momento.</p>
+        <div className="rounded-2xl border border-white/10 bg-futvar-dark p-12 text-center">
+          <p className="text-futvar-light text-lg">Nenhum campeonato publicado no momento.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-8">
           {tournaments.map((t) => (
-            <div
+            <TournamentCard
               key={t.id}
-              className="rounded-xl border border-white/10 bg-futvar-dark p-4 sm:p-6"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                <div className="flex-1">
-                  <h3 className="text-white font-semibold">{t.name}</h3>
-                  <p className="text-futvar-light text-sm mt-1">
-                    {t.season && `Temporada ${t.season}`}
-                    {t.region && ` · ${t.region}`}
-                    {' · '}
-                    {t.maxTeams} times
-                    {t.spotsLeft >= 0 && ` · ${t.spotsLeft} vagas`}
-                  </p>
-                  <PremiacaoResumo t={t} />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Link
-                    href={`/torneios/${t.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/20"
-                  >
-                    Ver página do campeonato
-                  </Link>
-                  {hasRegulamento(t) && (
-                    <button
-                      type="button"
-                      onClick={() => openRegulamento(t)}
-                      className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/20"
-                    >
-                      Ver regras
-                    </button>
-                  )}
-                  {t.enrolled ? (
-                    <span className="inline-flex items-center px-4 py-2 rounded-lg bg-futvar-green/20 text-futvar-green text-sm">
-                      {t.enrollment?.paymentStatus === 'paid' || t.enrollment?.teamStatus === 'CONFIRMED'
-                        ? 'Inscrito'
-                        : t.enrollment?.teamStatus === 'IN_GOAL'
-                          ? 'Na meta'
-                          : 'Aguardando pagamento'}
-                    </span>
-                  ) : t.canEnroll && teamApproved ? (
-                    <button
-                      type="button"
-                      onClick={() => handleParticipar(t.id)}
-                      disabled={participatingId === t.id}
-                      className="px-4 py-2 rounded-lg bg-futvar-green text-futvar-darker text-sm font-semibold hover:bg-futvar-green-light disabled:opacity-50"
-                    >
-                      {participatingId === t.id ? 'Inscrendo...' : 'Participar'}
-                    </button>
-                  ) : !teamApproved ? (
-                    <span className="text-futvar-light text-sm">Time não aprovado</span>
-                  ) : (
-                    <span className="text-futvar-light text-sm">Vagas esgotadas</span>
-                  )}
-                </div>
-              </div>
-              {t.registrationMode === 'PAID' && t.registrationFeeAmount != null && t.registrationFeeAmount > 0 && (
-                <p className="text-futvar-light text-xs mt-2">
-                  Inscrição:{' '}
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                    t.registrationFeeAmount
-                  )}
-                </p>
-              )}
-            </div>
+              t={t}
+              teamApproved={teamApproved}
+              participatingId={participatingId}
+              onParticipar={handleParticipar}
+              onVerRegras={openRegulamento}
+              hasRegulamento={hasRegulamento}
+            />
           ))}
         </div>
       )}

@@ -68,3 +68,12 @@ export type CopaBracketProps = {
   matches: TournamentMatchBasic[];
   roundLabel: Record<number, string>;
 };
+
+export type CopaPremiacaoProps = {
+  premiacaoTipo: string | null;
+  premio1: number | null;
+  premio2: number | null;
+  premio3: number | null;
+  premio4: number | null;
+  trofeus: string[];
+};
