@@ -493,19 +493,29 @@ export function VideoPlayerCard({
             Seu navegador não suporta vídeos.
           </video>
 
-          {/* Botão de play central (quando pausado) */}
+          {/* Botão de play central (quando pausado) - z-30 acima dos controles para garantir clique */}
           {!isPlaying && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <button
-                type="button"
-                onClick={handlePlayPause}
-                className="pointer-events-auto inline-flex h-16 w-16 items-center justify-center rounded-full bg-black/70 border border-emerald-400/80 shadow-lg shadow-black/80 hover:bg-emerald-500/90 hover:border-emerald-300 transition-colors"
-                aria-label="Reproduzir vídeo"
-              >
-                <svg viewBox="0 0 24 24" className="h-7 w-7 translate-x-[1px] text-white">
+            <div
+              className="absolute inset-0 z-30 flex items-center justify-center cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePlayPause();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handlePlayPause();
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label="Reproduzir vídeo"
+            >
+              <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-black/70 border border-emerald-400/80 shadow-lg shadow-black/80 hover:bg-emerald-500/90 hover:border-emerald-300 transition-colors pointer-events-none">
+                <svg viewBox="0 0 24 24" className="h-7 w-7 translate-x-[1px] text-white pointer-events-none">
                   <path d="M8 5l11 7-11 7z" fill="currentColor" />
                 </svg>
-              </button>
+              </div>
             </div>
           )}
 
