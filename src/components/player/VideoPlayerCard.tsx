@@ -544,7 +544,7 @@ export function VideoPlayerCard({
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(42,252,152,0.18),_transparent_55%)]" />
 
         <div
-          className="relative aspect-video bg-black"
+          className={`relative aspect-video bg-black ${!controlsVisible ? 'cursor-none' : ''}`}
           tabIndex={0}
           onKeyDown={handleKeyDown}
           onMouseMove={showControlsAndScheduleHide}
