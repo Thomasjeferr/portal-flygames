@@ -37,6 +37,7 @@ export function VideoPlayerCard({
   const initialTimeRef = useRef(initialTimeSeconds);
   const gameIdRef = useRef(gameId);
   const mountedRef = useRef(false);
+  const appliedInitialSeekRef = useRef(false);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -100,15 +101,15 @@ export function VideoPlayerCard({
     if (!video) return;
 
     mountedRef.current = true;
+    appliedInitialSeekRef.current = false;
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
     }
 
-    const canPlayNativeHls = video.canPlayType('application/vnd.apple.mpegurl') !== '';
-
-    if (isHlsSource && !canPlayNativeHls && Hls.isSupported()) {
+    // Usar hls.js sempre que suportado para ter seletor de qualidade (incluindo Safari)
+    if (isHlsSource && Hls.isSupported()) {
       const hls = new Hls({
         enableWorker: true,
       });
@@ -116,13 +117,12 @@ export function VideoPlayerCard({
       hls.loadSource(videoSrc);
       hls.attachMedia(video);
 
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      const updateQualityFromLevels = () => {
         const levels = hls.levels || [];
         if (levels.length) {
           const autoOption: QualityOption = { id: 'auto', label: 'Automático', helper: undefined };
           const mapped: QualityOption[] = levels.map((level, index) => {
             const height = level.height || 0;
-            // Alguns builds de hls.js expõem frameRate, outros fps; usamos o que existir (via any para não travar o tipo).
             const anyLevel = level as unknown as { frameRate?: number; fps?: number };
             const rawFps = anyLevel.frameRate ?? anyLevel.fps ?? 0;
             const fps = Math.round(rawFps || 0);
@@ -130,19 +130,23 @@ export function VideoPlayerCard({
             if (fps && fps >= 50) label = `${label}${fps}p`.replace('p60p', 'p60');
             let helper: string | undefined;
             if (height >= 1080) helper = 'HD';
-            return {
-              id: String(index),
-              label,
-              helper,
-            };
+            return { id: String(index), label, helper };
           });
           setQualityOptions([autoOption, ...mapped]);
-          setSelectedQualityId('auto');
+          setSelectedQualityId((prev) => {
+            if (prev === 'auto') return 'auto';
+            const idx = Number(prev);
+            if (!Number.isNaN(idx) && idx >= 0 && idx < levels.length) return prev;
+            return 'auto';
+          });
         } else {
           setQualityOptions([{ id: 'auto', label: 'Automático', helper: undefined }]);
           setSelectedQualityId('auto');
         }
-      });
+      };
+
+      hls.on(Hls.Events.MANIFEST_PARSED, updateQualityFromLevels);
+      hls.on(Hls.Events.LEVELS_UPDATED, updateQualityFromLevels);
     } else {
       video.src = videoSrc;
     }
@@ -155,6 +159,7 @@ export function VideoPlayerCard({
       if (t > 0 && Number.isFinite(v.duration) && t < v.duration) {
         try {
           v.currentTime = t;
+          appliedInitialSeekRef.current = true;
         } catch {
           // ignore
         }
@@ -277,6 +282,20 @@ export function VideoPlayerCard({
       }
     };
   }, [videoSrc, isHlsSource, autoplay, saveProgress, updateBuffered]);
+
+  // Aplicar "continuar assistindo" quando a API de progresso responder depois do vídeo já ter carregado
+  useEffect(() => {
+    if (initialTimeSeconds <= 0 || appliedInitialSeekRef.current) return;
+    const video = videoRef.current;
+    if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return;
+    const t = Math.min(initialTimeSeconds, video.duration - 1);
+    try {
+      video.currentTime = t;
+      appliedInitialSeekRef.current = true;
+    } catch {
+      // ignore
+    }
+  }, [initialTimeSeconds]);
 
   // Fullscreen: em mobile (iOS) só funciona no elemento <video>; em desktop no container
   const handleToggleFullscreen = () => {
