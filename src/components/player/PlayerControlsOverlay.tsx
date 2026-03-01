@@ -4,6 +4,8 @@ import React from 'react';
 import { ProgressBar } from './ProgressBar';
 
 interface PlayerControlsOverlayProps {
+  /** Quando false, overlay some com transição (controles ocultos por inatividade). */
+  show?: boolean;
   isPlaying: boolean;
   currentTime: number;
   duration: number;
@@ -34,6 +36,7 @@ function formatTime(seconds: number): string {
 }
 
 export function PlayerControlsOverlay({
+  show = true,
   isPlaying,
   currentTime,
   duration,
@@ -54,7 +57,12 @@ export function PlayerControlsOverlay({
   const displayVolume = isMuted ? 0 : volume;
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col justify-end">
+    <div
+      className={`absolute inset-x-0 bottom-0 z-20 flex flex-col justify-end transition-opacity duration-300 ${
+        show ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+      }`}
+      aria-hidden={!show}
+    >
       {/* Gradiente de fundo para legibilidade */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/85 via-black/60 to-transparent" />
 

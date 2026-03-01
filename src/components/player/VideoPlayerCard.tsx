@@ -6,6 +6,7 @@ import { PlayerControlsOverlay } from './PlayerControlsOverlay';
 import { SettingsModal, QualityOption } from './SettingsModal';
 
 const SAVE_PROGRESS_INTERVAL_MS = 30000;
+const HIDE_CONTROLS_DELAY_MS = 3000;
 
 interface VideoPlayerCardProps {
   videoSrc: string;
@@ -38,6 +39,9 @@ export function VideoPlayerCard({
   const gameIdRef = useRef(gameId);
   const mountedRef = useRef(false);
   const appliedInitialSeekRef = useRef(false);
+  const hideControlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isPlayingRef = useRef(false);
+  const isSettingsOpenRef = useRef(false);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -53,9 +57,12 @@ export function VideoPlayerCard({
     { id: 'auto', label: 'Automático', helper: undefined },
   ]);
   const [selectedQualityId, setSelectedQualityId] = useState('auto');
+  const [controlsVisible, setControlsVisible] = useState(true);
 
   initialTimeRef.current = initialTimeSeconds;
   gameIdRef.current = gameId;
+  isPlayingRef.current = isPlaying;
+  isSettingsOpenRef.current = isSettingsOpen;
 
   const isHlsSource = /\.m3u8($|\?)/i.test(videoSrc);
 
@@ -368,6 +375,25 @@ export function VideoPlayerCard({
     }
   };
 
+  const scheduleHideControls = useCallback(() => {
+    if (hideControlsTimeoutRef.current) clearTimeout(hideControlsTimeoutRef.current);
+    hideControlsTimeoutRef.current = setTimeout(() => {
+      hideControlsTimeoutRef.current = null;
+      if (isPlayingRef.current && !isSettingsOpenRef.current) {
+        setControlsVisible(false);
+      }
+    }, HIDE_CONTROLS_DELAY_MS);
+  }, []);
+
+  const showControlsAndScheduleHide = useCallback(() => {
+    setControlsVisible(true);
+    if (hideControlsTimeoutRef.current) {
+      clearTimeout(hideControlsTimeoutRef.current);
+      hideControlsTimeoutRef.current = null;
+    }
+    scheduleHideControls();
+  }, [scheduleHideControls]);
+
   const handlePlayPause = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -376,6 +402,12 @@ export function VideoPlayerCard({
     } else {
       video.pause();
     }
+    setControlsVisible(true);
+    if (hideControlsTimeoutRef.current) {
+      clearTimeout(hideControlsTimeoutRef.current);
+      hideControlsTimeoutRef.current = null;
+    }
+    scheduleHideControls();
   };
 
   const handleSkip = (deltaSeconds: number) => {
@@ -485,6 +517,23 @@ export function VideoPlayerCard({
     };
   }, []);
 
+  // Limpar timeout ao desmontar e manter controles visíveis quando pausado
+  useEffect(() => {
+    if (!isPlaying) {
+      setControlsVisible(true);
+      if (hideControlsTimeoutRef.current) {
+        clearTimeout(hideControlsTimeoutRef.current);
+        hideControlsTimeoutRef.current = null;
+      }
+    }
+    return () => {
+      if (hideControlsTimeoutRef.current) {
+        clearTimeout(hideControlsTimeoutRef.current);
+        hideControlsTimeoutRef.current = null;
+      }
+    };
+  }, [isPlaying]);
+
   return (
     <div className="flex justify-center px-4 sm:px-6">
       <div
@@ -498,6 +547,9 @@ export function VideoPlayerCard({
           className="relative aspect-video bg-black"
           tabIndex={0}
           onKeyDown={handleKeyDown}
+          onMouseMove={showControlsAndScheduleHide}
+          onMouseEnter={showControlsAndScheduleHide}
+          onTouchStart={showControlsAndScheduleHide}
           aria-label={title}
         >
           <video
@@ -539,6 +591,7 @@ export function VideoPlayerCard({
           )}
 
           <PlayerControlsOverlay
+            show={controlsVisible}
             isPlaying={isPlaying}
             currentTime={currentTime}
             duration={duration}
