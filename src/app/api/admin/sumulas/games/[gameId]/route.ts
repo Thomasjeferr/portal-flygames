@@ -1,9 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { sendTransactionalEmail, normalizeAppBaseUrl } from '@/lib/email/emailService';
 import { getTeamResponsibleEmails } from '@/lib/email/teamEmails';
 import { z } from 'zod';
+
+const gameSumulaInclude = {
+  homeTeam: {
+    select: {
+      id: true,
+      name: true,
+      shortName: true,
+      crestUrl: true,
+      members: { where: { isActive: true }, orderBy: { number: 'asc' as const }, select: { id: true, name: true, number: true, position: true, role: true } },
+    },
+  },
+  awayTeam: {
+    select: {
+      id: true,
+      name: true,
+      shortName: true,
+      crestUrl: true,
+      members: { where: { isActive: true }, orderBy: { number: 'asc' as const }, select: { id: true, name: true, number: true, position: true, role: true } },
+    },
+  },
+  playerMatchStats: { include: { teamMember: { select: { id: true, name: true, number: true } } } },
+  sumulaApprovals: { select: { teamId: true, status: true, rejectionReason: true, rejectedAt: true, approvedAt: true } },
+} as const;
+
+type GameWithSumula = Prisma.GameGetPayload<{ include: typeof gameSumulaInclude }>;
 
 const statsItemSchema = z.object({
   teamMemberId: z.string().min(1),
@@ -37,32 +63,11 @@ export async function GET(
   }
 
   const gameId = (await params).gameId;
-  let game: Awaited<ReturnType<typeof prisma.game.findUnique>>;
+  let game: GameWithSumula | null;
   try {
     game = await prisma.game.findUnique({
       where: { id: gameId },
-      include: {
-        homeTeam: {
-          select: {
-            id: true,
-            name: true,
-            shortName: true,
-            crestUrl: true,
-            members: { where: { isActive: true }, orderBy: { number: 'asc' }, select: { id: true, name: true, number: true, position: true, role: true } },
-          },
-        },
-        awayTeam: {
-          select: {
-            id: true,
-            name: true,
-            shortName: true,
-            crestUrl: true,
-            members: { where: { isActive: true }, orderBy: { number: 'asc' }, select: { id: true, name: true, number: true, position: true, role: true } },
-          },
-        },
-        playerMatchStats: { include: { teamMember: { select: { id: true, name: true, number: true } } } },
-        sumulaApprovals: { select: { teamId: true, status: true, rejectionReason: true, rejectedAt: true, approvedAt: true } },
-      },
+      include: gameSumulaInclude,
     });
   } catch (e) {
     console.error('GET /api/admin/sumulas/games/[gameId]', e);
