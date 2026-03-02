@@ -22,7 +22,8 @@ export type EmailTemplateKey =
   | 'SUMULA_ATUALIZADA'
   | 'SUMULA_OUTRO_APROVOU'
   | 'SUMULA_OUTRO_REJEITOU'
-  | 'SUMULA_APROVADA_AMBOS';
+  | 'SUMULA_APROVADA_AMBOS'
+  | 'TOURNAMENT_INSCRICAO_REGULAMENTO';
 
 /** Garante que links de e-mail usem o domínio canônico (flygames.app), nunca vercel.app. */
 export function normalizeAppBaseUrl(url: string | null | undefined): string {

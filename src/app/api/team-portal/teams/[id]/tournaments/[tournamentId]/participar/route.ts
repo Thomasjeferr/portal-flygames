@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTeamAccess } from '@/lib/team-portal-auth';
 import { prisma } from '@/lib/db';
+import { sendTransactionalEmail, normalizeAppBaseUrl } from '@/lib/email/emailService';
+import { getTeamResponsibleEmails } from '@/lib/email/teamEmails';
+import { escapeHtml } from '@/lib/email/templateRenderer';
 
 /**
  * POST /api/team-portal/teams/[id]/tournaments/[tournamentId]/participar
@@ -90,6 +93,39 @@ export async function POST(
   const needsPayment =
     mode === 'PAID' &&
     (tournament.registrationFeeAmount ?? 0) > 0;
+
+  // E-mail automático com regulamento para os responsáveis do time (não bloqueia a resposta)
+  const baseUrl = normalizeAppBaseUrl(process.env.NEXT_PUBLIC_APP_URL);
+  const painelUrl = `${baseUrl}/painel-time/times/${teamId}/campeonatos`;
+
+  let blocoRegulamentoUrl = '';
+  if (tournament.regulamentoUrl?.trim()) {
+    const url = tournament.regulamentoUrl.trim();
+    blocoRegulamentoUrl = `<p style="margin-top:16px"><a href="${url}" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Acessar regulamento (link externo)</a></p>`;
+  }
+
+  let blocoRegulamentoTexto = '';
+  if (tournament.regulamentoTexto?.trim()) {
+    const textoEscapado = escapeHtml(tournament.regulamentoTexto.trim());
+    blocoRegulamentoTexto = `<div style="margin-top:20px;padding:16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0"><h3 style="margin-top:0;color:#0C1222;font-size:14px">Regulamento</h3><div style="white-space: pre-wrap;font-size:14px;line-height:1.5;color:#334155">${textoEscapado}</div></div>`;
+  }
+
+  const emails = await getTeamResponsibleEmails(teamId);
+  const vars: Record<string, string> = {
+    tournament_name: tournament.name,
+    team_name: team.name,
+    painel_url: painelUrl,
+    bloco_regulamento_url: blocoRegulamentoUrl,
+    bloco_regulamento_texto: blocoRegulamentoTexto,
+  };
+  for (const to of emails) {
+    if (!to?.trim()) continue;
+    sendTransactionalEmail({
+      to: to.trim(),
+      templateKey: 'TOURNAMENT_INSCRICAO_REGULAMENTO',
+      vars,
+    }).catch((e) => console.error('[participar] Erro ao enviar e-mail regulamento:', e));
+  }
 
   return NextResponse.json({
     tournamentTeam: {

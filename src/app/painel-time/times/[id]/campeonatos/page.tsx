@@ -61,7 +61,7 @@ function TournamentCard({
   t: TournamentItem;
   teamApproved: boolean;
   participatingId: string | null;
-  onParticipar: (id: string) => void;
+  onParticipar: (tournament: TournamentItem) => void;
   onVerRegras: (tournament: TournamentItem) => void;
   hasRegulamento: (tournament: TournamentItem) => boolean;
 }) {
@@ -163,7 +163,7 @@ function TournamentCard({
           ) : t.canEnroll && teamApproved ? (
             <button
               type="button"
-              onClick={() => onParticipar(t.id)}
+              onClick={() => onParticipar(t)}
               disabled={participatingId === t.id}
               className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-futvar-green text-futvar-darker font-bold text-base uppercase tracking-wide hover:bg-futvar-green-light disabled:opacity-50 shadow-[0_0_24px_rgba(34,197,94,0.4)] transition-all duration-200"
             >
@@ -213,6 +213,11 @@ export default function CampeonatosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [participatingId, setParticipatingId] = useState<string | null>(null);
+  const [participarConfirm, setParticiparConfirm] = useState<{
+    tournamentId: string;
+    tournamentName: string;
+  } | null>(null);
+  const [aceiteRegulamento, setAceiteRegulamento] = useState(false);
   const [regulamentoModal, setRegulamentoModal] = useState<{
     title: string;
     url: string | null;
@@ -273,6 +278,19 @@ export default function CampeonatosPage() {
     }
   };
 
+  const openParticiparModal = (t: TournamentItem) => {
+    setParticiparConfirm({ tournamentId: t.id, tournamentName: t.name });
+    setAceiteRegulamento(false);
+  };
+
+  const confirmParticipar = () => {
+    if (!participarConfirm || !aceiteRegulamento) return;
+    const { tournamentId } = participarConfirm;
+    setParticiparConfirm(null);
+    setAceiteRegulamento(false);
+    handleParticipar(tournamentId);
+  };
+
   const openRegulamento = (t: TournamentItem) => {
     if (t.regulamentoUrl) {
       window.open(t.regulamentoUrl, '_blank');
@@ -327,11 +345,66 @@ export default function CampeonatosPage() {
               t={t}
               teamApproved={teamApproved}
               participatingId={participatingId}
-              onParticipar={handleParticipar}
+              onParticipar={openParticiparModal}
               onVerRegras={openRegulamento}
               hasRegulamento={hasRegulamento}
             />
           ))}
+        </div>
+      )}
+
+      {participarConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+          onClick={() => {
+            setParticiparConfirm(null);
+            setAceiteRegulamento(false);
+          }}
+        >
+          <div
+            className="bg-futvar-dark border border-white/20 rounded-xl max-w-md w-full shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b border-white/10">
+              <h3 className="text-lg font-bold text-white">Confirmar inscrição</h3>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-futvar-light text-sm">
+                Antes de inscrever seu time no campeonato <strong className="text-white">{participarConfirm.tournamentName}</strong>, confirme que você leu e aceita o regulamento.
+              </p>
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={aceiteRegulamento}
+                  onChange={(e) => setAceiteRegulamento(e.target.checked)}
+                  className="mt-1 w-5 h-5 rounded border-white/30 bg-white/10 text-futvar-green focus:ring-futvar-green"
+                />
+                <span className="text-futvar-light text-sm group-hover:text-white">
+                  Li e aceito o regulamento do campeonato.
+                </span>
+              </label>
+            </div>
+            <div className="p-5 border-t border-white/10 flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setParticiparConfirm(null);
+                  setAceiteRegulamento(false);
+                }}
+                className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/20"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmParticipar}
+                disabled={!aceiteRegulamento}
+                className="px-5 py-2 rounded-lg bg-futvar-green text-futvar-darker font-bold text-sm uppercase tracking-wide hover:bg-futvar-green-light disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Confirmar e inscrever
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

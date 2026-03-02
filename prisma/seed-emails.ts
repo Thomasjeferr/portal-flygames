@@ -204,6 +204,21 @@ async function main() {
 <p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
 </div></body></html>`,
     },
+    {
+      key: 'TOURNAMENT_INSCRICAO_REGULAMENTO',
+      subject: 'Inscrição no campeonato {{tournament_name}} – Regulamento',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<h2 style="color:#0C1222">Inscrição recebida</h2>
+<p>Olá,</p>
+<p>A inscrição do time <strong>{{team_name}}</strong> no campeonato <strong>{{tournament_name}}</strong> foi registrada com sucesso.</p>
+<p>Abaixo seguem as regras/regulamento do campeonato para sua consulta.</p>
+{{bloco_regulamento_url}}{{bloco_regulamento_texto}}
+<p style="margin-top:24px">Você também pode acessar o painel do time para ver o campeonato e as regras a qualquer momento.</p>
+<p style="margin-top:16px"><a href="{{painel_url}}" style="display:inline-block;padding:12px 24px;background:#64748b;color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Acessar painel do time</a></p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
   ];
 
   for (const t of templates) {
