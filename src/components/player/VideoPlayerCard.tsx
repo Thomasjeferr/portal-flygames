@@ -305,7 +305,7 @@ export function VideoPlayerCard({
     }
   }, [initialTimeSeconds]);
 
-  // Fullscreen: no mobile priorizar container (mantém nosso design); se não suportado, usar fullscreen "falso" (CSS)
+  // Fullscreen: desktop usa container (ou fake CSS se não houver API); em mobile usa fullscreen nativo do vídeo (como antes)
   const handleToggleFullscreen = () => {
     const container = containerRef.current;
     const video = videoRef.current;
@@ -352,7 +352,6 @@ export function VideoPlayerCard({
           if (videoExit) videoExit.call(video);
         }
       } else {
-        const isMobile = typeof window !== 'undefined' && ('ontouchstart' in window || window.innerWidth <= 768);
         const containerFs = container && (container as HTMLElement & {
           requestFullscreen?: () => void | Promise<void>;
           webkitRequestFullscreen?: () => void | Promise<void>;
@@ -366,13 +365,14 @@ export function VideoPlayerCard({
           containerFs?.msRequestFullscreen;
 
         if (isMobile) {
-          if (requestContainer) {
-            run(requestContainer.call(container) as void | Promise<void>);
-          } else {
-            // iOS Safari etc.: container fullscreen não disponível → fullscreen falso mantém borda, controles e gradiente
-            setIsFakeFullscreen(true);
-            setIsFullscreen(true);
-          }
+          // Mobile: fullscreen nativo do vídeo (comportamento anterior), sem overlay com nosso layout
+          const videoFs = video && (
+            (video as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen ||
+            (video as HTMLVideoElement & { webkitEnterFullScreen?: () => void }).webkitEnterFullScreen ||
+            (video as HTMLVideoElement & { requestFullscreen?: () => void }).requestFullscreen
+          );
+          if (videoFs) run(videoFs.call(video) as void | Promise<void>);
+          else if (requestContainer) run(requestContainer.call(container) as void | Promise<void>);
         } else if (requestContainer) {
           run(requestContainer.call(container) as void | Promise<void>);
         } else {
@@ -385,7 +385,8 @@ export function VideoPlayerCard({
         }
       }
     } catch {
-      if (isMobile && !isFakeFullscreen) {
+      // Em mobile não usamos fake fullscreen; em desktop fallback para fake
+      if (!isMobile && !isFakeFullscreen) {
         setIsFakeFullscreen(true);
         setIsFullscreen(true);
       }
