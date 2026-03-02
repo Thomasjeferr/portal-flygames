@@ -5,7 +5,6 @@ import { VideoPlayer } from '@/components/VideoPlayer';
 import { GamePlayTracker } from '@/components/GamePlayTracker';
 import { BuyGameButton } from '@/components/BuyGameButton';
 import { GameCard } from '@/components/GameCard';
-import { PlayerMatchInfo } from '@/components/PlayerMatchInfo';
 import { MatchPlayerPage } from '@/components/match/MatchPlayerPage';
 import { getSession } from '@/lib/auth';
 import { canAccessGameBySlug } from '@/lib/access';
@@ -42,7 +41,6 @@ export default async function GamePage({ params }: Props) {
     },
   });
   const displayMode = game?.displayMode ?? 'internal';
-  const showPlayer = displayMode === 'public_with_media' && !!game?.videoUrl;
   if (!game) notFound();
 
   const session = await getSession();
@@ -74,6 +72,30 @@ export default async function GamePage({ params }: Props) {
     year: 'numeric',
   });
 
+  const hasVideoPublished = displayMode === 'public_with_media' && !!game.videoUrl;
+
+  const matchPlayerCommonProps = {
+    teamA: game.homeTeam
+      ? {
+          name: game.homeTeam.shortName || game.homeTeam.name,
+          crest: game.homeTeam.crestUrl || undefined,
+          score: game.homeScore ?? undefined,
+        }
+      : undefined,
+    teamB: game.awayTeam
+      ? {
+          name: game.awayTeam.shortName || game.awayTeam.name,
+          crest: game.awayTeam.crestUrl || undefined,
+          score: game.awayScore ?? undefined,
+        }
+      : undefined,
+    title: game.title,
+    dateLabel: `${game.championship} • ${gameDateFormatted}`,
+    isLive: false,
+    isReplay: true,
+    description: game.description,
+  };
+
   return (
     <div className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-gradient-to-b from-[#07130f] via-[#06221a] to-[#081a1a]">
       <div className="max-w-5xl mx-auto">
@@ -83,32 +105,71 @@ export default async function GamePage({ params }: Props) {
           </Link>
         </div>
 
-        {!canWatch ? (
-          <MatchPlayerPage
-            teamA={
-              game.homeTeam
-                ? {
-                    name: game.homeTeam.shortName || game.homeTeam.name,
-                    crest: game.homeTeam.crestUrl || undefined,
-                    score: game.homeScore ?? undefined,
-                  }
-                : undefined
-            }
-            teamB={
-              game.awayTeam
-                ? {
-                    name: game.awayTeam.shortName || game.awayTeam.name,
-                    crest: game.awayTeam.crestUrl || undefined,
-                    score: game.awayScore ?? undefined,
-                  }
-                : undefined
-            }
-            title={game.title}
-            dateLabel={`${game.championship} • ${gameDateFormatted}`}
-            isLive={false}
-            isReplay={true}
-            description={game.description}
-          >
+        {!hasVideoPublished ? (
+          /* Sem vídeo publicado: mesma tela; quem já tem acesso vê só a mensagem, quem não tem vê mensagem + botões */
+          <MatchPlayerPage {...matchPlayerCommonProps}>
+            <div className="relative w-full overflow-hidden rounded-2xl border border-emerald-400/25 bg-black shadow-[0_18px_60px_rgba(0,0,0,0.9)] shadow-emerald-500/10 aspect-video">
+              {game.thumbnailUrl ? (
+                <Image
+                  src={game.thumbnailUrl.startsWith('http') ? game.thumbnailUrl : game.thumbnailUrl}
+                  alt={game.title}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-[#0a1f1a] to-[#07130f]" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-4 sm:px-8">
+                <p className="text-center text-lg font-semibold text-white sm:text-xl md:text-2xl">
+                  Jogo em breve
+                </p>
+                <p className="mt-2 text-center text-sm text-emerald-100/90">
+                  {canWatch
+                    ? 'O vídeo deste jogo será publicado em breve. Quando estiver disponível, você poderá assistir aqui.'
+                    : 'O vídeo deste jogo será publicado em breve. Patrocine o time ou compre o acesso para assistir quando estiver disponível.'}
+                </p>
+                {!canWatch && (
+                  <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                    {session && isTeamManager ? (
+                      <p className="text-center text-sm text-emerald-50/90 max-w-md">
+                        Esta conta é de responsável pelo time e não pode comprar acesso.
+                        Para assinar ou comprar jogos, use uma conta de cliente.{' '}
+                        <Link href="/cadastro" className="text-emerald-400 hover:underline font-semibold">
+                          Cadastro
+                        </Link>
+                      </p>
+                    ) : (
+                      <>
+                        {session ? (
+                          <Link
+                            href="/planos"
+                            className="inline-flex items-center justify-center rounded-full bg-[#19d37a] px-6 py-3 text-sm font-bold text-[#02130b] shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition-colors"
+                          >
+                            Ver planos e patrocinar
+                          </Link>
+                        ) : (
+                          <Link
+                            href="/entrar?redirect=/planos"
+                            className="inline-flex items-center justify-center rounded-full bg-[#19d37a] px-6 py-3 text-sm font-bold text-[#02130b] shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition-colors"
+                          >
+                            Entrar ou cadastrar para patrocinar
+                          </Link>
+                        )}
+                        <BuyGameButton
+                          gameId={game.id}
+                          className="inline-flex items-center justify-center rounded-full border-2 border-amber-400/80 px-6 py-3 text-sm font-bold text-amber-300 hover:bg-amber-400/10 transition-colors"
+                        />
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </MatchPlayerPage>
+        ) : !canWatch ? (
+          /* Tem vídeo mas usuário sem acesso: layout bonito + botões para patrocinar/comprar */
+          <MatchPlayerPage {...matchPlayerCommonProps}>
             <div className="relative w-full overflow-hidden rounded-2xl border border-emerald-400/25 bg-black shadow-[0_18px_60px_rgba(0,0,0,0.9)] shadow-emerald-500/10 aspect-video">
               {game.thumbnailUrl ? (
                 <Image
@@ -164,80 +225,22 @@ export default async function GamePage({ params }: Props) {
               </div>
             </div>
           </MatchPlayerPage>
-        ) : showPlayer ? (
+        ) : (
+          /* Tem vídeo e usuário tem acesso: player */
           <>
             <GamePlayTracker gameId={game.id} />
 
-            <MatchPlayerPage
-              teamA={
-                game.homeTeam
-                  ? {
-                      name: game.homeTeam.shortName || game.homeTeam.name,
-                      crest: game.homeTeam.crestUrl || undefined,
-                      score: game.homeScore ?? undefined,
-                    }
-                  : undefined
-              }
-              teamB={
-                game.awayTeam
-                  ? {
-                      name: game.awayTeam.shortName || game.awayTeam.name,
-                      crest: game.awayTeam.crestUrl || undefined,
-                      score: game.awayScore ?? undefined,
-                    }
-                  : undefined
-              }
-              title={game.title}
-              dateLabel={`${game.championship} • ${gameDateFormatted}`}
-              isLive={false}
-              isReplay={true}
-              description={game.description}
-            >
-              {game.videoUrl ? (
-                <VideoPlayer
-                  videoUrl={game.videoUrl}
-                  title={game.title}
-                  posterUrl={game.thumbnailUrl ?? undefined}
-                  streamPlaybackUrl={streamPlaybackUrl}
-                  streamHlsUrl={streamHlsUrl}
-                  gameId={game.id}
-                />
-              ) : (
-                <div className="relative mx-auto mt-4 max-w-[1100px] overflow-hidden rounded-2xl border border-emerald-400/25 bg-black shadow-[0_18px_60px_rgba(0,0,0,0.9)] shadow-emerald-500/10 aspect-video flex items-center justify-center">
-                  {game.thumbnailUrl ? (
-                    <Image src={game.thumbnailUrl} alt={game.title} fill className="object-cover opacity-60" />
-                  ) : null}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                    <p className="text-emerald-50/90">Vídeo em breve</p>
-                  </div>
-                </div>
-              )}
+            <MatchPlayerPage {...matchPlayerCommonProps}>
+              <VideoPlayer
+                videoUrl={game.videoUrl!}
+                title={game.title}
+                posterUrl={game.thumbnailUrl ?? undefined}
+                streamPlaybackUrl={streamPlaybackUrl}
+                streamHlsUrl={streamHlsUrl}
+                gameId={game.id}
+              />
             </MatchPlayerPage>
           </>
-        ) : (
-          <div className="bg-futvar-dark border border-futvar-green/20 rounded-2xl p-8 md:p-12 text-center">
-            <div className="mb-6">
-              <PlayerMatchInfo
-                title={game.title}
-                homeTeam={game.homeTeam ?? undefined}
-                awayTeam={game.awayTeam ?? undefined}
-                subtitle={`${game.championship} • ${gameDateFormatted}`}
-              />
-            </div>
-            {game.thumbnailUrl && (
-              <div className="relative aspect-video max-w-2xl mx-auto rounded-lg overflow-hidden mb-8">
-                <Image
-                  src={game.thumbnailUrl.startsWith('http') ? game.thumbnailUrl : game.thumbnailUrl}
-                  alt={game.title}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
-            {game.description && (
-              <p className="text-futvar-light text-left max-w-2xl mx-auto">{game.description}</p>
-            )}
-          </div>
         )}
 
         {suggested.length > 0 && (
