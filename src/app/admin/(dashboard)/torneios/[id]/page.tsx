@@ -23,8 +23,22 @@ interface TournamentTeam {
   goalStatus: string | null;
   goalCurrentSupporters: number;
   goalPayoutPercent?: number;
+  elencoSubmittedAt?: string | null;
   team: Team;
 }
+
+const ROLE_LABEL: Record<string, string> = {
+  PRESIDENTE: 'Presidente',
+  VICE_PRESIDENTE: 'Vice Presidente',
+  TREINADOR: 'Treinador',
+  TESOUREIRO: 'Tesoureiro',
+  ATLETA: 'Atleta',
+  OUTROS: 'Outros',
+  PLAYER: 'Atleta',
+  GOALKEEPER: 'Goleiro',
+  COACH: 'Treinador',
+  STAFF: 'Outros',
+};
 
 interface Tournament {
   id: string;
@@ -153,6 +167,10 @@ export default function TournamentDetailPage() {
   const [generatingBracket, setGeneratingBracket] = useState(false);
   const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
   const [deletingTournament, setDeletingTournament] = useState(false);
+  const [elencoModalTeam, setElencoModalTeam] = useState<{ teamId: string; teamName: string } | null>(null);
+  const [elencoModalList, setElencoModalList] = useState<{ id: string; name: string; number: number | null; position: string | null; role: string }[]>([]);
+  const [elencoModalLoading, setElencoModalLoading] = useState(false);
+  const [elencoModalSource, setElencoModalSource] = useState<'submitted' | 'current' | null>(null);
   const router = useRouter();
 
   const handleDeleteTournament = async () => {
@@ -429,6 +447,23 @@ export default function TournamentDetailPage() {
     }
   };
 
+  const handleViewElenco = async (teamId: string, teamName: string) => {
+    setElencoModalTeam({ teamId, teamName });
+    setElencoModalLoading(true);
+    setElencoModalList([]);
+    setElencoModalSource(null);
+    try {
+      const res = await fetch(`/api/admin/tournaments/${id}/teams/${teamId}/elenco`);
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.members)) {
+        setElencoModalList(data.members);
+        setElencoModalSource(data.source ?? 'current');
+      }
+    } finally {
+      setElencoModalLoading(false);
+    }
+  };
+
   const confirmedCount = teams.filter((t) => t.teamStatus === 'CONFIRMED').length;
   const canGenerateBracket = tournament?.bracketStatus === 'NONE' && confirmedCount >= (tournament?.maxTeams ?? 0);
   const roundLabel: Record<number, string> = {
@@ -602,6 +637,13 @@ export default function TournamentDetailPage() {
               </div>
               {(tt.teamStatus === 'APPLIED' || tt.teamStatus === 'IN_GOAL') && (
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleViewElenco(tt.teamId, tt.team.name)}
+                    className="px-3 py-1.5 rounded bg-sky-900/50 text-sky-300 text-sm hover:bg-sky-900"
+                  >
+                    Ver elenco
+                  </button>
                   {tournament.registrationMode === 'PAID' && tt.paymentStatus !== 'paid' && (
                     <button
                       type="button"
@@ -648,6 +690,13 @@ export default function TournamentDetailPage() {
               )}
               {(tt.teamStatus === 'CONFIRMED' || tt.teamStatus === 'REJECTED' || tt.teamStatus === 'ELIMINATED') && (
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleViewElenco(tt.teamId, tt.team.name)}
+                    className="px-3 py-1.5 rounded bg-sky-900/50 text-sky-300 text-sm hover:bg-sky-900"
+                  >
+                    Ver elenco
+                  </button>
                   <button
                     type="button"
                     onClick={() => handleRemoveTeam(tt.teamId, tt.team.name)}
@@ -758,6 +807,58 @@ export default function TournamentDetailPage() {
               type="button"
               onClick={() => { setPayModal(null); setPayMethod(null); setPixData(null); }}
               className="mt-4 w-full py-2 rounded bg-white/10 text-netflix-light hover:text-white text-sm"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {elencoModalTeam && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setElencoModalTeam(null)}
+        >
+          <div
+            className="bg-netflix-dark border border-white/20 rounded-xl max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-white p-4 pb-0">Elenco — {elencoModalTeam.teamName}</h3>
+            <p className="text-netflix-light text-sm px-4 pt-1">
+              {elencoModalSource === 'submitted' ? 'Elenco enviado para o campeonato (snapshot).' : 'Elenco atual do time (ainda não enviado para este campeonato).'}
+            </p>
+            {elencoModalLoading ? (
+              <p className="text-netflix-light text-sm p-4">Carregando...</p>
+            ) : elencoModalList.length === 0 ? (
+              <p className="text-netflix-light text-sm p-4">Nenhum jogador no elenco.</p>
+            ) : (
+              <div className="overflow-y-auto flex-1 p-4">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-netflix-light border-b border-white/10">
+                      <th className="py-2 pr-2 font-medium">Nome</th>
+                      <th className="py-2 pr-2 font-medium">Função</th>
+                      <th className="py-2 w-10 text-center font-medium">Nº</th>
+                      <th className="py-2 font-medium">Posição</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {elencoModalList.map((m) => (
+                      <tr key={m.id} className="border-b border-white/5">
+                        <td className="py-2 pr-2 text-white">{m.name}</td>
+                        <td className="py-2 pr-2 text-netflix-light">{ROLE_LABEL[m.role] ?? m.role}</td>
+                        <td className="py-2 text-center text-netflix-light">{m.number ?? '—'}</td>
+                        <td className="py-2 text-netflix-light">{m.position ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setElencoModalTeam(null)}
+              className="m-4 py-2 rounded bg-white/10 text-netflix-light hover:text-white text-sm"
             >
               Fechar
             </button>

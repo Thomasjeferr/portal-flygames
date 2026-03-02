@@ -3,6 +3,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 
+type TournamentElenco = {
+  id: string;
+  name: string;
+  slug: string;
+  elencoDeadlineAt: string | null;
+  elencoChangeRule: string;
+  elencoChangesPerPhase: number | null;
+  isConfirmed: boolean;
+  isElencoLocked: boolean;
+  canSubmitElenco: boolean;
+  enrollment: { elencoSubmittedAt: string | null } | null;
+};
+
 type Member = {
   id: string;
   name: string;
@@ -45,6 +58,11 @@ export default function ElencoPage() {
     photoUrl: '',
     isActive: true,
   });
+  const [tournamentsWithElenco, setTournamentsWithElenco] = useState<TournamentElenco[]>([]);
+  const [submittingElencoFor, setSubmittingElencoFor] = useState<string | null>(null);
+  const [viewElencoTournamentId, setViewElencoTournamentId] = useState<string | null>(null);
+  const [viewElencoList, setViewElencoList] = useState<{ id: string; name: string; number: number | null; position: string | null; role: string }[]>([]);
+  const [viewElencoLoading, setViewElencoLoading] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -59,8 +77,22 @@ export default function ElencoPage() {
       .finally(() => setLoading(false));
   };
 
+  const loadTournaments = () => {
+    fetch(`/api/team-portal/teams/${teamId}/tournaments`)
+      .then((r) => r.json())
+      .then((d) => {
+        const list = (d.tournaments ?? []).filter((t: TournamentElenco) => t.isConfirmed);
+        setTournamentsWithElenco(list);
+      })
+      .catch(() => setTournamentsWithElenco([]));
+  };
+
   useEffect(() => {
     load();
+  }, [teamId]);
+
+  useEffect(() => {
+    if (teamId) loadTournaments();
   }, [teamId]);
 
   const resetForm = () =>
@@ -168,6 +200,56 @@ export default function ElencoPage() {
     }
   };
 
+  const handleSubmitElenco = async (tournamentId: string) => {
+    setSubmittingElencoFor(tournamentId);
+    setError('');
+    try {
+      const res = await fetch(`/api/team-portal/teams/${teamId}/tournaments/${tournamentId}/elenco/submit`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Erro ao enviar elenco');
+        return;
+      }
+      loadTournaments();
+    } catch {
+      setError('Erro ao enviar elenco');
+    } finally {
+      setSubmittingElencoFor(null);
+    }
+  };
+
+  const handleViewElencoEnviado = async (tournamentId: string) => {
+    setViewElencoTournamentId(tournamentId);
+    setViewElencoLoading(true);
+    setViewElencoList([]);
+    try {
+      const res = await fetch(`/api/team-portal/teams/${teamId}/tournaments/${tournamentId}/elenco`);
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.members)) {
+        setViewElencoList(data.members);
+      }
+    } finally {
+      setViewElencoLoading(false);
+    }
+  };
+
+  function formatDeadline(iso: string | null) {
+    if (!iso) return null;
+    try {
+      return new Date(iso).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return iso;
+    }
+  }
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-6 py-10 text-futvar-light">
@@ -182,6 +264,59 @@ export default function ElencoPage() {
       <p className="text-futvar-light text-sm mb-6">
         Cadastre jogadores e membros da comissão técnica do seu time.
       </p>
+
+      {tournamentsWithElenco.length > 0 && (
+        <div className="mb-8 space-y-4">
+          <h3 className="text-sm font-semibold text-futvar-light uppercase tracking-wider">Elenco por campeonato</h3>
+          <p className="text-futvar-light text-sm">
+            Você está confirmado nos campeonatos abaixo. Envie o elenco até a data indicada ou quando estiver pronto.
+          </p>
+          {tournamentsWithElenco.map((t) => (
+            <div
+              key={t.id}
+              className="rounded-xl border border-white/10 bg-futvar-dark p-4 flex flex-wrap items-center justify-between gap-3"
+            >
+              <div>
+                <p className="font-medium text-white">{t.name}</p>
+                {t.elencoDeadlineAt && (
+                  <p className="text-futvar-light text-sm mt-1">
+                    Prazo para envio: {formatDeadline(t.elencoDeadlineAt)}
+                  </p>
+                )}
+              </div>
+              <div>
+                {t.canSubmitElenco && (
+                  <button
+                    type="button"
+                    onClick={() => handleSubmitElenco(t.id)}
+                    disabled={!!submittingElencoFor}
+                    className="px-4 py-2 rounded-lg bg-futvar-green text-futvar-darker text-sm font-semibold hover:bg-futvar-green-light disabled:opacity-50"
+                  >
+                    {submittingElencoFor === t.id ? 'Enviando...' : 'Enviar elenco'}
+                  </button>
+                )}
+                {t.isElencoLocked && t.enrollment?.elencoSubmittedAt && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-futvar-green text-sm">
+                      Elenco enviado em {formatDeadline(t.enrollment.elencoSubmittedAt)}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleViewElencoEnviado(t.id)}
+                      className="px-3 py-1.5 rounded bg-white/10 text-futvar-light text-xs hover:bg-white/20"
+                    >
+                      Ver elenco enviado
+                    </button>
+                  </div>
+                )}
+                {t.isElencoLocked && !t.enrollment?.elencoSubmittedAt && (
+                  <p className="text-futvar-light text-sm">Prazo encerrado — elenco travado.</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit}
@@ -375,6 +510,58 @@ export default function ElencoPage() {
           </table>
         )}
       </div>
+
+      {viewElencoTournamentId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+          onClick={() => setViewElencoTournamentId(null)}
+        >
+          <div
+            className="rounded-xl border border-white/10 bg-futvar-dark p-6 max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-white mb-2">
+              Elenco enviado — {tournamentsWithElenco.find((x) => x.id === viewElencoTournamentId)?.name ?? 'Campeonato'}
+            </h3>
+            <p className="text-futvar-light text-sm mb-4">Lista registrada no momento do envio (somente leitura).</p>
+            {viewElencoLoading ? (
+              <p className="text-futvar-light text-sm">Carregando...</p>
+            ) : viewElencoList.length === 0 ? (
+              <p className="text-futvar-light text-sm">Nenhum jogador no elenco enviado.</p>
+            ) : (
+              <div className="overflow-y-auto flex-1 min-h-0 rounded-lg border border-white/10">
+                <table className="w-full text-sm">
+                  <thead className="bg-white/5 text-futvar-light sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">Nome</th>
+                      <th className="px-3 py-2 text-left font-medium">Função</th>
+                      <th className="px-3 py-2 w-12 text-center font-medium">Nº</th>
+                      <th className="px-3 py-2 text-left font-medium">Posição</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {viewElencoList.map((m) => (
+                      <tr key={m.id}>
+                        <td className="px-3 py-2 text-white">{m.name}</td>
+                        <td className="px-3 py-2 text-futvar-light">{ROLE_LABEL[m.role] ?? m.role}</td>
+                        <td className="px-3 py-2 text-center text-futvar-light">{m.number ?? '—'}</td>
+                        <td className="px-3 py-2 text-futvar-light">{m.position || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setViewElencoTournamentId(null)}
+              className="mt-4 px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/20"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

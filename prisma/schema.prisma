@@ -169,6 +169,7 @@ model TeamMember {
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
   playerMatchStats PlayerMatchStats[]
+  tournamentTeamElencoEntries TournamentTeamElenco[]
 
   @@map("team_members")
 }
@@ -233,6 +234,7 @@ model PlayerMatchStats {
   teamId      String   @map("team_id")
   teamMemberId String  @map("team_member_id")
   goals       Int      @default(0) @map("goals")
+  penaltyGoals Int     @default(0) @map("penalty_goals") // gols marcados por pênalti (deve ser <= goals)
   assists     Int      @default(0) @map("assists")
   fouls       Int      @default(0) @map("fouls")
   yellowCard  Boolean  @default(false) @map("yellow_card")
@@ -968,6 +970,10 @@ model Tournament {
   craqueDaCopa               Boolean   @default(false) @map("craque_da_copa")
   regulamentoUrl             String?   @map("regulamento_url")
   regulamentoTexto           String?   @map("regulamento_texto")
+  // Regras de elenco (só aplicadas a times CONFIRMED)
+  elencoDeadlineAt           DateTime? @map("elenco_deadline_at")   // data limite para envio; null = só trava ao clicar Enviar
+  elencoChangeRule           String    @default("FULL") @map("elenco_change_rule") // FULL | N_PER_PHASE
+  elencoChangesPerPhase      Int?      @map("elenco_changes_per_phase") // quando N_PER_PHASE: máx alterações por fase (round)
   createdAt                 DateTime  @default(now()) @map("created_at")
   updatedAt                 DateTime  @updatedAt @map("updated_at")
 
@@ -990,14 +996,45 @@ model TournamentTeam {
   goalCurrentSupporters Int       @default(0) @map("goal_current_supporters")
   goalAchievedAt        DateTime? @map("goal_achieved_at")
   goalPayoutPercent     Int       @default(0) @map("goal_payout_percent") // 0-100: % do valor de apoio que vai para o time
+  elencoSubmittedAt    DateTime? @map("elenco_submitted_at") // quando o time clicou em Enviar elenco
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
   tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   team       Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  elencoEntries TournamentTeamElenco[]
+  elencoChangesByPhase TournamentTeamElencoChange[]
 
   @@unique([tournamentId, teamId])
   @@map("tournament_teams")
+}
+
+// Elenco oficial do time no campeonato (snapshot no envio + alterações por fase)
+model TournamentTeamElenco {
+  id              String   @id @default(cuid())
+  tournamentTeamId String  @map("tournament_team_id")
+  teamMemberId    String   @map("team_member_id")
+  addedAt         DateTime @default(now()) @map("added_at")
+  phaseRound      Int?     @map("phase_round") // round da fase em que foi adicionado (32|16|8|4|2); null = envio inicial
+
+  tournamentTeam TournamentTeam @relation(fields: [tournamentTeamId], references: [id], onDelete: Cascade)
+  teamMember     TeamMember     @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentTeamId, teamMemberId])
+  @@map("tournament_team_elenco")
+}
+
+// Contagem de alterações de elenco por fase (para regra N_PER_PHASE)
+model TournamentTeamElencoChange {
+  id              String   @id @default(cuid())
+  tournamentTeamId String  @map("tournament_team_id")
+  phaseRound      Int      @map("phase_round") // 32 | 16 | 8 | 4 | 2
+  changesCount    Int      @default(0) @map("changes_count")
+
+  tournamentTeam TournamentTeam @relation(fields: [tournamentTeamId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentTeamId, phaseRound])
+  @@map("tournament_team_elenco_changes")
 }
 
 model TournamentMatch {

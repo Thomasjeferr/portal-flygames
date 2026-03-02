@@ -25,6 +25,8 @@ export async function GET(
     return NextResponse.json({ error: 'Time não encontrado' }, { status: 404 });
   }
 
+  const now = new Date();
+
   const tournaments = await prisma.tournament.findMany({
     where: { status: 'PUBLISHED' },
     orderBy: { createdAt: 'desc' },
@@ -54,6 +56,9 @@ export async function GET(
       craqueDaCopa: true,
       regulamentoUrl: true,
       regulamentoTexto: true,
+      elencoDeadlineAt: true,
+      elencoChangeRule: true,
+      elencoChangesPerPhase: true,
       teams: {
         where: { teamId },
         select: {
@@ -63,6 +68,7 @@ export async function GET(
           registrationType: true,
           goalStatus: true,
           goalCurrentSupporters: true,
+          elencoSubmittedAt: true,
         },
       },
     },
@@ -83,11 +89,50 @@ export async function GET(
 
   const teamApproved = team.approvalStatus === 'approved';
 
+  // Travamento por data: se prazo passou e time não enviou, gravar snapshot e marcar como enviado
+  for (const t of tournaments) {
+    const enrollment = t.teams[0] ?? null;
+    if (
+      enrollment &&
+      enrollment.teamStatus === 'CONFIRMED' &&
+      !enrollment.elencoSubmittedAt &&
+      t.elencoDeadlineAt &&
+      now > t.elencoDeadlineAt
+    ) {
+      const currentMembers = await prisma.teamMember.findMany({
+        where: { teamId, isActive: true },
+        select: { id: true },
+      });
+      await prisma.$transaction(async (tx) => {
+        await tx.tournamentTeam.update({
+          where: { id: enrollment.id },
+          data: { elencoSubmittedAt: t.elencoDeadlineAt },
+        });
+        await tx.tournamentTeamElenco.deleteMany({
+          where: { tournamentTeamId: enrollment.id },
+        });
+        for (const m of currentMembers) {
+          await tx.tournamentTeamElenco.create({
+            data: {
+              tournamentTeamId: enrollment.id,
+              teamMemberId: m.id,
+            },
+          });
+        }
+      });
+      enrollment.elencoSubmittedAt = t.elencoDeadlineAt;
+    }
+  }
+
   const list = tournaments.map((t) => {
     const enrollment = t.teams[0] ?? null;
     const enrolledCount = countByTournament[t.id] ?? 0;
     const spotsLeft = Math.max(0, t.maxTeams - enrolledCount);
     const canEnroll = teamApproved && !enrollment && spotsLeft > 0;
+    const isConfirmed = enrollment?.teamStatus === 'CONFIRMED';
+    const deadlinePassed = t.elencoDeadlineAt ? now > t.elencoDeadlineAt : false;
+    const elencoSubmitted = !!enrollment?.elencoSubmittedAt;
+    const isElencoLocked = isConfirmed && (elencoSubmitted || deadlinePassed);
     return {
       id: t.id,
       name: t.name,
@@ -114,6 +159,9 @@ export async function GET(
       craqueDaCopa: t.craqueDaCopa,
       regulamentoUrl: t.regulamentoUrl,
       regulamentoTexto: t.regulamentoTexto,
+      elencoDeadlineAt: t.elencoDeadlineAt?.toISOString() ?? null,
+      elencoChangeRule: t.elencoChangeRule ?? 'FULL',
+      elencoChangesPerPhase: t.elencoChangesPerPhase ?? null,
       enrolled: !!enrollment,
       enrollment: enrollment
         ? {
@@ -123,10 +171,14 @@ export async function GET(
             registrationType: enrollment.registrationType,
             goalStatus: enrollment.goalStatus,
             goalCurrentSupporters: enrollment.goalCurrentSupporters,
+            elencoSubmittedAt: enrollment.elencoSubmittedAt?.toISOString() ?? null,
           }
         : null,
       canEnroll,
       spotsLeft,
+      isConfirmed,
+      isElencoLocked,
+      canSubmitElenco: isConfirmed && !elencoSubmitted && !deadlinePassed,
     };
   });
 

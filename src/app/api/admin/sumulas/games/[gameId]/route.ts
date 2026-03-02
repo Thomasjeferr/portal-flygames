@@ -8,6 +8,7 @@ import { z } from 'zod';
 const statsItemSchema = z.object({
   teamMemberId: z.string().min(1),
   goals: z.number().int().min(0).default(0),
+  penaltyGoals: z.number().int().min(0).default(0),
   assists: z.number().int().min(0).default(0),
   fouls: z.number().int().min(0).default(0),
   yellowCard: z.boolean().default(false),
@@ -36,31 +37,41 @@ export async function GET(
   }
 
   const gameId = (await params).gameId;
-  const game = await prisma.game.findUnique({
-    where: { id: gameId },
-    include: {
-      homeTeam: {
-        select: {
-          id: true,
-          name: true,
-          shortName: true,
-          crestUrl: true,
-          members: { where: { isActive: true }, orderBy: { number: 'asc' }, select: { id: true, name: true, number: true, position: true, role: true } },
+  let game: Awaited<ReturnType<typeof prisma.game.findUnique>>;
+  try {
+    game = await prisma.game.findUnique({
+      where: { id: gameId },
+      include: {
+        homeTeam: {
+          select: {
+            id: true,
+            name: true,
+            shortName: true,
+            crestUrl: true,
+            members: { where: { isActive: true }, orderBy: { number: 'asc' }, select: { id: true, name: true, number: true, position: true, role: true } },
+          },
         },
-      },
-      awayTeam: {
-        select: {
-          id: true,
-          name: true,
-          shortName: true,
-          crestUrl: true,
-          members: { where: { isActive: true }, orderBy: { number: 'asc' }, select: { id: true, name: true, number: true, position: true, role: true } },
+        awayTeam: {
+          select: {
+            id: true,
+            name: true,
+            shortName: true,
+            crestUrl: true,
+            members: { where: { isActive: true }, orderBy: { number: 'asc' }, select: { id: true, name: true, number: true, position: true, role: true } },
+          },
         },
+        playerMatchStats: { include: { teamMember: { select: { id: true, name: true, number: true } } } },
+        sumulaApprovals: { select: { teamId: true, status: true, rejectionReason: true, rejectedAt: true, approvedAt: true } },
       },
-      playerMatchStats: { include: { teamMember: { select: { id: true, name: true, number: true } } } },
-      sumulaApprovals: { select: { teamId: true, status: true, rejectionReason: true, rejectedAt: true, approvedAt: true } },
-    },
-  });
+    });
+  } catch (e) {
+    console.error('GET /api/admin/sumulas/games/[gameId]', e);
+    const msg = e instanceof Error ? e.message : 'Erro ao carregar jogo';
+    const hint = msg.includes('penalty_goals') || msg.includes('column')
+      ? ' A coluna penalty_goals pode não existir: rode npx prisma migrate deploy.'
+      : '';
+    return NextResponse.json({ error: `Erro ao carregar dados.${hint}` }, { status: 500 });
+  }
 
   if (!game) {
     return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
@@ -71,6 +82,7 @@ export async function GET(
     .map((s) => ({
       teamMemberId: s.teamMemberId,
       goals: s.goals,
+      penaltyGoals: s.penaltyGoals,
       assists: s.assists,
       fouls: s.fouls,
       yellowCard: s.yellowCard,
@@ -82,6 +94,7 @@ export async function GET(
     .map((s) => ({
       teamMemberId: s.teamMemberId,
       goals: s.goals,
+      penaltyGoals: s.penaltyGoals,
       assists: s.assists,
       fouls: s.fouls,
       yellowCard: s.yellowCard,
@@ -166,6 +179,7 @@ export async function PATCH(
           teamId: homeTeamId,
           teamMemberId: s.teamMemberId,
           goals: s.goals,
+          penaltyGoals: Math.min(s.penaltyGoals ?? 0, s.goals),
           assists: s.assists,
           fouls: s.fouls,
           yellowCard: s.yellowCard,
@@ -181,6 +195,7 @@ export async function PATCH(
           teamId: awayTeamId,
           teamMemberId: s.teamMemberId,
           goals: s.goals,
+          penaltyGoals: Math.min(s.penaltyGoals ?? 0, s.goals),
           assists: s.assists,
           fouls: s.fouls,
           yellowCard: s.yellowCard,

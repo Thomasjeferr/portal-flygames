@@ -58,6 +58,7 @@ export function VideoPlayerCard({
   ]);
   const [selectedQualityId, setSelectedQualityId] = useState('auto');
   const [controlsVisible, setControlsVisible] = useState(true);
+  const [isFakeFullscreen, setIsFakeFullscreen] = useState(false);
 
   initialTimeRef.current = initialTimeSeconds;
   gameIdRef.current = gameId;
@@ -304,7 +305,7 @@ export function VideoPlayerCard({
     }
   }, [initialTimeSeconds]);
 
-  // Fullscreen: em mobile (iOS) só funciona no elemento <video>; em desktop no container
+  // Fullscreen: no mobile priorizar container (mantém nosso design); se não suportado, usar fullscreen "falso" (CSS)
   const handleToggleFullscreen = () => {
     const container = containerRef.current;
     const video = videoRef.current;
@@ -324,7 +325,7 @@ export function VideoPlayerCard({
       doc.webkitFullscreenElement ||
       doc.mozFullScreenElement ||
       doc.msFullscreenElement ||
-      isFullscreen; // estado de fullscreen do vídeo (iOS)
+      isFullscreen;
 
     const run = (p: void | Promise<void>) => {
       if (p && typeof (p as Promise<void>).catch === 'function') {
@@ -332,24 +333,26 @@ export function VideoPlayerCard({
       }
     };
 
+    const isMobile = typeof window !== 'undefined' && ('ontouchstart' in window || window.innerWidth <= 768);
+
     try {
-      if (isFs) {
-        // Sair: tentar documento e depois vídeo (iOS usa só o vídeo)
-        const exitDoc =
-          doc.exitFullscreen ||
-          doc.webkitExitFullscreen ||
-          doc.mozCancelFullScreen ||
-          doc.msExitFullscreen;
-        if (exitDoc) run(exitDoc.call(doc) as void | Promise<void>);
-        const videoExit = video && (video as HTMLVideoElement & { webkitExitFullScreen?: () => void }).webkitExitFullScreen;
-        if (videoExit) videoExit.call(video);
+      if (isFs || isFakeFullscreen) {
+        // Sair: native ou fake
+        if (isFakeFullscreen) {
+          setIsFakeFullscreen(false);
+          setIsFullscreen(false);
+        } else {
+          const exitDoc =
+            doc.exitFullscreen ||
+            doc.webkitExitFullscreen ||
+            doc.mozCancelFullScreen ||
+            doc.msExitFullscreen;
+          if (exitDoc) run(exitDoc.call(doc) as void | Promise<void>);
+          const videoExit = video && (video as HTMLVideoElement & { webkitExitFullScreen?: () => void }).webkitExitFullScreen;
+          if (videoExit) videoExit.call(video);
+        }
       } else {
         const isMobile = typeof window !== 'undefined' && ('ontouchstart' in window || window.innerWidth <= 768);
-        const videoFs = video && (
-          (video as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen ||
-          (video as HTMLVideoElement & { webkitEnterFullScreen?: () => void }).webkitEnterFullScreen ||
-          (video as HTMLVideoElement & { requestFullscreen?: () => void }).requestFullscreen
-        );
         const containerFs = container && (container as HTMLElement & {
           requestFullscreen?: () => void | Promise<void>;
           webkitRequestFullscreen?: () => void | Promise<void>;
@@ -362,16 +365,30 @@ export function VideoPlayerCard({
           containerFs?.mozRequestFullScreen ||
           containerFs?.msRequestFullscreen;
 
-        if (isMobile && videoFs) {
-          run(videoFs.call(video) as void | Promise<void>);
+        if (isMobile) {
+          if (requestContainer) {
+            run(requestContainer.call(container) as void | Promise<void>);
+          } else {
+            // iOS Safari etc.: container fullscreen não disponível → fullscreen falso mantém borda, controles e gradiente
+            setIsFakeFullscreen(true);
+            setIsFullscreen(true);
+          }
         } else if (requestContainer) {
           run(requestContainer.call(container) as void | Promise<void>);
-        } else if (videoFs) {
-          run(videoFs.call(video) as void | Promise<void>);
+        } else {
+          const videoFs = video && (
+            (video as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen ||
+            (video as HTMLVideoElement & { webkitEnterFullScreen?: () => void }).webkitEnterFullScreen ||
+            (video as HTMLVideoElement & { requestFullscreen?: () => void }).requestFullscreen
+          );
+          if (videoFs) run(videoFs.call(video) as void | Promise<void>);
         }
       }
     } catch {
-      // Silencia falhas de fullscreen para não quebrar o player
+      if (isMobile && !isFakeFullscreen) {
+        setIsFakeFullscreen(true);
+        setIsFullscreen(true);
+      }
     }
   };
 
@@ -480,6 +497,9 @@ export function VideoPlayerCard({
     } else if (event.key === 'Escape') {
       if (isSettingsOpen) {
         setIsSettingsOpen(false);
+      } else if (isFakeFullscreen) {
+        setIsFakeFullscreen(false);
+        setIsFullscreen(false);
       }
     } else if (event.key === 'ArrowLeft') {
       event.preventDefault();
@@ -503,6 +523,7 @@ export function VideoPlayerCard({
         doc.webkitFullscreenElement ||
         doc.mozFullScreenElement ||
         doc.msFullscreenElement;
+      if (!isFs) setIsFakeFullscreen(false);
       setIsFullscreen(Boolean(isFs));
     };
     document.addEventListener('fullscreenchange', onFsChange);
@@ -535,10 +556,16 @@ export function VideoPlayerCard({
   }, [isPlaying]);
 
   return (
-    <div className="flex justify-center px-4 sm:px-6">
+    <div
+      className={
+        isFakeFullscreen
+          ? 'fixed inset-0 z-[9999] bg-black flex items-center justify-center p-0'
+          : 'flex justify-center px-4 sm:px-6'
+      }
+    >
       <div
         ref={containerRef}
-        className="relative w-full max-w-[1100px] rounded-2xl bg-[#071617] border border-emerald-400/25 shadow-[0_18px_60px_rgba(0,0,0,0.9)] shadow-emerald-500/10 overflow-hidden"
+        className={`relative w-full max-w-[1100px] rounded-2xl bg-[#071617] border border-emerald-400/25 shadow-[0_18px_60px_rgba(0,0,0,0.9)] shadow-emerald-500/10 overflow-hidden ${isFakeFullscreen ? 'max-h-[100dvh] aspect-video h-auto w-full' : ''}`}
       >
         {/* Vinheta leve no topo do card */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(42,252,152,0.18),_transparent_55%)]" />

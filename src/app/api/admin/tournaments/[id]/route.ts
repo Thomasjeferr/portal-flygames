@@ -43,6 +43,14 @@ const updateSchema = z.object({
   craqueDaCopa: z.boolean().optional(),
   regulamentoUrl: z.string().optional().nullable(),
   regulamentoTexto: z.string().optional().nullable(),
+  // Regras de elenco (só para times CONFIRMED)
+  elencoDeadlineAt: z
+    .string()
+    .optional()
+    .nullable()
+    .refine((v) => !v || v.trim() === '' || !isNaN(Date.parse(v)), { message: 'Invalid datetime' }),
+  elencoChangeRule: z.enum(['FULL', 'N_PER_PHASE']).optional(),
+  elencoChangesPerPhase: z.number().int().min(0).optional().nullable(),
 });
 
 export async function GET(
@@ -98,6 +106,9 @@ export async function PATCH(
       craqueDaCopa: body.craqueDaCopa,
       regulamentoUrl: body.regulamentoUrl !== undefined ? body.regulamentoUrl : undefined,
       regulamentoTexto: body.regulamentoTexto !== undefined ? body.regulamentoTexto : undefined,
+      elencoDeadlineAt: body.elencoDeadlineAt !== undefined ? body.elencoDeadlineAt : undefined,
+      elencoChangeRule: body.elencoChangeRule,
+      elencoChangesPerPhase: body.elencoChangesPerPhase != null ? Number(body.elencoChangesPerPhase) : undefined,
     });
     if (!parsed.success) {
       return NextResponse.json(
@@ -140,6 +151,9 @@ export async function PATCH(
     if (data.craqueDaCopa !== undefined) update.craqueDaCopa = data.craqueDaCopa;
     if (data.regulamentoUrl !== undefined) update.regulamentoUrl = data.regulamentoUrl && data.regulamentoUrl.trim() ? data.regulamentoUrl.trim() : null;
     if (data.regulamentoTexto !== undefined) update.regulamentoTexto = data.regulamentoTexto && data.regulamentoTexto.trim() ? data.regulamentoTexto.trim() : null;
+    if (data.elencoDeadlineAt !== undefined) update.elencoDeadlineAt = data.elencoDeadlineAt ? new Date(data.elencoDeadlineAt) : null;
+    if (data.elencoChangeRule !== undefined) update.elencoChangeRule = data.elencoChangeRule;
+    if (data.elencoChangesPerPhase !== undefined) update.elencoChangesPerPhase = data.elencoChangesPerPhase;
 
     const tournament = await prisma.tournament.update({
       where: { id },

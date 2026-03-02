@@ -10,6 +10,7 @@ type StatRow = {
   number: number | null;
   position: string | null;
   goals: number;
+  penaltyGoals: number;
   assists: number;
   fouls: number;
   yellowCard: boolean;
@@ -272,6 +273,7 @@ export default function SumulaDetailPage() {
                         <tr className="text-left text-futvar-light border-b border-white/10">
                           <th className="py-1 pr-2">Jogador</th>
                           <th className="py-1 w-10 text-center">G</th>
+                          <th className="py-1 w-10 text-center" title="Gols de pênalti">G pên.</th>
                           <th className="py-1 w-10 text-center">A</th>
                           <th className="py-1 w-10 text-center" title="Cartão amarelo">Amarelo</th>
                           <th className="py-1 w-10 text-center" title="Cartão vermelho">Vermelho</th>
@@ -283,6 +285,7 @@ export default function SumulaDetailPage() {
                           <tr key={s.teamMemberId} className="border-b border-white/5">
                             <td className="py-1 pr-2 text-white">{s.number != null ? `${s.number} · ` : ''}{s.name}</td>
                             <td className="text-center">{s.goals}</td>
+                            <td className="text-center">{s.penaltyGoals ?? 0}</td>
                             <td className="text-center">{s.assists}</td>
                             <td className="text-center">{s.yellowCard ? '✓' : '—'}</td>
                             <td className="text-center">{s.redCard ? '✓' : '—'}</td>
@@ -303,6 +306,7 @@ export default function SumulaDetailPage() {
                         <tr className="text-left text-futvar-light border-b border-white/10">
                           <th className="py-1 pr-2">Jogador</th>
                           <th className="py-1 w-10 text-center">G</th>
+                          <th className="py-1 w-10 text-center" title="Gols de pênalti">G pên.</th>
                           <th className="py-1 w-10 text-center">A</th>
                           <th className="py-1 w-10 text-center" title="Cartão amarelo">Amarelo</th>
                           <th className="py-1 w-10 text-center" title="Cartão vermelho">Vermelho</th>
@@ -314,6 +318,7 @@ export default function SumulaDetailPage() {
                           <tr key={s.teamMemberId} className="border-b border-white/5">
                             <td className="py-1 pr-2 text-white">{s.number != null ? `${s.number} · ` : ''}{s.name}</td>
                             <td className="text-center">{s.goals}</td>
+                            <td className="text-center">{s.penaltyGoals ?? 0}</td>
                             <td className="text-center">{s.assists}</td>
                             <td className="text-center">{s.yellowCard ? '✓' : '—'}</td>
                             <td className="text-center">{s.redCard ? '✓' : '—'}</td>

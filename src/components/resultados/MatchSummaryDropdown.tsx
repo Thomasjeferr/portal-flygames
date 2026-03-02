@@ -7,6 +7,7 @@ type PlayerStat = {
   name: string;
   photoUrl: string | null;
   goals: number;
+  penaltyGoals?: number;
   assists: number;
   yellow: boolean;
   red: boolean;
@@ -74,6 +75,7 @@ function StatsTable({
               <th scope="col" className="py-2 pl-3 pr-2 text-left font-semibold w-10">Foto</th>
               <th scope="col" className="py-2 pr-2 text-left font-semibold">Jogador</th>
               <th scope="col" className="py-2 px-2 text-center font-semibold w-10">G</th>
+              <th scope="col" className="py-2 px-2 text-center font-semibold w-10" title="Gols de pênalti">G pên.</th>
               <th scope="col" className="py-2 px-2 text-center font-semibold w-10">A</th>
               <th scope="col" className="py-2 px-2 text-center font-semibold w-10" title="Amarelo">🟨</th>
               <th scope="col" className="py-2 px-2 text-center font-semibold w-10" title="Vermelho">🟥</th>
@@ -88,6 +90,7 @@ function StatsTable({
                 </td>
                 <td className="py-2 pr-2 text-white">{s.name}</td>
                 <td className="py-2 px-2 text-center text-futvar-light">{s.goals}</td>
+                <td className="py-2 px-2 text-center text-futvar-light">{s.penaltyGoals ?? 0}</td>
                 <td className="py-2 px-2 text-center text-futvar-light">{s.assists}</td>
                 <td className="py-2 px-2 text-center">{s.yellow ? '✓' : '—'}</td>
                 <td className="py-2 px-2 text-center">{s.red ? '✓' : '—'}</td>
@@ -146,8 +149,12 @@ export function MatchSummaryDropdown({ slug }: { slug: string }) {
   }
 
   const hasStats = data.stats.home.length > 0 || data.stats.away.length > 0;
-  const homeLabel = `Mandante (${data.homeTeam?.shortName ?? data.homeTeam?.name ?? '—'})`;
-  const awayLabel = `Visitante (${data.awayTeam?.shortName ?? data.awayTeam?.name ?? '—'})`;
+  const homeName = data.homeTeam?.name ?? 'Mandante';
+  const homeSigla = data.homeTeam?.shortName && data.homeTeam.shortName !== homeName ? ` (${data.homeTeam.shortName})` : '';
+  const awayName = data.awayTeam?.name ?? 'Visitante';
+  const awaySigla = data.awayTeam?.shortName && data.awayTeam.shortName !== awayName ? ` (${data.awayTeam.shortName})` : '';
+  const homeLabel = `Mandante: ${homeName}${homeSigla}`;
+  const awayLabel = `Visitante: ${awayName}${awaySigla}`;
 
   return (
     <div className="p-4 sm:p-5">

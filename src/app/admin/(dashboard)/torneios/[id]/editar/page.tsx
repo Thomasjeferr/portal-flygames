@@ -44,6 +44,9 @@ interface Tournament {
   craqueDaCopa: boolean;
   regulamentoUrl: string | null;
   regulamentoTexto: string | null;
+  elencoDeadlineAt: string | null;
+  elencoChangeRule: string;
+  elencoChangesPerPhase: number | null;
 }
 
 export default function EditTournamentPage() {
@@ -80,6 +83,9 @@ export default function EditTournamentPage() {
     craqueDaCopa: false,
     regulamentoUrl: '',
     regulamentoTexto: '',
+    elencoDeadlineAt: '',
+    elencoChangeRule: 'FULL',
+    elencoChangesPerPhase: '',
   });
 
   useEffect(() => {
@@ -119,6 +125,9 @@ export default function EditTournamentPage() {
         craqueDaCopa: t.craqueDaCopa ?? false,
         regulamentoUrl: t.regulamentoUrl ?? '',
         regulamentoTexto: t.regulamentoTexto ?? '',
+        elencoDeadlineAt: t.elencoDeadlineAt ? t.elencoDeadlineAt.slice(0, 16) : '',
+        elencoChangeRule: t.elencoChangeRule ?? 'FULL',
+        elencoChangesPerPhase: t.elencoChangesPerPhase != null ? String(t.elencoChangesPerPhase) : '',
       });
       setLoadData(false);
     })();
@@ -161,6 +170,9 @@ export default function EditTournamentPage() {
       body.craqueDaCopa = form.craqueDaCopa;
       body.regulamentoUrl = form.regulamentoUrl.trim() || null;
       body.regulamentoTexto = form.regulamentoTexto.trim() || null;
+      body.elencoDeadlineAt = form.elencoDeadlineAt ? new Date(form.elencoDeadlineAt).toISOString() : null;
+      body.elencoChangeRule = form.elencoChangeRule;
+      body.elencoChangesPerPhase = form.elencoChangesPerPhase !== '' ? Number(form.elencoChangesPerPhase) : null;
       const res = await fetch(`/api/admin/tournaments/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -315,6 +327,47 @@ export default function EditTournamentPage() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="border-t border-white/10 pt-5 mt-5">
+          <h2 className="text-lg font-semibold text-white mb-4">Regras de elenco</h2>
+          <p className="text-sm text-netflix-light mb-4">Aplicadas apenas a times <strong>confirmados</strong> no campeonato. Data limite para envio do elenco; após travar, não permitir alterações ou permitir N alterações por fase.</p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-netflix-light mb-2">Data limite para envio do elenco</label>
+              <input
+                type="datetime-local"
+                value={form.elencoDeadlineAt}
+                onChange={(e) => setForm((f) => ({ ...f, elencoDeadlineAt: e.target.value }))}
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              />
+              <p className="text-xs text-netflix-light mt-1">Deixe vazio para travar apenas quando o time clicar em &quot;Enviar elenco&quot;.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-netflix-light mb-2">Após o travamento</label>
+              <select
+                value={form.elencoChangeRule}
+                onChange={(e) => setForm((f) => ({ ...f, elencoChangeRule: e.target.value }))}
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              >
+                <option value="FULL">Não permitir alterações</option>
+                <option value="N_PER_PHASE">Permitir N alterações por fase</option>
+              </select>
+            </div>
+            {form.elencoChangeRule === 'N_PER_PHASE' && (
+              <div>
+                <label className="block text-sm font-medium text-netflix-light mb-2">Máximo de alterações por fase</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={form.elencoChangesPerPhase}
+                  onChange={(e) => setForm((f) => ({ ...f, elencoChangesPerPhase: e.target.value }))}
+                  placeholder="Ex: 2"
+                  className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                />
+              </div>
+            )}
           </div>
         </div>
 

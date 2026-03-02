@@ -69,6 +69,7 @@ export default async function ResultadoDetalhePage({ params }: Props) {
       name: s.teamMember.name,
       number: s.teamMember.number,
       goals: s.goals,
+      penaltyGoals: s.penaltyGoals,
       assists: s.assists,
       yellowCard: s.yellowCard,
       redCard: s.redCard,
@@ -80,6 +81,7 @@ export default async function ResultadoDetalhePage({ params }: Props) {
       name: s.teamMember.name,
       number: s.teamMember.number,
       goals: s.goals,
+      penaltyGoals: s.penaltyGoals,
       assists: s.assists,
       yellowCard: s.yellowCard,
       redCard: s.redCard,
@@ -156,13 +158,17 @@ export default async function ResultadoDetalhePage({ params }: Props) {
                 <h3 className="text-white font-semibold pt-4 border-t border-white/10">Estatísticas da partida</h3>
                 {homeStats.length > 0 && (
                   <div>
-                    <p className="text-futvar-light text-xs uppercase mb-2">{game.homeTeam?.shortName ?? game.homeTeam?.name ?? 'Mandante'}</p>
+                    <p className="text-futvar-light text-xs uppercase mb-2">
+                      {game.homeTeam?.name ?? 'Mandante'}
+                      {game.homeTeam?.shortName && game.homeTeam.shortName !== game.homeTeam?.name && ` (${game.homeTeam.shortName})`}
+                    </p>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-left text-futvar-light border-b border-white/10">
                             <th className="py-1 pr-2">Jogador</th>
                             <th className="py-1 w-10 text-center">G</th>
+                            <th className="py-1 w-10 text-center" title="Gols de pênalti">G pên.</th>
                             <th className="py-1 w-10 text-center">A</th>
                             <th className="py-1 w-10 text-center">Amarelo</th>
                             <th className="py-1 w-10 text-center">Vermelho</th>
@@ -174,6 +180,7 @@ export default async function ResultadoDetalhePage({ params }: Props) {
                             <tr key={i} className="border-b border-white/5">
                               <td className="py-1 pr-2 text-white">{s.number != null ? `${s.number} · ` : ''}{s.name}</td>
                               <td className="text-center">{s.goals}</td>
+                              <td className="text-center">{s.penaltyGoals ?? 0}</td>
                               <td className="text-center">{s.assists}</td>
                               <td className="text-center">{s.yellowCard ? '✓' : '—'}</td>
                               <td className="text-center">{s.redCard ? '✓' : '—'}</td>
@@ -187,13 +194,17 @@ export default async function ResultadoDetalhePage({ params }: Props) {
                 )}
                 {awayStats.length > 0 && (
                   <div>
-                    <p className="text-futvar-light text-xs uppercase mb-2 mt-4">{game.awayTeam?.shortName ?? game.awayTeam?.name ?? 'Visitante'}</p>
+                    <p className="text-futvar-light text-xs uppercase mb-2 mt-4">
+                      {game.awayTeam?.name ?? 'Visitante'}
+                      {game.awayTeam?.shortName && game.awayTeam.shortName !== game.awayTeam?.name && ` (${game.awayTeam.shortName})`}
+                    </p>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-left text-futvar-light border-b border-white/10">
                             <th className="py-1 pr-2">Jogador</th>
                             <th className="py-1 w-10 text-center">G</th>
+                            <th className="py-1 w-10 text-center" title="Gols de pênalti">G pên.</th>
                             <th className="py-1 w-10 text-center">A</th>
                             <th className="py-1 w-10 text-center">Amarelo</th>
                             <th className="py-1 w-10 text-center">Vermelho</th>
@@ -205,6 +216,7 @@ export default async function ResultadoDetalhePage({ params }: Props) {
                             <tr key={i} className="border-b border-white/5">
                               <td className="py-1 pr-2 text-white">{s.number != null ? `${s.number} · ` : ''}{s.name}</td>
                               <td className="text-center">{s.goals}</td>
+                              <td className="text-center">{s.penaltyGoals ?? 0}</td>
                               <td className="text-center">{s.assists}</td>
                               <td className="text-center">{s.yellowCard ? '✓' : '—'}</td>
                               <td className="text-center">{s.redCard ? '✓' : '—'}</td>

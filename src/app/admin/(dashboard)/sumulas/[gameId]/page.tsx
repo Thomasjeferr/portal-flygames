@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 
 type Member = { id: string; name: string; number: number | null; position: string | null; role: string };
 type Team = { id: string; name: string; shortName: string | null; crestUrl: string | null; members: Member[] };
-type StatRow = { teamMemberId: string; goals: number; assists: number; fouls: number; yellowCard: boolean; redCard: boolean; highlight: boolean };
+type StatRow = { teamMemberId: string; goals: number; penaltyGoals: number; assists: number; fouls: number; yellowCard: boolean; redCard: boolean; highlight: boolean };
 type Approval = { teamId: string; status: string; rejectionReason: string | null; rejectedAt: string | null; approvedAt: string | null };
 
 type GameSumula = {
@@ -42,9 +42,13 @@ export default function AdminSumulaGamePage() {
 
   useEffect(() => {
     fetch(`/api/admin/sumulas/games/${gameId}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.error) {
+      .then((r) => r.json().then((d) => ({ ok: r.ok, data: d })))
+      .then(({ ok, data: d }) => {
+        if (!ok && d?.error) {
+          setError(d.error);
+          return;
+        }
+        if (d?.error) {
           setError(d.error);
           return;
         }
@@ -53,18 +57,18 @@ export default function AdminSumulaGamePage() {
         setAwayScore(d.awayScore != null ? String(d.awayScore) : '');
         const homeMap: Record<string, StatRow> = {};
         for (const s of d.homeStats || []) {
-          homeMap[s.teamMemberId] = s;
+          homeMap[s.teamMemberId] = { ...s, penaltyGoals: s.penaltyGoals ?? 0 };
         }
         for (const m of d.homeTeam?.members || []) {
-          if (!homeMap[m.id]) homeMap[m.id] = { teamMemberId: m.id, goals: 0, assists: 0, fouls: 0, yellowCard: false, redCard: false, highlight: false };
+          if (!homeMap[m.id]) homeMap[m.id] = { teamMemberId: m.id, goals: 0, penaltyGoals: 0, assists: 0, fouls: 0, yellowCard: false, redCard: false, highlight: false };
         }
         setHomeStats(homeMap);
         const awayMap: Record<string, StatRow> = {};
         for (const s of d.awayStats || []) {
-          awayMap[s.teamMemberId] = s;
+          awayMap[s.teamMemberId] = { ...s, penaltyGoals: s.penaltyGoals ?? 0 };
         }
         for (const m of d.awayTeam?.members || []) {
-          if (!awayMap[m.id]) awayMap[m.id] = { teamMemberId: m.id, goals: 0, assists: 0, fouls: 0, yellowCard: false, redCard: false, highlight: false };
+          if (!awayMap[m.id]) awayMap[m.id] = { teamMemberId: m.id, goals: 0, penaltyGoals: 0, assists: 0, fouls: 0, yellowCard: false, redCard: false, highlight: false };
         }
         setAwayStats(awayMap);
       })
@@ -102,15 +106,15 @@ export default function AdminSumulaGamePage() {
           setHomeScore(d.homeScore != null ? String(d.homeScore) : '');
           setAwayScore(d.awayScore != null ? String(d.awayScore) : '');
           const homeMap: Record<string, StatRow> = {};
-          for (const s of d.homeStats || []) homeMap[s.teamMemberId] = s;
+          for (const s of d.homeStats || []) homeMap[s.teamMemberId] = { ...s, penaltyGoals: s.penaltyGoals ?? 0 };
           for (const m of d.homeTeam?.members || []) {
-            if (!homeMap[m.id]) homeMap[m.id] = { teamMemberId: m.id, goals: 0, assists: 0, fouls: 0, yellowCard: false, redCard: false, highlight: false };
+            if (!homeMap[m.id]) homeMap[m.id] = { teamMemberId: m.id, goals: 0, penaltyGoals: 0, assists: 0, fouls: 0, yellowCard: false, redCard: false, highlight: false };
           }
           setHomeStats(homeMap);
           const awayMap: Record<string, StatRow> = {};
-          for (const s of d.awayStats || []) awayMap[s.teamMemberId] = s;
+          for (const s of d.awayStats || []) awayMap[s.teamMemberId] = { ...s, penaltyGoals: s.penaltyGoals ?? 0 };
           for (const m of d.awayTeam?.members || []) {
-            if (!awayMap[m.id]) awayMap[m.id] = { teamMemberId: m.id, goals: 0, assists: 0, fouls: 0, yellowCard: false, redCard: false, highlight: false };
+            if (!awayMap[m.id]) awayMap[m.id] = { teamMemberId: m.id, goals: 0, penaltyGoals: 0, assists: 0, fouls: 0, yellowCard: false, redCard: false, highlight: false };
           }
           setAwayStats(awayMap);
         })
@@ -123,13 +127,13 @@ export default function AdminSumulaGamePage() {
   const updateHomeStat = (memberId: string, field: keyof StatRow, value: number | boolean) => {
     setHomeStats((prev) => ({
       ...prev,
-      [memberId]: { ...(prev[memberId] || { teamMemberId: memberId, goals: 0, assists: 0, fouls: 0, yellowCard: false, redCard: false, highlight: false }), [field]: value },
+      [memberId]: { ...(prev[memberId] || { teamMemberId: memberId, goals: 0, penaltyGoals: 0, assists: 0, fouls: 0, yellowCard: false, redCard: false, highlight: false }), [field]: value },
     }));
   };
   const updateAwayStat = (memberId: string, field: keyof StatRow, value: number | boolean) => {
     setAwayStats((prev) => ({
       ...prev,
-      [memberId]: { ...(prev[memberId] || { teamMemberId: memberId, goals: 0, assists: 0, fouls: 0, yellowCard: false, redCard: false, highlight: false }), [field]: value },
+      [memberId]: { ...(prev[memberId] || { teamMemberId: memberId, goals: 0, penaltyGoals: 0, assists: 0, fouls: 0, yellowCard: false, redCard: false, highlight: false }), [field]: value },
     }));
   };
 
@@ -205,6 +209,7 @@ export default function AdminSumulaGamePage() {
                   <tr className="text-left text-netflix-light border-b border-white/10">
                     <th className="py-2 pr-2">Jogador</th>
                     <th className="py-2 px-1 w-14 text-center">G</th>
+                    <th className="py-2 px-1 w-12 text-center" title="Gols de pênalti">G pên.</th>
                     <th className="py-2 px-1 w-14 text-center">A</th>
                     <th className="py-2 px-1 w-14 text-center">F</th>
                     <th className="py-2 px-1 w-14 text-center" title="Cartão amarelo">Amarelo</th>
@@ -217,6 +222,7 @@ export default function AdminSumulaGamePage() {
                     <tr key={m.id} className="border-b border-white/5">
                       <td className="py-1.5 pr-2 text-white">{m.number != null ? `${m.number} · ` : ''}{m.name}</td>
                       <td className="px-1"><input type="number" min={0} value={homeStats[m.id]?.goals ?? 0} onChange={(e) => updateHomeStat(m.id, 'goals', parseInt(e.target.value, 10) || 0)} className="w-12 px-1 py-0.5 rounded bg-netflix-gray border border-white/20 text-white text-center" /></td>
+                      <td className="px-1"><input type="number" min={0} value={homeStats[m.id]?.penaltyGoals ?? 0} onChange={(e) => updateHomeStat(m.id, 'penaltyGoals', parseInt(e.target.value, 10) || 0)} className="w-10 px-1 py-0.5 rounded bg-netflix-gray border border-white/20 text-white text-center" title="Gols de pênalti" /></td>
                       <td className="px-1"><input type="number" min={0} value={homeStats[m.id]?.assists ?? 0} onChange={(e) => updateHomeStat(m.id, 'assists', parseInt(e.target.value, 10) || 0)} className="w-12 px-1 py-0.5 rounded bg-netflix-gray border border-white/20 text-white text-center" /></td>
                       <td className="px-1"><input type="number" min={0} value={homeStats[m.id]?.fouls ?? 0} onChange={(e) => updateHomeStat(m.id, 'fouls', parseInt(e.target.value, 10) || 0)} className="w-12 px-1 py-0.5 rounded bg-netflix-gray border border-white/20 text-white text-center" /></td>
                       <td className="px-1 text-center"><input type="checkbox" checked={homeStats[m.id]?.yellowCard ?? false} onChange={(e) => updateHomeStat(m.id, 'yellowCard', e.target.checked)} className="rounded" /></td>
@@ -239,6 +245,7 @@ export default function AdminSumulaGamePage() {
                   <tr className="text-left text-netflix-light border-b border-white/10">
                     <th className="py-2 pr-2">Jogador</th>
                     <th className="py-2 px-1 w-14 text-center">G</th>
+                    <th className="py-2 px-1 w-12 text-center" title="Gols de pênalti">G pên.</th>
                     <th className="py-2 px-1 w-14 text-center">A</th>
                     <th className="py-2 px-1 w-14 text-center">F</th>
                     <th className="py-2 px-1 w-14 text-center" title="Cartão amarelo">Amarelo</th>
@@ -251,6 +258,7 @@ export default function AdminSumulaGamePage() {
                     <tr key={m.id} className="border-b border-white/5">
                       <td className="py-1.5 pr-2 text-white">{m.number != null ? `${m.number} · ` : ''}{m.name}</td>
                       <td className="px-1"><input type="number" min={0} value={awayStats[m.id]?.goals ?? 0} onChange={(e) => updateAwayStat(m.id, 'goals', parseInt(e.target.value, 10) || 0)} className="w-12 px-1 py-0.5 rounded bg-netflix-gray border border-white/20 text-white text-center" /></td>
+                      <td className="px-1"><input type="number" min={0} value={awayStats[m.id]?.penaltyGoals ?? 0} onChange={(e) => updateAwayStat(m.id, 'penaltyGoals', parseInt(e.target.value, 10) || 0)} className="w-10 px-1 py-0.5 rounded bg-netflix-gray border border-white/20 text-white text-center" title="Gols de pênalti" /></td>
                       <td className="px-1"><input type="number" min={0} value={awayStats[m.id]?.assists ?? 0} onChange={(e) => updateAwayStat(m.id, 'assists', parseInt(e.target.value, 10) || 0)} className="w-12 px-1 py-0.5 rounded bg-netflix-gray border border-white/20 text-white text-center" /></td>
                       <td className="px-1"><input type="number" min={0} value={awayStats[m.id]?.fouls ?? 0} onChange={(e) => updateAwayStat(m.id, 'fouls', parseInt(e.target.value, 10) || 0)} className="w-12 px-1 py-0.5 rounded bg-netflix-gray border border-white/20 text-white text-center" /></td>
                       <td className="px-1 text-center"><input type="checkbox" checked={awayStats[m.id]?.yellowCard ?? false} onChange={(e) => updateAwayStat(m.id, 'yellowCard', e.target.checked)} className="rounded" /></td>

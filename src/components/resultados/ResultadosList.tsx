@@ -78,7 +78,10 @@ export function ResultadosList({ games }: { games: ResultadoGame[] }) {
                 </span>
               )}
               <span className="text-white font-medium">
-                {g.homeTeam?.shortName ?? g.homeTeam?.name ?? 'Mandante'}
+                {g.homeTeam?.name ?? 'Mandante'}
+                {g.homeTeam?.shortName && g.homeTeam.shortName !== g.homeTeam?.name && (
+                  <span className="text-futvar-light font-normal ml-1">({g.homeTeam.shortName})</span>
+                )}
               </span>
               {hasScore ? (
                 <span className="text-futvar-green font-bold">
@@ -88,7 +91,10 @@ export function ResultadosList({ games }: { games: ResultadoGame[] }) {
                 <span className="text-futvar-light text-sm">x</span>
               )}
               <span className="text-white font-medium">
-                {g.awayTeam?.shortName ?? g.awayTeam?.name ?? 'Visitante'}
+                {g.awayTeam?.name ?? 'Visitante'}
+                {g.awayTeam?.shortName && g.awayTeam.shortName !== g.awayTeam?.name && (
+                  <span className="text-futvar-light font-normal ml-1">({g.awayTeam.shortName})</span>
+                )}
               </span>
               {g.awayTeam?.crestUrl ? (
                 <img
