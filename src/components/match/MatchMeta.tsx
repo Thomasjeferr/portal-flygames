@@ -2,10 +2,11 @@ interface MatchMetaProps {
   title: string;
   dateLabel: string;
   isLive?: boolean;
+  isScheduled?: boolean;
   isReplay?: boolean;
 }
 
-export function MatchMeta({ title, dateLabel, isLive = false, isReplay = true }: MatchMetaProps) {
+export function MatchMeta({ title, dateLabel, isLive = false, isScheduled = false, isReplay = true }: MatchMetaProps) {
   return (
     <div className="mt-6 text-center">
       <div className="mb-3 flex items-center justify-center gap-3">
@@ -15,7 +16,12 @@ export function MatchMeta({ title, dateLabel, isLive = false, isReplay = true }:
             Ao vivo
           </span>
         )}
-        {isReplay && (
+        {isScheduled && !isLive && (
+          <span className="inline-flex items-center rounded-full bg-amber-500 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#1c1917] shadow shadow-amber-900/50">
+            Agendada
+          </span>
+        )}
+        {isReplay && !isLive && !isScheduled && (
           <span className="inline-flex items-center rounded-full bg-[#19d37a] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#02130b] shadow shadow-emerald-900/70">
             Replay
           </span>

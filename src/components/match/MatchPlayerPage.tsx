@@ -14,7 +14,10 @@ interface MatchPlayerPageProps {
   title: string;
   dateLabel: string;
   isLive?: boolean;
+  isScheduled?: boolean;
   isReplay?: boolean;
+  /** Quando true, ScoreboardHeader exibe apenas "vs" no centro (ex.: live sem placar) */
+  hideScore?: boolean;
   description?: string | null;
   children: ReactNode;
 }
@@ -25,7 +28,9 @@ export function MatchPlayerPage({
   title,
   dateLabel,
   isLive = false,
+  isScheduled = false,
   isReplay = true,
+  hideScore = false,
   description,
   children,
 }: MatchPlayerPageProps) {
@@ -39,7 +44,7 @@ export function MatchPlayerPage({
       <div className="relative z-10 flex w-full max-w-[1100px] flex-col items-center px-4 sm:px-6">
         {hasTeams && teamA && teamB ? (
           <div className="mb-5 w-full sm:mb-6">
-            <ScoreboardHeader teamA={teamA} teamB={teamB} />
+            <ScoreboardHeader teamA={teamA} teamB={teamB} hideScore={hideScore} />
           </div>
         ) : (
           <h1 className="mb-4 text-center text-lg font-bold text-white sm:text-xl">{title}</h1>
@@ -48,7 +53,7 @@ export function MatchPlayerPage({
         {/* Card do player / placeholder */}
         <div className="w-full">{children}</div>
 
-        <MatchMeta title={title} dateLabel={dateLabel} isLive={isLive} isReplay={isReplay} />
+        <MatchMeta title={title} dateLabel={dateLabel} isLive={isLive} isScheduled={isScheduled} isReplay={isReplay} />
 
         {description && (
           <p className="mt-4 max-w-3xl text-center text-sm leading-relaxed text-emerald-50/80 md:text-left">

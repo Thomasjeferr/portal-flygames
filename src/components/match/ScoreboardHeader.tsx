@@ -9,9 +9,11 @@ interface TeamInfo {
 interface ScoreboardHeaderProps {
   teamA: TeamInfo;
   teamB: TeamInfo;
+  /** Quando true, exibe apenas "vs" no centro (ex.: página da live sem placar) */
+  hideScore?: boolean;
 }
 
-export function ScoreboardHeader({ teamA, teamB }: ScoreboardHeaderProps) {
+export function ScoreboardHeader({ teamA, teamB, hideScore = false }: ScoreboardHeaderProps) {
   const leftScore = typeof teamA.score === 'number' ? teamA.score : 0;
   const rightScore = typeof teamB.score === 'number' ? teamB.score : 0;
 
@@ -44,15 +46,21 @@ export function ScoreboardHeader({ teamA, teamB }: ScoreboardHeaderProps) {
         </div>
       </div>
 
-      {/* Placar */}
+      {/* Placar ou "vs" */}
       <div className="flex flex-shrink-0 items-center gap-3 rounded-xl bg-black/40 px-5 py-2 ring-1 ring-emerald-400/20">
-        <span className="min-w-[2rem] text-center text-2xl font-extrabold text-white sm:text-3xl">
-          {leftScore}
-        </span>
-        <span className="text-base font-semibold text-emerald-400/90">x</span>
-        <span className="min-w-[2rem] text-center text-2xl font-extrabold text-white sm:text-3xl">
-          {rightScore}
-        </span>
+        {hideScore ? (
+          <span className="text-base font-semibold text-emerald-400/90">vs</span>
+        ) : (
+          <>
+            <span className="min-w-[2rem] text-center text-2xl font-extrabold text-white sm:text-3xl">
+              {leftScore}
+            </span>
+            <span className="text-base font-semibold text-emerald-400/90">x</span>
+            <span className="min-w-[2rem] text-center text-2xl font-extrabold text-white sm:text-3xl">
+              {rightScore}
+            </span>
+          </>
+        )}
       </div>
 
       {/* Time B */}

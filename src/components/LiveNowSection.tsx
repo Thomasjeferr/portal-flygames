@@ -19,13 +19,6 @@ type LiveHighlight = {
   } | null;
 };
 
-function buildTitleWithTeams(title: string, homeTeam: Team, awayTeam: Team): string {
-  const home = homeTeam?.shortName || homeTeam?.name || '';
-  const away = awayTeam?.shortName || awayTeam?.name || '';
-  if (home && away) return `${title}${title.endsWith('.') ? '' : ':'} ${home} vs ${away}`;
-  return title;
-}
-
 const ArrowUpRight = () => (
   <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -46,11 +39,6 @@ export function LiveNowSection() {
 
   const isLive = data.mode === 'LIVE';
   const live = data.live;
-  const displayTitle = buildTitleWithTeams(
-    live.title,
-    live.homeTeam ?? null,
-    live.awayTeam ?? null
-  );
   const dateStr = formatLiveCardDate(live.startAt);
 
   return (
@@ -82,7 +70,7 @@ export function LiveNowSection() {
               </span>
             ) : (
               <span className="inline-flex w-fit rounded-full bg-futvar-green px-4 py-1.5 text-sm font-medium text-futvar-darker mb-4">
-                Próxima live
+                Próximo jogo ao vivo
               </span>
             )}
 
@@ -116,9 +104,16 @@ export function LiveNowSection() {
 
               {/* Conteúdo do card */}
               <div className="flex-1 flex flex-col justify-center min-w-0">
-                <h3 className="text-2xl lg:text-3xl font-bold text-white line-clamp-2 mb-4">
-                  {displayTitle}
+                <h3 className={`text-xl lg:text-2xl font-bold text-white line-clamp-2 ${live.homeTeam && live.awayTeam ? 'mb-2' : 'mb-4'}`}>
+                  {live.title}
                 </h3>
+                {live.homeTeam && live.awayTeam && (
+                  <h5 className="text-base lg:text-lg font-semibold text-white/90 mb-4">
+                    {live.homeTeam.name}
+                    <span className="mx-2 text-futvar-green/90">vs</span>
+                    {live.awayTeam.name}
+                  </h5>
+                )}
 
                 {isLive ? (
                   <>

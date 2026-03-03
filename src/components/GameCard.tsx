@@ -29,26 +29,35 @@ interface GameCardProps {
   awayTeam?: TeamInfo | null;
 }
 
-function TeamCrest({ team, size = 10 }: { team: TeamInfo; size?: number }) {
-  const name = team.shortName || team.name;
+function TeamCrest({ team, size = 14 }: { team: TeamInfo; size?: number }) {
+  const initial = (team.shortName || team.name).slice(0, 2).toUpperCase();
+  const px = size * 4;
   return (
-    <div className="flex flex-col items-center gap-1 min-w-0 flex-1">
+    <div className="flex flex-col items-center gap-2 min-w-0 flex-1">
       {team.crestUrl ? (
-        <div className="relative flex-shrink-0" style={{ width: size * 4, height: size * 4 }}>
+        <div
+          className="relative flex-shrink-0 rounded-xl overflow-hidden border border-futvar-green/25 bg-futvar-dark/80 shadow-md ring-1 ring-white/5"
+          style={{ width: px, height: px }}
+        >
           <Image
             src={team.crestUrl.startsWith('http') ? team.crestUrl : team.crestUrl}
-            alt={name}
+            alt={team.name}
             fill
-            className="object-contain"
-            sizes="40px"
+            className="object-contain p-0.5"
+            sizes="56px"
           />
         </div>
       ) : (
-        <div className="rounded-full bg-futvar-gray border border-futvar-green/30 flex items-center justify-center text-futvar-light text-xs font-bold" style={{ width: size * 4, height: size * 4 }}>
-          {name.slice(0, 2).toUpperCase()}
+        <div
+          className="rounded-xl border border-futvar-green/30 bg-futvar-gray flex items-center justify-center text-futvar-light text-sm font-bold"
+          style={{ width: px, height: px }}
+        >
+          {initial}
         </div>
       )}
-      <span className="text-xs text-white font-medium truncate w-full text-center" title={team.name}>{name}</span>
+      <span className="text-xs text-white font-medium text-center truncate w-full block" title={team.name}>
+        {team.name}
+      </span>
     </div>
   );
 }
