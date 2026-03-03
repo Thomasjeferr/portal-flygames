@@ -6,7 +6,7 @@ import { canAccessLive } from '@/lib/access';
 import { prisma } from '@/lib/db';
 import { getLiveHlsUrl, getReplayHlsUrl } from '@/lib/cloudflare-live';
 import { StreamCustomPlayer } from '@/components/StreamCustomPlayer';
-import { LiveCountdown } from '@/components/LiveCountdown';
+import { LiveScheduledToLivePlayer } from '@/components/LiveScheduledToLivePlayer';
 import { MatchPlayerPage } from '@/components/match/MatchPlayerPage';
 
 interface Props {
@@ -227,11 +227,21 @@ export default async function LivePage({ params }: Props) {
                           className="object-cover opacity-60"
                         />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                          <LiveCountdown startAt={startAt} title={live.title} />
+                          <LiveScheduledToLivePlayer
+                            liveId={live.id}
+                            startAt={startAt}
+                            title={live.title}
+                            thumbnailUrl={live.thumbnailUrl}
+                          />
                         </div>
                       </div>
                     ) : (
-                      <LiveCountdown startAt={startAt} title={live.title} />
+                      <LiveScheduledToLivePlayer
+                        liveId={live.id}
+                        startAt={startAt}
+                        title={live.title}
+                        thumbnailUrl={null}
+                      />
                     )}
                   </div>
                 ) : live.status === 'LIVE' && hlsUrl ? (

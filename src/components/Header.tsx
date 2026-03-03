@@ -136,29 +136,29 @@ export function Header() {
     !isAdmin &&
     liveHighlight.mode !== 'NONE' &&
     liveHighlight.live && (
-      <div className="hidden md:flex items-center mr-4">
+      <div className="relative flex items-center flex-1 justify-center min-w-0 mx-2 md:mx-0 md:flex-initial md:justify-start md:mr-4">
         <button
           type="button"
           onClick={() => setLivePreviewOpen((o) => !o)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm transition-colors ${
+          className={`flex items-center gap-1.5 md:gap-2 px-2.5 py-1 md:px-3 md:py-1.5 rounded-full border text-[10px] md:text-xs font-semibold shadow-sm transition-colors shrink-0 ${
             liveHighlight.mode === 'LIVE'
               ? 'border-red-500 bg-red-600 text-white hover:bg-red-500 shadow-red-500/30 shadow-md'
               : 'border-amber-400/60 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25'
           }`}
         >
-          <span className="relative flex h-2.5 w-2.5">
+          <span className="relative flex h-2 w-2 md:h-2.5 md:w-2.5 shrink-0">
             {liveHighlight.mode === 'LIVE' && (
               <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 animate-ping opacity-70" />
             )}
             <span
-              className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+              className={`relative inline-flex rounded-full h-full w-full ${
                 liveHighlight.mode === 'LIVE'
                   ? 'bg-red-300 animate-live-blink'
                   : 'bg-amber-200'
               }`}
             />
           </span>
-          <span className="uppercase tracking-wide">
+          <span className="uppercase tracking-wide truncate">
             {liveHighlight.mode === 'LIVE' ? 'Ao vivo agora' : 'Live agendada'}
           </span>
         </button>
