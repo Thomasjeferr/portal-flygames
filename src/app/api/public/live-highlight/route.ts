@@ -41,6 +41,40 @@ export async function GET() {
       );
     }
 
+    // Live agendada cujo horário já passou: exibir como "Ao vivo" automaticamente
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const scheduledButStarted = await prisma.live.findFirst({
+      where: {
+        status: 'SCHEDULED',
+        startAt: { not: null, lte: now, gte: oneDayAgo },
+      },
+      orderBy: [{ startAt: 'desc' }, { createdAt: 'desc' }],
+      include: {
+        homeTeam: { select: { id: true, name: true, shortName: true } },
+        awayTeam: { select: { id: true, name: true, shortName: true } },
+      },
+    });
+
+    if (scheduledButStarted) {
+      return NextResponse.json(
+        {
+          mode: 'LIVE',
+          live: {
+            id: scheduledButStarted.id,
+            title: scheduledButStarted.title,
+            thumbnailUrl: scheduledButStarted.thumbnailUrl,
+            status: scheduledButStarted.status,
+            startAt: scheduledButStarted.startAt,
+            requireSubscription: scheduledButStarted.requireSubscription,
+            allowOneTimePurchase: scheduledButStarted.allowOneTimePurchase,
+            homeTeam: scheduledButStarted.homeTeam,
+            awayTeam: scheduledButStarted.awayTeam,
+          },
+        },
+        { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
+      );
+    }
+
     const nextScheduled = await prisma.live.findFirst({
       where: {
         status: 'SCHEDULED',

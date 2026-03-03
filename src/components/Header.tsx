@@ -86,13 +86,18 @@ export function Header() {
 
   useEffect(() => {
     if (isAdmin) return;
-    fetch('/api/public/live-highlight', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then((data: LiveHighlight) => {
-        if (!data || !data.mode) return;
-        setLiveHighlight(data);
-      })
-      .catch(() => {});
+    const fetchLiveHighlight = () => {
+      fetch('/api/public/live-highlight', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((data: LiveHighlight) => {
+          if (!data || !data.mode) return;
+          setLiveHighlight(data);
+        })
+        .catch(() => {});
+    };
+    fetchLiveHighlight();
+    const interval = setInterval(fetchLiveHighlight, 45_000); // 45 segundos
+    return () => clearInterval(interval);
   }, [isAdmin]);
 
   const handleLogout = async () => {
