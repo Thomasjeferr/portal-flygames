@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { parseLiveDatetime } from '@/lib/liveTimezone';
 import { z } from 'zod';
 import { uniqueSlug } from '@/lib/slug';
 
@@ -133,8 +134,8 @@ export async function PATCH(
     if (data.registrationMode === 'GOAL') {
       if (data.goalRequiredSupporters !== undefined) update.goalRequiredSupporters = data.goalRequiredSupporters;
       if (data.goalPricePerSupporter !== undefined) update.goalPricePerSupporter = data.goalPricePerSupporter;
-      if (data.goalStartAt !== undefined) update.goalStartAt = data.goalStartAt ? new Date(data.goalStartAt) : null;
-      if (data.goalEndAt !== undefined) update.goalEndAt = data.goalEndAt ? new Date(data.goalEndAt) : null;
+      if (data.goalStartAt !== undefined) update.goalStartAt = parseLiveDatetime(data.goalStartAt) ?? null;
+      if (data.goalEndAt !== undefined) update.goalEndAt = parseLiveDatetime(data.goalEndAt) ?? null;
     }
     if (data.lockConfirmationOnGoal !== undefined) update.lockConfirmationOnGoal = data.lockConfirmationOnGoal;
     if (data.status !== undefined) update.status = data.status;

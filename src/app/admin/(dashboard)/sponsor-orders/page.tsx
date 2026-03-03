@@ -133,6 +133,7 @@ export default function AdminSponsorOrdersPage() {
                       day: '2-digit',
                       month: 'short',
                       year: 'numeric',
+                      timeZone: 'America/Sao_Paulo',
                     })}
                   </td>
                   <td className="px-4 py-2 text-netflix-light text-xs max-w-[180px]">

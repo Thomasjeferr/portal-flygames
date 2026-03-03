@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { BannerForm } from '@/components/admin/BannerForm';
+import { formatLiveDatetimeForInput } from '@/lib/liveTimezone';
 
 export default function AdminBannerEditarPage() {
   const params = useParams();
@@ -100,8 +101,8 @@ export default function AdminBannerEditarPage() {
     preSaleId: String((banner.preSale as { id?: string })?.id ?? ''),
     liveId: String((banner.live as { id?: string })?.id ?? ''),
     showOnlyWhenReady: Boolean(banner.showOnlyWhenReady ?? true),
-    startAt: banner.startAt ? new Date(banner.startAt as string).toISOString().slice(0, 16) : '',
-    endAt: banner.endAt ? new Date(banner.endAt as string).toISOString().slice(0, 16) : '',
+    startAt: formatLiveDatetimeForInput(banner.startAt as string),
+    endAt: formatLiveDatetimeForInput(banner.endAt as string),
   };
 
   return (

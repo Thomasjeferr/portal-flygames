@@ -202,8 +202,8 @@ export function BannerForm({ games, preSales, lives, initialData, onSubmit }: Ba
         preSaleId: form.type === 'FEATURED_PRE_SALE' ? form.preSaleId || null : null,
         liveId: form.type === 'FEATURED_LIVE' ? form.liveId || null : null,
         showOnlyWhenReady: form.showOnlyWhenReady,
-        startAt: form.startAt ? new Date(form.startAt).toISOString() : null,
-        endAt: form.endAt ? new Date(form.endAt).toISOString() : null,
+        startAt: form.startAt || null,
+        endAt: form.endAt || null,
       };
       await onSubmit(data);
     } catch (err) {

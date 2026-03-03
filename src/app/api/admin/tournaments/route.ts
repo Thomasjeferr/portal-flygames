@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { parseLiveDatetime } from '@/lib/liveTimezone';
 import { z } from 'zod';
 import { uniqueSlug } from '@/lib/slug';
 
@@ -136,8 +137,8 @@ export async function POST(request: NextRequest) {
         registrationFeeAmount: data.registrationMode === 'PAID' ? (data.registrationFeeAmount ?? 0) : null,
         goalRequiredSupporters: data.registrationMode === 'GOAL' ? data.goalRequiredSupporters ?? null : null,
         goalPricePerSupporter: data.registrationMode === 'GOAL' ? data.goalPricePerSupporter ?? null : null,
-        goalStartAt: data.registrationMode === 'GOAL' ? (data.goalStartAt ? new Date(data.goalStartAt) : null) : null,
-        goalEndAt: data.registrationMode === 'GOAL' ? (data.goalEndAt ? new Date(data.goalEndAt) : null) : null,
+        goalStartAt: data.registrationMode === 'GOAL' ? (parseLiveDatetime(data.goalStartAt) ?? null) : null,
+        goalEndAt: data.registrationMode === 'GOAL' ? (parseLiveDatetime(data.goalEndAt) ?? null) : null,
         lockConfirmationOnGoal: data.lockConfirmationOnGoal ?? true,
         status: data.status ?? 'DRAFT',
         premiacaoTipo: data.premiacaoTipo ?? null,

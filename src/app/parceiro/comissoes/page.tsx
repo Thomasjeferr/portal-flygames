@@ -192,7 +192,7 @@ export default function ParceiroComissoesPage() {
                     {row.type === 'plano' ? 'Plano / Jogo' : 'Patrocínio'}
                   </td>
                   <td className="px-4 py-3 text-futvar-light">
-                    {new Date(row.date).toLocaleDateString('pt-BR')}
+                    {new Date(row.date).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                   </td>
                   <td className="px-4 py-3 text-right text-futvar-light">
                     {typeof row.commissionPercent === 'number' ? `${row.commissionPercent}%` : '—'}
@@ -212,7 +212,7 @@ export default function ParceiroComissoesPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-futvar-light text-xs">
-                    {row.paidAt ? new Date(row.paidAt).toLocaleDateString('pt-BR') : '—'}
+                    {row.paidAt ? new Date(row.paidAt).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—'}
                   </td>
                 </tr>
               ))}
@@ -240,7 +240,7 @@ export default function ParceiroComissoesPage() {
               {withdrawals.map((w) => (
                 <tr key={w.id} className="border-b border-white/5">
                   <td className="px-4 py-3 text-futvar-light">
-                    {new Date(w.requestedAt).toLocaleDateString('pt-BR')}
+                    {new Date(w.requestedAt).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                   </td>
                   <td className="px-4 py-3 text-futvar-green font-medium">
                     {formatMoney(w.amountCents)}
@@ -255,7 +255,7 @@ export default function ParceiroComissoesPage() {
                       : 'Solicitado'}
                   </td>
                   <td className="px-4 py-3 text-futvar-light text-xs">
-                    {w.paidAt ? new Date(w.paidAt).toLocaleDateString('pt-BR') : '—'}
+                    {w.paidAt ? new Date(w.paidAt).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—'}
                   </td>
                   <td className="px-4 py-3 text-futvar-light text-xs">
                     {w.receiptUrl ? (

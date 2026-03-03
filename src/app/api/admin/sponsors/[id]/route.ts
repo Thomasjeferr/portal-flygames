@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { parseLiveDatetime } from '@/lib/liveTimezone';
 import { sponsorUpdateSchema } from '@/lib/validators/sponsorSchema';
 
 function toBody(data: Record<string, unknown>) {
@@ -58,8 +59,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         ...(d.tier !== undefined && { tier: d.tier }),
         ...(d.priority !== undefined && { priority: d.priority }),
         ...(d.is_active !== undefined && { isActive: d.is_active }),
-        ...(d.start_at !== undefined && { startAt: d.start_at ? new Date(d.start_at) : null }),
-        ...(d.end_at !== undefined && { endAt: d.end_at ? new Date(d.end_at) : null }),
+        ...(d.start_at !== undefined && { startAt: parseLiveDatetime(d.start_at) ?? null }),
+        ...(d.end_at !== undefined && { endAt: parseLiveDatetime(d.end_at) ?? null }),
         ...(d.plan_id !== undefined && { planId: d.plan_id || null }),
         ...(d.team_id !== undefined && { teamId: d.team_id || null }),
       },

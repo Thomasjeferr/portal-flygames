@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
+import { formatBrazilDateOnly, formatBrazilTimeOnly } from '@/lib/liveTimezone';
 import { StreamVideoField } from '@/components/admin/StreamVideoField';
 
 interface PreSaleCategory {
@@ -116,8 +117,8 @@ export default function AdminPreEstreiaMetaEditarPage() {
             homeTeamId: g.homeTeamId ?? g.homeTeam?.id ?? '',
             awayTeamId: g.awayTeamId ?? g.awayTeam?.id ?? '',
             metaExtraPerTeam: String(Math.max(1, Number(g.metaExtraPerTeam) || 10)),
-            premiereDate: g.premiereAt ? new Date(g.premiereAt).toISOString().slice(0, 10) : '',
-            premiereTime: g.premiereAt ? `${String(new Date(g.premiereAt).getHours()).padStart(2, '0')}:${String(new Date(g.premiereAt).getMinutes()).padStart(2, '0')}` : '',
+            premiereDate: formatBrazilDateOnly(g.premiereAt),
+            premiereTime: formatBrazilTimeOnly(g.premiereAt),
           });
         }
       })
@@ -164,7 +165,7 @@ export default function AdminPreEstreiaMetaEditarPage() {
           homeTeamId: form.homeTeamId || null,
           awayTeamId: form.awayTeamId || null,
           metaExtraPerTeam: Math.max(1, parseInt(form.metaExtraPerTeam, 10) || 10),
-          premiereAt: form.premiereDate && form.premiereTime ? new Date(`${form.premiereDate}T${form.premiereTime}`).toISOString() : null,
+          premiereAt: form.premiereDate && form.premiereTime ? `${form.premiereDate}T${form.premiereTime}` : null,
         }),
       });
       const data = await res.json();

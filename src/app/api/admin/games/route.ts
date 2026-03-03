@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { parseLiveDatetime } from '@/lib/liveTimezone';
 import { z } from 'zod';
 import { uniqueSlug } from '@/lib/slug';
 
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
         title: data.title,
         slug,
         championship: data.championship,
-        gameDate: new Date(data.gameDate),
+        gameDate: parseLiveDatetime(data.gameDate) ?? new Date(),
         description: data.description || null,
         videoUrl: data.videoUrl?.trim() || null,
         thumbnailUrl: data.thumbnailUrl || null,

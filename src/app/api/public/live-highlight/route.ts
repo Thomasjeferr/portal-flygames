@@ -15,6 +15,10 @@ export async function GET() {
         cloudflarePlaybackId: null,
       },
       orderBy: [{ startAt: 'desc' }, { createdAt: 'desc' }],
+      include: {
+        homeTeam: { select: { id: true, name: true, shortName: true } },
+        awayTeam: { select: { id: true, name: true, shortName: true } },
+      },
     });
 
     if (liveNow) {
@@ -29,6 +33,8 @@ export async function GET() {
           startAt: liveNow.startAt,
           requireSubscription: liveNow.requireSubscription,
           allowOneTimePurchase: liveNow.allowOneTimePurchase,
+          homeTeam: liveNow.homeTeam,
+          awayTeam: liveNow.awayTeam,
         },
       },
         { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
@@ -41,6 +47,10 @@ export async function GET() {
         startAt: { not: null, gte: now },
       },
       orderBy: [{ startAt: 'asc' }, { createdAt: 'desc' }],
+      include: {
+        homeTeam: { select: { id: true, name: true, shortName: true } },
+        awayTeam: { select: { id: true, name: true, shortName: true } },
+      },
     });
 
     if (nextScheduled) {
@@ -55,6 +65,8 @@ export async function GET() {
           startAt: nextScheduled.startAt,
           requireSubscription: nextScheduled.requireSubscription,
           allowOneTimePurchase: nextScheduled.allowOneTimePurchase,
+          homeTeam: nextScheduled.homeTeam,
+          awayTeam: nextScheduled.awayTeam,
         },
       },
         { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }

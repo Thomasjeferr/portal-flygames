@@ -2,7 +2,7 @@ import type { CopaConfirmedTeamsProps } from './types';
 
 function formatDate(d: Date | null): string {
   if (!d) return '—';
-  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(d);
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'America/Sao_Paulo' }).format(d);
 }
 
 export function CopaConfirmedTeams({ teams }: CopaConfirmedTeamsProps) {

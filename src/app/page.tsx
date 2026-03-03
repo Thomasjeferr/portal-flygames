@@ -421,7 +421,7 @@ export default async function HomePage() {
                               </p>
                             )}
                             <p className="mt-0.5 text-[11px] text-futvar-light/80">
-                              Criado em {new Date(g.createdAt).toLocaleDateString('pt-BR')}
+                              Criado em {new Date(g.createdAt).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                             </p>
                           </div>
 

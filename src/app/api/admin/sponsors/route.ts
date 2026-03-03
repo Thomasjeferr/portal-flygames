@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parseLiveDatetime } from '@/lib/liveTimezone';
 import { revalidatePath } from 'next/cache';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
@@ -52,8 +53,8 @@ export async function POST(request: NextRequest) {
         tier: d.tier,
         priority: d.priority,
         isActive: d.is_active,
-        startAt: d.start_at ? new Date(d.start_at) : null,
-        endAt: d.end_at ? new Date(d.end_at) : null,
+        startAt: parseLiveDatetime(d.start_at) ?? null,
+        endAt: parseLiveDatetime(d.end_at) ?? null,
         planId: d.plan_id || null,
         teamId: d.team_id || null,
       },

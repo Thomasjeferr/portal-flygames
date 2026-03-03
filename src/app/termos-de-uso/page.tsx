@@ -6,7 +6,7 @@ export default function TermosDeUsoPage() {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">Termos de Uso da Plataforma Fly Games</h1>
         <p className="text-futvar-light text-sm mb-8">
-          Última atualização: {new Date().toLocaleDateString('pt-BR')}
+          Última atualização: {new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
         </p>
         <div className="space-y-6 text-futvar-light">
           <section>

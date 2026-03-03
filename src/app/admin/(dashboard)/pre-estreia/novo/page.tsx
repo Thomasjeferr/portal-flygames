@@ -128,7 +128,7 @@ export default function AdminPreEstreiaNovoPage() {
           metaEnabled: false,
           homeTeamId: form.homeTeamId || null,
           awayTeamId: form.awayTeamId || null,
-          premiereAt: form.premiereDate && form.premiereTime ? new Date(`${form.premiereDate}T${form.premiereTime}`).toISOString() : null,
+          premiereAt: form.premiereDate && form.premiereTime ? `${form.premiereDate}T${form.premiereTime}` : null,
         }),
       });
       const data = await res.json();

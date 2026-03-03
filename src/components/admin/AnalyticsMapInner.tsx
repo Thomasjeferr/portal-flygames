@@ -60,7 +60,7 @@ export function AnalyticsMapInner({ markers }: { markers: MarkerType[] }) {
           <p class="font-semibold">${m.city ?? m.country ?? 'Local desconhecido'}</p>
           ${m.country ? `<p class="text-gray-600">${m.country}</p>` : ''}
           <p class="text-xs text-gray-500 mt-1">Página: ${m.pagePath}</p>
-          <p class="text-xs text-gray-400">${new Date(m.createdAt).toLocaleString('pt-BR')}</p>
+          <p class="text-xs text-gray-400">${new Date(m.createdAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
         </div>
       `;
       L.marker([m.lat, m.lng], { icon: defaultIcon })

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { formatLiveDatetimeForInput } from '@/lib/liveTimezone';
 
 const REGISTRATION_MODES = [
   { value: 'FREE', label: 'Grátis' },
@@ -108,8 +109,8 @@ export default function EditTournamentPage() {
         registrationFeeAmount: t.registrationFeeAmount != null ? String(t.registrationFeeAmount) : '',
         goalRequiredSupporters: t.goalRequiredSupporters != null ? String(t.goalRequiredSupporters) : '',
         goalPricePerSupporter: t.goalPricePerSupporter != null ? String(t.goalPricePerSupporter) : '',
-        goalStartAt: t.goalStartAt ? t.goalStartAt.slice(0, 16) : '',
-        goalEndAt: t.goalEndAt ? t.goalEndAt.slice(0, 16) : '',
+        goalStartAt: formatLiveDatetimeForInput(t.goalStartAt),
+        goalEndAt: formatLiveDatetimeForInput(t.goalEndAt),
         lockConfirmationOnGoal: t.lockConfirmationOnGoal,
         status: t.status,
         premiacaoTipo: t.premiacaoTipo ?? '',

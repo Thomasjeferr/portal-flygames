@@ -31,7 +31,7 @@ const TIER_LABEL: Record<string, string> = {
 
 function fmtDate(s: string | null) {
   if (!s) return '—';
-  return new Date(s).toLocaleDateString('pt-BR');
+  return new Date(s).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }
 
 export default function AdminSponsorsPage() {

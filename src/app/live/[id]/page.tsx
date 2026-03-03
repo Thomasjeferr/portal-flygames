@@ -227,6 +227,7 @@ export default async function LivePage({ params }: Props) {
                             month: '2-digit',
                             hour: '2-digit',
                             minute: '2-digit',
+                            timeZone: 'America/Sao_Paulo',
                           })}
                         </>
                       )}
@@ -239,6 +240,7 @@ export default async function LivePage({ params }: Props) {
                             month: '2-digit',
                             hour: '2-digit',
                             minute: '2-digit',
+                            timeZone: 'America/Sao_Paulo',
                           })}
                         </>
                       )}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { parseLiveDatetime } from '@/lib/liveTimezone';
 import { createPreSaleGameSchema } from '@/lib/pre-sale/validations';
 import { uniqueSlug } from '@/lib/slug';
 
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     const specialCategoryId = data.specialCategoryId?.trim() || null;
     const premiereAtRaw = data.premiereAt && typeof data.premiereAt === 'string' ? data.premiereAt.trim() : '';
-    const premiereAt = premiereAtRaw ? (() => { const d = new Date(premiereAtRaw); return isNaN(d.getTime()) ? null : d; })() : null;
+    const premiereAt = parseLiveDatetime(premiereAtRaw) ?? null;
 
     const createData: Parameters<typeof prisma.preSaleGame.create>[0]['data'] = {
       title: data.title,

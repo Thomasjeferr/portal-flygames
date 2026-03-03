@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { parseLiveDatetime } from '@/lib/liveTimezone';
 import { z } from 'zod';
 
 const updateSchema = z.object({
@@ -86,8 +87,8 @@ export async function PATCH(
     if (finalPlaybackId) {
       update.status = 'ENDED';
     }
-    if (data.startAt !== undefined) update.startAt = data.startAt ? new Date(data.startAt) : null;
-    if (data.endAt !== undefined) update.endAt = data.endAt ? new Date(data.endAt) : null;
+    if (data.startAt !== undefined) update.startAt = parseLiveDatetime(data.startAt) ?? null;
+    if (data.endAt !== undefined) update.endAt = parseLiveDatetime(data.endAt) ?? null;
     if (data.requireSubscription !== undefined) update.requireSubscription = data.requireSubscription;
     if (data.allowOneTimePurchase !== undefined) update.allowOneTimePurchase = data.allowOneTimePurchase;
     if (data.allowChat !== undefined) update.allowChat = data.allowChat;

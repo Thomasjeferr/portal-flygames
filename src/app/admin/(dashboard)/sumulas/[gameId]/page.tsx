@@ -164,7 +164,7 @@ export default function AdminSumulaGamePage() {
       </div>
 
       <h2 className="text-xl font-bold text-white mb-4">{data.title}</h2>
-      <p className="text-netflix-light text-sm mb-6">{data.championship} · {new Date(data.gameDate).toLocaleDateString('pt-BR')}</p>
+      <p className="text-netflix-light text-sm mb-6">{data.championship} · {new Date(data.gameDate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
 
       {(homeApproval?.status === 'REJEITADA' || awayApproval?.status === 'REJEITADA') && (
         <div className="rounded-lg border border-red-500/50 bg-red-900/20 p-4 mb-6">

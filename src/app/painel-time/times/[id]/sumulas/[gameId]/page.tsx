@@ -69,9 +69,10 @@ export default function SumulaDetailPage() {
 
   function formatDate(iso: string) {
     try {
-      return new Date(iso).toLocaleDateString('pt-BR', {
-        weekday: 'long',
-        day: '2-digit',
+return new Date(iso).toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      day: '2-digit',
+      timeZone: 'America/Sao_Paulo',
         month: 'long',
         year: 'numeric',
         hour: '2-digit',

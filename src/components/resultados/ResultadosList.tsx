@@ -115,6 +115,7 @@ export function ResultadosList({ games }: { games: ResultadoGame[] }) {
                   year: 'numeric',
                   hour: '2-digit',
                   minute: '2-digit',
+                  timeZone: 'America/Sao_Paulo',
                 })}
               </p>
               <span className="ml-auto flex items-center text-futvar-green" aria-hidden>

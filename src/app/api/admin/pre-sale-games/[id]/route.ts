@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { parseLiveDatetime } from '@/lib/liveTimezone';
 import { updatePreSaleGameSchema } from '@/lib/pre-sale/validations';
 
 export async function GET(
@@ -91,7 +92,7 @@ export async function PATCH(
     }
     if (data.premiereAt !== undefined) {
       const raw = typeof data.premiereAt === 'string' ? data.premiereAt.trim() : '';
-      updateData.premiereAt = raw ? (() => { const d = new Date(raw); return isNaN(d.getTime()) ? null : d; })() : null;
+      updateData.premiereAt = parseLiveDatetime(raw) ?? null;
     }
 
     if (data.normalCategoryIds !== undefined) {

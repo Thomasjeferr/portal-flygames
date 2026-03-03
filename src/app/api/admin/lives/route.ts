@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { createLiveInput } from '@/lib/cloudflare-live';
+import { parseLiveDatetime } from '@/lib/liveTimezone';
 import { z } from 'zod';
 
 const createSchema = z.object({
@@ -88,8 +89,8 @@ export async function POST(request: NextRequest) {
         thumbnailUrl: data.thumbnailUrl ?? null,
         cloudflareLiveInputId,
         status: data.status ?? 'SCHEDULED',
-        startAt: data.startAt ? new Date(data.startAt) : null,
-        endAt: data.endAt ? new Date(data.endAt) : null,
+        startAt: parseLiveDatetime(data.startAt) ?? null,
+        endAt: parseLiveDatetime(data.endAt) ?? null,
         requireSubscription: data.requireSubscription ?? true,
         allowOneTimePurchase: data.allowOneTimePurchase ?? false,
         allowChat: data.allowChat ?? false,

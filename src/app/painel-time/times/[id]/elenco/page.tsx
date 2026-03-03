@@ -241,6 +241,7 @@ export default function ElencoPage() {
       return new Date(iso).toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit',
+        timeZone: 'America/Sao_Paulo',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',

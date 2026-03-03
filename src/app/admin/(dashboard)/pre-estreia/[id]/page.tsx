@@ -164,7 +164,7 @@ export default function AdminPreEstreiaDetailPage() {
                 <p className="text-sm text-netflix-light">
                   Credenciais enviadas em:{' '}
                   {slot.credentialsSentAt
-                    ? new Date(slot.credentialsSentAt).toLocaleString('pt-BR')
+                    ? new Date(slot.credentialsSentAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
                     : '—'}
                 </p>
                 <button

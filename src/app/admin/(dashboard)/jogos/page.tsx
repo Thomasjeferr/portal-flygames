@@ -110,7 +110,7 @@ export default function AdminGamesPage() {
     }
   };
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString('pt-BR');
+  const formatDate = (d: string) => new Date(d).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
   const renderGameRow = (game: Game, index: number, total: number) => (
     <div

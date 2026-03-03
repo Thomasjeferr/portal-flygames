@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { formatLiveDatetimeDisplay } from '@/lib/liveTimezone';
 
 interface User {
   id: string;
@@ -167,12 +168,7 @@ export function Header() {
             {liveHighlight.live.startAt && (
               <p className="text-xs text-futvar-light mb-3">
                 {liveHighlight.mode === 'LIVE' ? 'Iniciada em ' : 'Horário: '}
-                {new Date(liveHighlight.live.startAt).toLocaleString('pt-BR', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {formatLiveDatetimeDisplay(liveHighlight.live.startAt)}
               </p>
             )}
             <div className="flex justify-between items-center gap-2">

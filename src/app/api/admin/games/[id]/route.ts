@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { parseLiveDatetime } from '@/lib/liveTimezone';
 import { z } from 'zod';
 import { uniqueSlug } from '@/lib/slug';
 
@@ -75,7 +76,10 @@ export async function PATCH(
     const update: Record<string, unknown> = {};
     if (data.title !== undefined) update.title = data.title;
     if (data.championship !== undefined) update.championship = data.championship;
-    if (data.gameDate !== undefined) update.gameDate = new Date(data.gameDate);
+    if (data.gameDate !== undefined) {
+      const parsed = parseLiveDatetime(data.gameDate);
+      if (parsed) update.gameDate = parsed;
+    }
     if (data.description !== undefined) update.description = data.description;
     if (data.videoUrl !== undefined) update.videoUrl = data.videoUrl?.trim() || null;
     if (data.thumbnailUrl !== undefined) update.thumbnailUrl = data.thumbnailUrl === '' ? null : data.thumbnailUrl;

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
+import { formatLiveDatetimeForInput } from '@/lib/liveTimezone';
 
 export default function EditLivePage() {
   const router = useRouter();
@@ -52,8 +53,8 @@ export default function EditLivePage() {
           description: data.description ?? '',
           thumbnailUrl: data.thumbnailUrl ?? '',
           status: data.status ?? 'SCHEDULED',
-          startAt: data.startAt ? new Date(data.startAt).toISOString().slice(0, 16) : '',
-          endAt: data.endAt ? new Date(data.endAt).toISOString().slice(0, 16) : '',
+          startAt: formatLiveDatetimeForInput(data.startAt),
+          endAt: formatLiveDatetimeForInput(data.endAt),
           requireSubscription: data.requireSubscription ?? true,
           allowOneTimePurchase: data.allowOneTimePurchase ?? false,
           allowChat: data.allowChat ?? false,

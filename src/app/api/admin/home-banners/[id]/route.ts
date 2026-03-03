@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { parseLiveDatetime } from '@/lib/liveTimezone';
 import { updateHomeBannerSchema } from '@/lib/validators/bannerSchema';
 
 export const dynamic = 'force-dynamic';
@@ -84,8 +85,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (d.preSaleId !== undefined) updateData.preSaleId = d.preSaleId?.trim() || null;
     if (d.liveId !== undefined) updateData.liveId = d.liveId?.trim() || null;
     if (d.showOnlyWhenReady !== undefined) updateData.showOnlyWhenReady = d.showOnlyWhenReady;
-    if (d.startAt !== undefined) updateData.startAt = d.startAt && d.startAt !== '' ? new Date(d.startAt) : null;
-    if (d.endAt !== undefined) updateData.endAt = d.endAt && d.endAt !== '' ? new Date(d.endAt) : null;
+    if (d.startAt !== undefined) updateData.startAt = parseLiveDatetime(d.startAt) ?? null;
+    if (d.endAt !== undefined) updateData.endAt = parseLiveDatetime(d.endAt) ?? null;
 
     if (d.mediaType !== undefined) updateData.mediaType = d.mediaType;
 

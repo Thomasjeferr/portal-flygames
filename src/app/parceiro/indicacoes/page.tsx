@@ -67,7 +67,7 @@ export default function ParceiroIndicacoesPage() {
                     {row.type === 'plano' ? 'Plano / Jogo' : 'Patrocínio'}
                   </td>
                   <td className="px-4 py-3 text-futvar-light">
-                    {new Date(row.date).toLocaleDateString('pt-BR')}
+                    {new Date(row.date).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                   </td>
                   <td className="px-4 py-3 text-right text-futvar-light">
                     {typeof row.commissionPercent === 'number' ? `${row.commissionPercent}%` : '—'}

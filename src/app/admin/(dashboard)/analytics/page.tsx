@@ -128,7 +128,7 @@ export default function AdminAnalyticsPage() {
 
           <div className="mt-6 p-4 bg-netflix-dark/50 border border-white/10 rounded-lg">
             <p className="text-netflix-light text-sm">
-              <strong>Período:</strong> {new Date(data.dateRange.from).toLocaleDateString('pt-BR')} até {new Date(data.dateRange.to).toLocaleDateString('pt-BR')}.
+              <strong>Período:</strong> {new Date(data.dateRange.from).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })} até {new Date(data.dateRange.to).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}.
               Os dados são baseados em geolocalização por IP (ip-api.com).
             </p>
           </div>

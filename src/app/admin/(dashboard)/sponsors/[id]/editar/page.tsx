@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { formatLiveDatetimeForInput } from '@/lib/liveTimezone';
 import { useRouter, useParams } from 'next/navigation';
 import { useRef, useState, useEffect } from 'react';
 
@@ -75,8 +76,8 @@ export default function EditSponsorPage() {
           tier: data.tier || 'APOIO',
           priority: data.priority ?? 0,
           is_active: data.isActive ?? true,
-          start_at: data.startAt ? new Date(data.startAt).toISOString().slice(0, 16) : '',
-          end_at: data.endAt ? new Date(data.endAt).toISOString().slice(0, 16) : '',
+          start_at: formatLiveDatetimeForInput(data.startAt),
+          end_at: formatLiveDatetimeForInput(data.endAt),
           plan_id: data.planId || '',
           team_id: data.teamId || '',
         });

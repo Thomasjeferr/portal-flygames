@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { parseLiveDatetime } from '@/lib/liveTimezone';
 import { createHomeBannerSchema } from '@/lib/validators/bannerSchema';
 
 function sanitize(body: Record<string, unknown>) {
@@ -73,8 +74,8 @@ export async function POST(request: NextRequest) {
         preSaleId: d.preSaleId?.trim() || null,
         liveId: d.liveId?.trim() || null,
         showOnlyWhenReady: d.showOnlyWhenReady ?? true,
-        startAt: d.startAt && d.startAt !== '' ? new Date(d.startAt) : null,
-        endAt: d.endAt && d.endAt !== '' ? new Date(d.endAt) : null,
+        startAt: parseLiveDatetime(d.startAt) ?? null,
+        endAt: parseLiveDatetime(d.endAt) ?? null,
       },
       include: { game: true, preSale: true, live: true },
     });

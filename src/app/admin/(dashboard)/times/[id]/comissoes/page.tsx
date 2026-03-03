@@ -16,6 +16,7 @@ function formatDate(s: string) {
     return new Date(s).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
+      timeZone: 'America/Sao_Paulo',
       year: 'numeric',
     });
   } catch {

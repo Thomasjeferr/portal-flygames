@@ -49,7 +49,7 @@ export default function AdminLivesPage() {
   };
 
   const formatDate = (d: string | null) =>
-    d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+    d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }) : '—';
 
   const statusLabel: Record<string, string> = {
     SCHEDULED: 'Agendada',

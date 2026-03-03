@@ -69,6 +69,7 @@ export function LiveCountdown({ startAt, title }: LiveCountdownProps) {
         {new Date(startAt).toLocaleString('pt-BR', {
           dateStyle: 'long',
           timeStyle: 'short',
+          timeZone: 'America/Sao_Paulo',
         })}
       </p>
       <div className="flex flex-wrap justify-center gap-4 md:gap-6">

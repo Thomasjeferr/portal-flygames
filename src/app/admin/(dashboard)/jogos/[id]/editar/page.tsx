@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
+import { formatLiveDatetimeForInput } from '@/lib/liveTimezone';
 import { extractYouTubeVideoId, getYouTubeThumbnailUrl } from '@/lib/youtube';
 import { StreamVideoField } from '@/components/admin/StreamVideoField';
 
@@ -63,7 +64,7 @@ export default function EditGamePage() {
         setForm({
           title: data.title,
           championship: data.championship,
-          gameDate: data.gameDate ? new Date(data.gameDate).toISOString().slice(0, 16) : '',
+          gameDate: formatLiveDatetimeForInput(data.gameDate),
           description: data.description || '',
           videoUrl: data.videoUrl || '',
           thumbnailUrl,

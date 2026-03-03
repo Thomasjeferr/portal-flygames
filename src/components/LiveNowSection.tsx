@@ -3,6 +3,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import { formatLiveCardDate } from '@/lib/liveTimezone';
+
+type Team = { id: string; name: string; shortName: string | null } | null;
 
 type LiveHighlight = {
   mode: 'LIVE' | 'SCHEDULED' | 'NONE';
@@ -11,8 +14,23 @@ type LiveHighlight = {
     title: string;
     thumbnailUrl: string | null;
     startAt: string | null;
+    homeTeam?: Team;
+    awayTeam?: Team;
   } | null;
 };
+
+function buildTitleWithTeams(title: string, homeTeam: Team, awayTeam: Team): string {
+  const home = homeTeam?.shortName || homeTeam?.name || '';
+  const away = awayTeam?.shortName || awayTeam?.name || '';
+  if (home && away) return `${title}${title.endsWith('.') ? '' : ':'} ${home} vs ${away}`;
+  return title;
+}
+
+const ArrowUpRight = () => (
+  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+  </svg>
+);
 
 export function LiveNowSection() {
   const [data, setData] = useState<LiveHighlight | null>(null);
@@ -27,71 +45,104 @@ export function LiveNowSection() {
   if (!data || data.mode === 'NONE' || !data.live) return null;
 
   const isLive = data.mode === 'LIVE';
-  const startAtStr = data.live.startAt
-    ? new Date(data.live.startAt).toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : null;
+  const live = data.live;
+  const displayTitle = buildTitleWithTeams(
+    live.title,
+    live.homeTeam ?? null,
+    live.awayTeam ?? null
+  );
+  const dateStr = formatLiveCardDate(live.startAt);
 
   return (
     <section className="py-8 px-4 lg:px-12 bg-futvar-darker/50">
-      <div className="max-w-[1920px] mx-auto">
-        <div className="flex items-center gap-3 mb-4">
-          <span className={`w-1 h-8 rounded-full ${isLive ? 'bg-red-500' : 'bg-amber-500'}`} />
-          <h2 className="text-xl lg:text-2xl font-bold text-white">
-            {isLive ? 'Ao vivo agora' : 'Próxima live'}
-          </h2>
-        </div>
+      <div className="max-w-[1920px] mx-auto flex justify-start">
         <Link
-          href={`/live/${data.live.id}`}
-          className="block bg-futvar-dark border border-futvar-green/20 rounded-2xl overflow-hidden hover:border-futvar-green/50 transition-colors"
+          href={`/live/${live.id}`}
+          className={`group relative flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl
+            ${isLive
+              ? 'border-red-500/20 bg-gradient-to-br from-futvar-dark to-futvar-darker/80 shadow-lg shadow-red-500/5'
+              : 'border-futvar-green/20 bg-gradient-to-br from-futvar-dark to-futvar-darker/80 shadow-lg shadow-futvar-green/5'
+            }`}
         >
-          <div className="flex flex-col sm:flex-row gap-4 p-4 sm:p-6">
-            <div className="relative w-full sm:w-72 aspect-video sm:aspect-auto sm:h-40 flex-shrink-0 rounded-xl overflow-hidden bg-black/40">
-              {data.live.thumbnailUrl ? (
-                <Image
-                  src={data.live.thumbnailUrl}
-                  alt={data.live.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 100vw, 288px"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-futvar-light text-sm">
-                  Live
-                </div>
-              )}
-              {isLive && (
-                <span className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 rounded-full bg-red-600 text-white text-xs font-bold">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-red-300 animate-ping opacity-70" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-200 animate-live-blink" />
-                  </span>
-                  AO VIVO
-                </span>
-              )}
-            </div>
-            <div className="flex-1 flex flex-col justify-center min-w-0">
-              <h3 className="text-lg sm:text-xl font-bold text-white line-clamp-2">
-                {data.live.title}
-              </h3>
-              {startAtStr && (
-                <p className="text-futvar-light text-sm mt-1">
-                  {isLive ? `Iniciada em ${startAtStr}` : `Horário: ${startAtStr}`}
-                </p>
-              )}
-              <span
-                className={`mt-3 inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 rounded-lg text-sm font-bold transition-colors ${
-                  isLive
-                    ? 'bg-red-600 text-white hover:bg-red-500'
-                    : 'bg-futvar-green text-futvar-darker hover:bg-futvar-green-light'
+          {/* Barra vertical esquerda */}
+          <span
+            className={`absolute left-0 top-0 bottom-0 w-1 rounded-full ${isLive ? 'bg-red-500' : 'bg-futvar-green'}`}
+            aria-hidden
+          />
+
+          <div className="pl-5 flex flex-col min-h-0">
+            {/* Topo: título da seção + badge */}
+            <h2 className="text-xl lg:text-2xl font-bold text-white mb-3">
+              {isLive ? 'Ao vivo' : 'Agendado'}
+            </h2>
+            {isLive ? (
+              <span className="inline-flex items-center gap-1.5 w-fit rounded-full bg-red-600 px-4 py-1.5 text-sm font-bold text-white mb-4">
+                <span className="h-2 w-2 rounded-full bg-white shrink-0" />
+                AO VIVO
+              </span>
+            ) : (
+              <span className="inline-flex w-fit rounded-full bg-futvar-green px-4 py-1.5 text-sm font-medium text-futvar-darker mb-4">
+                Próxima live
+              </span>
+            )}
+
+            {/* Conteúdo: mobile empilhado (imagem topo, conteúdo abaixo), desktop lado a lado (imagem esquerda, conteúdo direita) */}
+            <div className="flex flex-col lg:flex-row gap-6 flex-1">
+              {/* Imagem */}
+              <div
+                className={`relative w-full lg:w-[45%] flex-shrink-0 aspect-video lg:aspect-auto lg:min-h-[200px] rounded-xl overflow-hidden bg-black/40 ${
+                  isLive ? 'shadow-[0_8px_24px_-8px_rgba(239,68,68,0.25)]' : 'shadow-[0_8px_24px_-8px_rgba(34,197,94,0.25)]'
                 }`}
               >
-                {isLive ? 'Assistir agora' : 'Ver detalhes'}
-              </span>
+                {live.thumbnailUrl ? (
+                  <Image
+                    src={live.thumbnailUrl}
+                    alt={live.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 45vw"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-futvar-light text-sm">
+                    Live
+                  </div>
+                )}
+                {/* Overlay gradient escuro na parte inferior */}
+                <div
+                  className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"
+                  aria-hidden
+                />
+              </div>
+
+              {/* Conteúdo do card */}
+              <div className="flex-1 flex flex-col justify-center min-w-0">
+                <h3 className="text-2xl lg:text-3xl font-bold text-white line-clamp-2 mb-4">
+                  {displayTitle}
+                </h3>
+
+                {isLive ? (
+                  <>
+                    <span className="inline-flex w-fit rounded-lg bg-red-600/90 px-3 py-1 text-xs font-bold text-white mb-4">
+                      AGORA
+                    </span>
+                    <span className="inline-flex items-center justify-center gap-2 w-full lg:w-auto mt-auto py-3 px-6 rounded-xl text-sm font-bold bg-red-600 text-white transition-colors hover:bg-red-700">
+                      Assistir agora
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {dateStr && (
+                      <span className="inline-flex w-fit rounded-full bg-futvar-green px-4 py-2 text-sm font-medium text-futvar-darker mb-4">
+                        {dateStr}
+                      </span>
+                    )}
+                    <span className="inline-flex items-center justify-center gap-2 w-full lg:w-auto mt-auto py-3 px-6 rounded-xl text-sm font-bold bg-futvar-green text-futvar-darker transition-colors hover:brightness-95 hover:shadow-md">
+                      Promover Time
+                      <ArrowUpRight />
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </Link>

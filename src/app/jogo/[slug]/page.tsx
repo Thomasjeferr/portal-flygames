@@ -70,6 +70,7 @@ export default async function GamePage({ params }: Props) {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
+    timeZone: 'America/Sao_Paulo',
   });
 
   const hasVideoPublished = displayMode === 'public_with_media' && !!game.videoUrl;
