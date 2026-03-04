@@ -14,6 +14,7 @@ const assetsDir = path.join(root, 'assets');
 const iconOnly = path.join(assetsDir, 'icon-only.png');
 const iconForeground = path.join(assetsDir, 'icon-foreground.png');
 const iconBackground = path.join(assetsDir, 'icon-background.png');
+const splashPng = path.join(assetsDir, 'splash.png');
 
 if (!fs.existsSync(assetsDir)) {
   fs.mkdirSync(assetsDir, { recursive: true });
@@ -35,11 +36,29 @@ async function createGreenBackground() {
   console.log('icon-background.png (verde) criado.');
 }
 
+/** Gera assets/splash.png (2732x2732) para a tela de abertura do app: fundo escuro + ícone centralizado. */
+async function ensureSplash() {
+  if (!fs.existsSync(iconOnly)) return;
+  const sharp = require('sharp');
+  const size = 2732;
+  const iconSize = 1024;
+  const icon = await sharp(iconOnly).resize(iconSize, iconSize).toBuffer();
+  const left = Math.round((size - iconSize) / 2);
+  await sharp({
+    create: { width: size, height: size, channels: 3, background: { r: 10, g: 15, b: 13 } },
+  })
+    .composite([{ input: icon, left, top: left }])
+    .png()
+    .toFile(splashPng);
+  console.log('splash.png (tela de abertura) criado.');
+}
+
 (async () => {
   if (fs.existsSync(iconApps)) {
     fs.copyFileSync(iconApps, iconOnly);
     ensureAdaptiveIcons();
     await createGreenBackground();
+    await ensureSplash();
     console.log('Ícone usado: assets/icone-apps.png');
     process.exit(0);
     return;
@@ -49,6 +68,7 @@ async function createGreenBackground() {
     fs.copyFileSync(uploadsFavicon, iconOnly);
     ensureAdaptiveIcons();
     await createGreenBackground();
+    await ensureSplash();
     console.log('Ícone copiado de public/uploads/favicon-fly.png para assets/icon-only.png');
     process.exit(0);
     return;
@@ -59,6 +79,7 @@ async function createGreenBackground() {
     if (!fs.existsSync(iconBackground)) {
       await createGreenBackground();
     }
+    await ensureSplash();
     console.log('assets/icon-only.png já existe.');
     process.exit(0);
     return;
@@ -79,6 +100,7 @@ async function createGreenBackground() {
       .toFile(iconOnly);
     await createGreenBackground();
     ensureAdaptiveIcons();
+    await ensureSplash();
     console.log('Placeholder criado em assets/icon-only.png (verde). Substitua pelo ícone Fly Games 1024x1024.');
   } catch (err) {
     console.error('Erro ao criar placeholder:', err.message);

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#22c55e</color>
+    <color name="colorPrimaryDark">#16a34a</color>
+    <color name="colorAccent">#22c55e</color>
+    <!-- Cor de fundo da splash (Android 12+) -->
+    <color name="splash_background">#0a0f0d</color>
+</resources>
