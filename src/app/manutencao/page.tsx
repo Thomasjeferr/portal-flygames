@@ -17,6 +17,7 @@ const legalLinks = [
   { href: '/termos-de-uso', label: 'Termos de uso' },
   { href: '/contrato-direitos-imagem', label: 'Direitos de imagem' },
   { href: '/suporte', label: 'Suporte' },
+  { href: '/excluir-conta', label: 'Excluir conta' },
 ];
 
 export default function ManutencaoPage() {

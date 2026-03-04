@@ -9,6 +9,7 @@ import { StreamCustomPlayer } from '@/components/StreamCustomPlayer';
 import { LiveScheduledToLivePlayer } from '@/components/LiveScheduledToLivePlayer';
 import { MatchPlayerPage } from '@/components/match/MatchPlayerPage';
 import { StoreAppNoAccessMessage } from '@/components/StoreAppNoAccessMessage';
+import { StoreAppOptionalText } from '@/components/StoreAppOptionalText';
 import { LiveAccessBadges } from '@/components/LiveAccessBadges';
 
 interface Props {
@@ -136,7 +137,10 @@ export default async function LivePage({ params }: Props) {
                     </p>
                   )}
                   <p className="text-center text-lg font-semibold text-white mb-4">
-                    Assinatura ou compra necessária para assistir a esta live
+                    <StoreAppOptionalText
+                      normal="Assinatura ou compra necessária para assistir a esta live"
+                      storeApp="Conteúdo exclusivo para quem tem acesso."
+                    />
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-3">
                     <StoreAppNoAccessMessage message="Este conteúdo não está disponível no momento.">

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { FooterExcluirContaLink } from '@/components/FooterExcluirContaLink';
 
 /**
  * Rodapé mínimo só com a coluna Legal. Usado na página de manutenção para
@@ -32,6 +33,7 @@ export function FooterLegalOnly() {
               <Link href="/suporte" className="hover:text-futvar-green transition-colors">
                 Suporte
               </Link>
+              <FooterExcluirContaLink />
             </nav>
           </div>
           <p className="text-sm text-futvar-light/70">

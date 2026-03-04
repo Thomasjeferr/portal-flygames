@@ -52,6 +52,7 @@ export async function middleware(request: NextRequest) {
         '/sobre-nos',
         '/contrato-direitos-imagem',
         '/suporte',
+        '/excluir-conta',
       ];
       // Legal: deixar passar mas manter o cookie para continuar sem menu/rodapé
       if (allowedDuringMaintenance.some((p) => pathname === p || pathname.startsWith(p + '/'))) {

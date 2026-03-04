@@ -7,6 +7,8 @@ import Image from 'next/image';
 import CardPaymentScreen from '@/components/checkout/CardPaymentScreen';
 import { TeamSelectorWithConfirm, type TeamOption } from '@/components/checkout/TeamSelectorWithConfirm';
 import { NaoEncontrouTimeCTA } from '@/components/account/NaoEncontrouTimeCTA';
+import { useStoreApp } from '@/lib/StoreAppContext';
+import { StoreAppRedirectToHome } from '@/components/StoreAppRedirectToHome';
 
 interface Plan {
   id: string;
@@ -568,6 +570,8 @@ function CheckoutContent() {
 }
 
 export default function CheckoutPage() {
+  const isStoreApp = useStoreApp();
+  if (isStoreApp) return <StoreAppRedirectToHome />;
   return (
     <Suspense fallback={
       <div className="pt-24 pb-16 px-4 min-h-screen bg-futvar-darker flex items-center justify-center">

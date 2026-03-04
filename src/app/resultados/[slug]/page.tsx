@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { ResultadosNotLoggedIn } from '@/components/resultados/ResultadosNotLoggedIn';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,36 +15,13 @@ export default async function ResultadoDetalhePage({ params }: Props) {
   const session = await getSession();
   if (!session) {
     return (
-      <div className="pt-20 sm:pt-24 pb-16 px-4 sm:px-6 min-h-screen bg-futvar-darker flex items-center justify-center">
-        <div className="max-w-xl mx-auto text-center">
-          <Link href="/resultados" className="text-futvar-green hover:text-futvar-green-light text-sm font-semibold inline-flex gap-2 mb-8">
-            ← Voltar aos resultados
-          </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-            Ver placar e súmula deste jogo
-          </h1>
-          <p className="text-futvar-light text-lg mb-2">
-            <strong className="text-white">Cadastre-se grátis</strong> e veja todos os detalhes: placar, estatísticas e súmula oficial.
-          </p>
-          <p className="text-futvar-light text-sm mb-8">
-            É rápido e sem custo. Depois você pode assinar para assistir aos vídeos.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href={`/cadastro?redirect=${encodeURIComponent(`/resultados/${slug}`)}`}
-              className="px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light transition-colors"
-            >
-              Criar conta grátis
-            </Link>
-            <Link
-              href={`/entrar?redirect=${encodeURIComponent(`/resultados/${slug}`)}`}
-              className="px-6 py-3 rounded-lg border-2 border-futvar-green/60 text-futvar-green font-bold hover:bg-futvar-green/10 transition-colors"
-            >
-              Já tenho conta
-            </Link>
-          </div>
-        </div>
-      </div>
+      <ResultadosNotLoggedIn
+        title="Ver placar e súmula deste jogo"
+        redirectPath={`/resultados/${slug}`}
+        backHref="/resultados"
+        backLabel="← Voltar aos resultados"
+        storeAppMessage="Faça login para ver placar, estatísticas e súmula oficial."
+      />
     );
   }
 

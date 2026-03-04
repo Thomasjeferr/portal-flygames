@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState, useRef, useEffect } from 'react';
+import { useStoreApp } from '@/lib/StoreAppContext';
+import { StoreAppRedirectToHome } from '@/components/StoreAppRedirectToHome';
 
 function safeRedirect(path: string | null): string {
   if (!path || typeof path !== 'string') return '/';
@@ -150,6 +152,8 @@ function RegisterForm() {
 }
 
 export default function RegisterPage() {
+  const isStoreApp = useStoreApp();
+  if (isStoreApp) return <StoreAppRedirectToHome />;
   return (
     <Suspense fallback={<div className="min-h-screen pt-28 flex items-center justify-center text-futvar-light">Carregando...</div>}>
       <RegisterForm />

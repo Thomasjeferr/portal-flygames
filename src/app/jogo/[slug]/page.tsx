@@ -7,6 +7,7 @@ import { BuyGameButton } from '@/components/BuyGameButton';
 import { GameCard } from '@/components/GameCard';
 import { MatchPlayerPage } from '@/components/match/MatchPlayerPage';
 import { StoreAppNoAccessMessage } from '@/components/StoreAppNoAccessMessage';
+import { StoreAppOptionalText } from '@/components/StoreAppOptionalText';
 import { getSession } from '@/lib/auth';
 import { canAccessGameBySlug } from '@/lib/access';
 import { prisma } from '@/lib/db';
@@ -191,7 +192,10 @@ export default async function GamePage({ params }: Props) {
                   Assista ao jogo completo
                 </p>
                 <p className="mt-2 text-center text-sm text-emerald-100/90">
-                  Patrocine o time ou compre o acesso para assistir
+                  <StoreAppOptionalText
+                    normal="Patrocine o time ou compre o acesso para assistir"
+                    storeApp="Conteúdo exclusivo para quem tem acesso."
+                  />
                 </p>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                   <StoreAppNoAccessMessage message="Este conteúdo não está disponível no momento.">

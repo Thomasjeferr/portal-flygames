@@ -5,6 +5,8 @@ import { prisma } from '@/lib/db';
 import { getCompactSponsors } from '@/services/sponsorsService';
 import { FooterNav } from '@/components/FooterNav';
 import { FooterPatrocinarLink } from '@/components/FooterPatrocinarLink';
+import { FooterPaymentColumn } from '@/components/FooterPaymentColumn';
+import { FooterExcluirContaLink } from '@/components/FooterExcluirContaLink';
 
 async function getSiteSettings() {
   try {
@@ -139,30 +141,30 @@ export async function Footer() {
               <Link href="/suporte" className="hover:text-futvar-green transition-colors">
                 Suporte
               </Link>
+              <FooterExcluirContaLink />
             </nav>
           </div>
 
-          {/* Coluna 4: Pagamentos */}
-          <div>
-            <h3 className="text-lg font-bold text-white mb-3">Formas de pagamento</h3>
-            <div className="flex flex-wrap items-center gap-3 mb-3">
-              {/* PIX - fundo branco para contraste, cor oficial */}
-              <span className="inline-flex items-center justify-center rounded-lg bg-white p-2 shadow-sm" title="PIX">
-                <SiPix className="w-8 h-8 text-[#32BCAD]" aria-hidden />
-              </span>
-              {/* Visa - fundo branco, azul oficial */}
-              <span className="inline-flex items-center justify-center rounded-lg bg-white p-2 shadow-sm" title="Visa">
-                <SiVisa className="w-8 h-8 text-[#1A1F71]" aria-hidden />
-              </span>
-              {/* Mastercard - fundo branco, cores oficiais via ícone */}
-              <span className="inline-flex items-center justify-center rounded-lg bg-white p-2 shadow-sm" title="Mastercard">
-                <SiMastercard className="w-8 h-8 text-[#EB001B]" aria-hidden />
-              </span>
+          {/* Coluna 4: Pagamentos (oculta no app lojas) */}
+          <FooterPaymentColumn>
+            <div>
+              <h3 className="text-lg font-bold text-white mb-3">Formas de pagamento</h3>
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                <span className="inline-flex items-center justify-center rounded-lg bg-white p-2 shadow-sm" title="PIX">
+                  <SiPix className="w-8 h-8 text-[#32BCAD]" aria-hidden />
+                </span>
+                <span className="inline-flex items-center justify-center rounded-lg bg-white p-2 shadow-sm" title="Visa">
+                  <SiVisa className="w-8 h-8 text-[#1A1F71]" aria-hidden />
+                </span>
+                <span className="inline-flex items-center justify-center rounded-lg bg-white p-2 shadow-sm" title="Mastercard">
+                  <SiMastercard className="w-8 h-8 text-[#EB001B]" aria-hidden />
+                </span>
+              </div>
+              <p className="text-xs text-futvar-light/80">
+                Pagamentos processados com segurança via Stripe e Woovi.
+              </p>
             </div>
-            <p className="text-xs text-futvar-light/80">
-              Pagamentos processados com segurança via Stripe e Woovi.
-            </p>
-          </div>
+          </FooterPaymentColumn>
         </div>
 
         {/* Linha compacta de patrocinadores */}

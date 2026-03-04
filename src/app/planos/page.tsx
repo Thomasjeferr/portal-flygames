@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useStoreApp } from '@/lib/StoreAppContext';
+import { StoreAppRedirectToHome } from '@/components/StoreAppRedirectToHome';
 
 interface Plan {
   id: string;
@@ -30,6 +32,7 @@ const periodLabel: Record<string, string> = {
 };
 
 export default function PlanosPage() {
+  const isStoreApp = useStoreApp();
   const searchParams = useSearchParams();
   const ref = searchParams.get('ref');
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -83,6 +86,8 @@ export default function PlanosPage() {
           ];
         })()
       : plans;
+
+  if (isStoreApp) return <StoreAppRedirectToHome />;
 
   return (
     <div className="pt-24 pb-16 px-4 lg:px-12 min-h-screen bg-futvar-darker">
