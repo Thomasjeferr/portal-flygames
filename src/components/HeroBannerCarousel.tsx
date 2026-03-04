@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { extractYouTubeVideoId } from '@/lib/youtube';
+import { useStoreApp } from '@/lib/StoreAppContext';
 
 type Banner = {
   id: string;
@@ -78,6 +79,7 @@ const HEIGHT_CLASSES: Record<string, string> = {
 const MOBILE_BREAKPOINT = 768;
 
 export function HeroBannerCarousel() {
+  const isStoreApp = useStoreApp();
   const [data, setData] = useState<Response | null>(null);
   const [index, setIndex] = useState(0);
   const [hovering, setHovering] = useState(false);
@@ -279,12 +281,14 @@ export function HeroBannerCarousel() {
             {banner.subheadline && <span className="block text-futvar-green mt-1 text-xl sm:text-2xl lg:text-3xl">{banner.subheadline}</span>}
           </h1>
           <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-            <Link
-              href={banner.primaryCta.url}
-              className="px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-bold text-base hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
-            >
-              {banner.primaryCta.text}
-            </Link>
+            {!isStoreApp && (
+              <Link
+                href={banner.primaryCta.url}
+                className="px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-bold text-base hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
+              >
+                {banner.primaryCta.text}
+              </Link>
+            )}
             {banner.secondaryCta && (
               <Link
                 href={banner.secondaryCta.url}
@@ -369,6 +373,7 @@ function HeroFallback(props?: {
   primaryCta?: { text: string; url: string };
   secondaryCta?: { text: string; url: string };
 }) {
+  const isStoreApp = useStoreApp();
   const badge = props?.badgeText ?? 'FILMAGEM COM DRONES';
   const headline = props?.headline ?? 'Futebol de Várzea';
   const subheadline = props?.subheadline ?? 'visão aérea';
@@ -392,12 +397,14 @@ function HeroFallback(props?: {
           </h1>
           <p className="text-base sm:text-lg text-futvar-light mb-6 max-w-xl mx-auto">{desc}</p>
           <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-            <Link
-              href={primary.url}
-              className="px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-bold text-base hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
-            >
-              {primary.text}
-            </Link>
+            {!isStoreApp && (
+              <Link
+                href={primary.url}
+                className="px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-bold text-base hover:bg-futvar-green-light transition-colors shadow-lg shadow-futvar-green/25"
+              >
+                {primary.text}
+              </Link>
+            )}
             <Link
               href={secondary.url}
               className="px-6 py-3 rounded-lg border-2 border-futvar-green/50 text-futvar-green font-bold text-base hover:bg-futvar-green/10 transition-colors"

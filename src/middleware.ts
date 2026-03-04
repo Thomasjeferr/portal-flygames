@@ -53,10 +53,9 @@ export async function middleware(request: NextRequest) {
         '/contrato-direitos-imagem',
         '/suporte',
       ];
+      // Legal: deixar passar mas manter o cookie para continuar sem menu/rodapé
       if (allowedDuringMaintenance.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
-        const res = NextResponse.next();
-        res.cookies.delete('x-maintenance-view');
-        return res;
+        return NextResponse.next();
       }
       const res = NextResponse.rewrite(new URL('/manutencao', request.url));
       res.cookies.set('x-maintenance-view', '1', { path: '/', maxAge: 300, httpOnly: false });

@@ -11,6 +11,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useStoreApp } from '@/lib/StoreAppContext';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { VideoPlayer } from '@/components/VideoPlayer';
@@ -34,6 +35,7 @@ type MeResponse = {
 export default function PreEstreiaWatchPage() {
   const params = useParams();
   const slug = params?.slug as string;
+  const isStoreApp = useStoreApp();
   const [game, setGame] = useState<PreSaleGame | null>(null);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [meLoading, setMeLoading] = useState(true);
@@ -228,7 +230,21 @@ export default function PreEstreiaWatchPage() {
         <div className="space-y-8">
           <section className="bg-futvar-dark border border-white/10 rounded-2xl p-6">
             <h2 className="text-lg font-bold text-white mb-2">Assistir com minha conta</h2>
-            {me?.user ? (
+            {isStoreApp ? (
+              <>
+                <p className="text-futvar-light text-sm mb-4">
+                  Este conteúdo não está disponível no momento.
+                </p>
+                {!me?.user && (
+                  <Link
+                    href={loginUrl}
+                    className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light transition-colors"
+                  >
+                    Fazer login
+                  </Link>
+                )}
+              </>
+            ) : me?.user ? (
               <>
                 <p className="text-futvar-light text-sm mb-4">
                   Este jogo está no catálogo. Assine para assistir.

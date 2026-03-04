@@ -9,6 +9,7 @@ import { StreamCustomPlayer } from '@/components/StreamCustomPlayer';
 import { LiveScheduledToLivePlayer } from '@/components/LiveScheduledToLivePlayer';
 import { MatchPlayerPage } from '@/components/match/MatchPlayerPage';
 import { StoreAppNoAccessMessage } from '@/components/StoreAppNoAccessMessage';
+import { LiveAccessBadges } from '@/components/LiveAccessBadges';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -138,7 +139,7 @@ export default async function LivePage({ params }: Props) {
                     Assinatura ou compra necessária para assistir a esta live
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-3">
-                    <StoreAppNoAccessMessage message="Conteúdo disponível para assinantes.">
+                    <StoreAppNoAccessMessage message="Este conteúdo não está disponível no momento.">
                       {session ? (
                         <Link
                           href="/planos"
@@ -176,7 +177,7 @@ export default async function LivePage({ params }: Props) {
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
                 <h1 className="text-center text-xl font-bold text-white sm:text-2xl mb-2">{live.title}</h1>
-                <StoreAppNoAccessMessage message="Conteúdo disponível para assinantes.">
+                <StoreAppNoAccessMessage message="Este conteúdo não está disponível no momento.">
                   <p className="text-emerald-100/90 mb-6">Faça login e assine ou compre acesso para assistir.</p>
                   <div className="flex flex-wrap items-center justify-center gap-3">
                     {session ? (
@@ -304,18 +305,10 @@ export default async function LivePage({ params }: Props) {
               </>
             </MatchPlayerPage>
 
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs md:text-sm">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#0a1f1a]/80 border border-emerald-400/30 text-emerald-100/90">
-                <span className="w-2 h-2 rounded-full bg-[#19d37a]" />
-                {live.requireSubscription ? 'Disponível para assinantes' : 'Disponível sem assinatura'}
-              </span>
-              {live.allowOneTimePurchase && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#0a1f1a]/80 border border-amber-400/40 text-amber-300">
-                  <span className="w-2 h-2 rounded-full bg-amber-400" />
-                  Acesso avulso disponível
-                </span>
-              )}
-            </div>
+            <LiveAccessBadges
+              requireSubscription={!!live.requireSubscription}
+              allowOneTimePurchase={!!live.allowOneTimePurchase}
+            />
           </>
         )}
       </div>

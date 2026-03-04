@@ -257,30 +257,34 @@ export function Header() {
             >
               Início
             </Link>
-            <Link
-              href="/times/cadastrar"
-              className={`text-sm font-semibold ${pathname === '/times/cadastrar' ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
-            >
-              Cadastrar time
-            </Link>
-            <Link
-              href="/painel-time"
-              className={`text-sm font-semibold ${pathname.startsWith('/painel-time') ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
-            >
-              Área do time
-            </Link>
-            <Link
-              href="/resultados"
-              className={`text-sm font-semibold ${pathname.startsWith('/resultados') ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
-            >
-              Resultados
-            </Link>
-            <Link
-              href="/torneios"
-              className={`text-sm font-semibold ${pathname.startsWith('/torneios') ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
-            >
-              Campeonatos
-            </Link>
+            {!isStoreApp && (
+              <>
+                <Link
+                  href="/times/cadastrar"
+                  className={`text-sm font-semibold ${pathname === '/times/cadastrar' ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
+                >
+                  Cadastrar time
+                </Link>
+                <Link
+                  href="/painel-time"
+                  className={`text-sm font-semibold ${pathname.startsWith('/painel-time') ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
+                >
+                  Área do time
+                </Link>
+                <Link
+                  href="/resultados"
+                  className={`text-sm font-semibold ${pathname.startsWith('/resultados') ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
+                >
+                  Resultados
+                </Link>
+                <Link
+                  href="/torneios"
+                  className={`text-sm font-semibold ${pathname.startsWith('/torneios') ? 'text-futvar-green' : 'text-futvar-light hover:text-white'}`}
+                >
+                  Campeonatos
+                </Link>
+              </>
+            )}
             {user ? (
               <div className="relative">
                 <button
@@ -318,25 +322,29 @@ export function Header() {
                       <p className="text-xs text-futvar-light truncate">{user.email}</p>
                       {subscription && (
                         <p className={`text-xs mt-1 ${subscription.active ? 'text-green-400' : 'text-amber-400'}`}>
-                          {subscription.active ? 'Assinatura ativa' : 'Assinatura inativa'}
+                          {isStoreApp ? (subscription.active ? 'Acesso ativo' : 'Acesso inativo') : (subscription.active ? 'Assinatura ativa' : 'Assinatura inativa')}
                         </p>
                       )}
                     </div>
-                    <Link
-                      href="/painel-time"
-                      className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
-                      onClick={() => setUserMenuOpen(false)}
-                    >
-                      Área do time
-                    </Link>
-                    <Link
-                      href="/resultados"
-                      className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
-                      onClick={() => setUserMenuOpen(false)}
-                    >
-                      Resultados
-                    </Link>
-                    {isPartner && (
+                    {!isStoreApp && (
+                      <>
+                        <Link
+                          href="/painel-time"
+                          className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          Área do time
+                        </Link>
+                        <Link
+                          href="/resultados"
+                          className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          Resultados
+                        </Link>
+                      </>
+                    )}
+                    {!isStoreApp && isPartner && (
                       <Link
                         href="/parceiro"
                         className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
@@ -458,34 +466,38 @@ export function Header() {
               >
                 Início
               </Link>
-              <Link
-                href="/times/cadastrar"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname === '/times/cadastrar' ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
-              >
-                Cadastrar time
-              </Link>
-              <Link
-                href="/painel-time"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname.startsWith('/painel-time') ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
-              >
-                Área do time
-              </Link>
-              <Link
-                href="/resultados"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname.startsWith('/resultados') ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
-              >
-                Resultados
-              </Link>
-              <Link
-                href="/torneios"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname.startsWith('/torneios') ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
-              >
-                Campeonatos
-              </Link>
+              {!isStoreApp && (
+                <>
+                  <Link
+                    href="/times/cadastrar"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname === '/times/cadastrar' ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
+                  >
+                    Cadastrar time
+                  </Link>
+                  <Link
+                    href="/painel-time"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname.startsWith('/painel-time') ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
+                  >
+                    Área do time
+                  </Link>
+                  <Link
+                    href="/resultados"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname.startsWith('/resultados') ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
+                  >
+                    Resultados
+                  </Link>
+                  <Link
+                    href="/torneios"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`px-4 py-3 rounded-lg text-sm font-semibold ${pathname.startsWith('/torneios') ? 'text-futvar-green bg-futvar-green/10' : 'text-futvar-light hover:bg-white/5'}`}
+                  >
+                    Campeonatos
+                  </Link>
+                </>
+              )}
               {user ? (
                 <>
                   <div className="px-4 py-2 text-sm text-futvar-light border-b border-white/10 flex items-center gap-3">
@@ -500,15 +512,17 @@ export function Header() {
                       <p className="font-medium text-white truncate">{user.name || user.email}</p>
                     {subscription && (
                       <p className={`text-xs mt-0.5 ${subscription.active ? 'text-green-400' : 'text-amber-400'}`}>
-                        {subscription.active ? 'Assinatura ativa' : 'Assinatura inativa'}
+                        {isStoreApp ? (subscription.active ? 'Acesso ativo' : 'Acesso inativo') : (subscription.active ? 'Assinatura ativa' : 'Assinatura inativa')}
                       </p>
                     )}
                     </div>
                   </div>
-                  <Link href="/painel-time" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
-                    Área do time
-                  </Link>
-                  {isPartner && (
+                  {!isStoreApp && (
+                    <Link href="/painel-time" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
+                      Área do time
+                    </Link>
+                  )}
+                  {!isStoreApp && isPartner && (
                     <Link href="/parceiro" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
                       Dashboard Parceiro
                     </Link>

@@ -468,7 +468,7 @@ export default function ContaPage() {
                   </span>
                 </div>
                 <p className="text-futvar-light text-sm">{subscription.plan.name}</p>
-                {subscription.plan.price != null && (
+                {!isStoreApp && subscription.plan.price != null && (
                   <p className="text-futvar-light">Valor: {formatPrice(subscription.plan.price)}</p>
                 )}
                 <p className="text-futvar-light text-sm">
@@ -609,7 +609,7 @@ export default function ContaPage() {
                         <p className="text-futvar-light text-sm">{formatDate(p.purchasedAt)}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        {p.plan?.price != null && (
+                        {!isStoreApp && p.plan?.price != null && (
                           <span className="text-futvar-light text-sm">{formatPrice(p.plan.price)}</span>
                         )}
                         <span

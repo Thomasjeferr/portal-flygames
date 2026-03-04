@@ -30,17 +30,13 @@ export function MaintenanceLayoutShell({ header, footer, footerLegal, initialMai
 
   const isMaintenance = pathname === '/manutencao' || maintenanceFromCookie;
 
-  if (isMaintenance) {
-    return (
-      <main className="min-h-screen flex flex-col">{children}</main>
-    );
-  }
-
+  // Header e Footer sempre montados (só escondidos em manutenção) para evitar
+  // "Rendered more hooks than during the previous render" ao clicar nos links Legal.
   return (
     <>
-      {header}
-      <main className="min-h-screen">{children}</main>
-      {footer}
+      <div style={{ display: isMaintenance ? 'none' : undefined }}>{header}</div>
+      <main className="min-h-screen flex flex-col">{children}</main>
+      <div style={{ display: isMaintenance ? 'none' : undefined }}>{footer}</div>
     </>
   );
 }

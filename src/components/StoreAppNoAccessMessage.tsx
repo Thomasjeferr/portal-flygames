@@ -14,7 +14,7 @@ interface Props {
  * No app das lojas (?app=1): mostra só uma mensagem neutra, sem CTAs de assinar/planos.
  * No site normal: mostra o conteúdo (children) com botões/links.
  */
-export function StoreAppNoAccessMessage({ children, message = 'Conteúdo disponível para assinantes.', className = '' }: Props) {
+export function StoreAppNoAccessMessage({ children, message = 'Este conteúdo não está disponível no momento.', className = '' }: Props) {
   const isStoreApp = useStoreApp();
 
   if (isStoreApp) {

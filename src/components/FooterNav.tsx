@@ -27,11 +27,11 @@ export function FooterNav() {
             <Link href="/patrocinar" className="hover:text-futvar-green transition-colors">
               Seja Patrocinador
             </Link>
+            <Link href="/parceiros" className="hover:text-futvar-green transition-colors">
+              Programa de parceiros
+            </Link>
           </>
         )}
-        <Link href="/parceiros" className="hover:text-futvar-green transition-colors">
-          Programa de parceiros
-        </Link>
         <Link href="/sobre-o-projeto" className="hover:text-futvar-green transition-colors">
           Sobre o projeto
         </Link>

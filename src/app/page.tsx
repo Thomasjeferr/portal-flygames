@@ -6,6 +6,8 @@ import { LiveNowSection } from '@/components/LiveNowSection';
 import { FindGameSection } from '@/components/FindGameSection';
 import { SponsorsSection } from '@/components/SponsorsSection';
 import { PreSaleShareButton } from '@/components/PreSaleShareButton';
+import { StoreAppHide } from '@/components/StoreAppHide';
+import { PreEstreiaCards } from '@/components/PreEstreiaCards';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { getGamesAccessMap, hasFullAccess } from '@/lib/access';
@@ -475,38 +477,40 @@ export default async function HomePage() {
                           )}
                         </div>
 
-                        {/* Ação */}
-                        <div className="flex w-36 sm:w-44 flex-shrink-0 flex-col items-stretch justify-center gap-2">
-                          {!isPatrocinador && (
-                            <Link
-                              href="/planos"
-                              className="inline-flex w-full items-center justify-center px-5 py-2 text-[11px] sm:text-sm font-bold bg-futvar-green text-futvar-darker hover:bg-futvar-green-light transition-colors border border-futvar-green-dark rounded-[9px]"
-                            >
-                              Ser Patrocinador Torcedor
-                            </Link>
-                          )}
+                        {/* Ação (oculta no app lojas para não remeter a assinatura) */}
+                        <StoreAppHide>
+                          <div className="flex w-36 sm:w-44 flex-shrink-0 flex-col items-stretch justify-center gap-2">
+                            {!isPatrocinador && (
+                              <Link
+                                href="/planos"
+                                className="inline-flex w-full items-center justify-center px-5 py-2 text-[11px] sm:text-sm font-bold bg-futvar-green text-futvar-darker hover:bg-futvar-green-light transition-colors border border-futvar-green-dark rounded-[9px]"
+                              >
+                                Ser Patrocinador Torcedor
+                              </Link>
+                            )}
 
-                          {isPatrocinador && hasFavoriteTeam && (
-                            <>
-                              <div className="inline-flex w-full items-center justify-center rounded-[9px] border border-futvar-green/70 bg-futvar-green/10 px-3 py-2 text-[10px] sm:text-[11px] font-semibold text-futvar-green">
-                                Você já é Patrocinador Torcedor
-                              </div>
-                              <PreSaleShareButton
-                                title={g.title}
+                            {isPatrocinador && hasFavoriteTeam && (
+                              <>
+                                <div className="inline-flex w-full items-center justify-center rounded-[9px] border border-futvar-green/70 bg-futvar-green/10 px-3 py-2 text-[10px] sm:text-[11px] font-semibold text-futvar-green">
+                                  Você já é Patrocinador Torcedor
+                                </div>
+                                <PreSaleShareButton
+                                  title={g.title}
+                                  className="inline-flex w-full items-center justify-center px-4 py-2 text-[10px] sm:text-[11px] font-semibold bg-futvar-dark border border-futvar-green/60 text-futvar-green hover:bg-futvar-green/10 transition-colors rounded-[9px]"
+                                />
+                              </>
+                            )}
+
+                            {isPatrocinador && !hasFavoriteTeam && (
+                              <Link
+                                href="/conta"
                                 className="inline-flex w-full items-center justify-center px-4 py-2 text-[10px] sm:text-[11px] font-semibold bg-futvar-dark border border-futvar-green/60 text-futvar-green hover:bg-futvar-green/10 transition-colors rounded-[9px]"
-                              />
-                            </>
-                          )}
-
-                          {isPatrocinador && !hasFavoriteTeam && (
-                            <Link
-                              href="/conta"
-                              className="inline-flex w-full items-center justify-center px-4 py-2 text-[10px] sm:text-[11px] font-semibold bg-futvar-dark border border-futvar-green/60 text-futvar-green hover:bg-futvar-green/10 transition-colors rounded-[9px]"
-                            >
-                              Escolher meu time do coração
-                            </Link>
-                          )}
-                        </div>
+                              >
+                                Escolher meu time do coração
+                              </Link>
+                            )}
+                          </div>
+                        </StoreAppHide>
                       </div>
                     </div>
                   );
@@ -525,28 +529,16 @@ export default async function HomePage() {
               <p className="text-futvar-light mb-6 max-w-2xl">
                 Dois clubes financiam previamente o jogo.
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
-                {preSaleForClubs.map((g, i) => {
-                  const patrocinioOk = g.fundedClubsCount === 2;
-                  return (
-                    <div key={g.id} className="animate-scale-in opacity-0" style={{ animationDelay: `${0.15 + i * 0.05}s` }}>
-                      <GameCard
-                        slug={g.slug}
-                        title={g.title}
-                        championship={patrocinioOk ? 'Financiados: 2/2' : `Financiados: ${g.fundedClubsCount}/2`}
-                        thumbnailUrl={g.thumbnailUrl}
-                        gameDate={g.createdAt.toISOString()}
-                        featured={false}
-                        href={`/pre-estreia/${g.id}/checkout`}
-                        badgeText={patrocinioOk ? undefined : 'APOIAR'}
-                        showAssistir={!patrocinioOk}
-                        sponsorOkLabel={patrocinioOk ? 'Patrocínio OK' : undefined}
-                        sponsorOkSubtitle={patrocinioOk ? 'Em breve disponível para membros dos clubes e assinantes.' : undefined}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+              <PreEstreiaCards
+                games={preSaleForClubs.map((g) => ({
+                  id: g.id,
+                  slug: g.slug,
+                  title: g.title,
+                  fundedClubsCount: g.fundedClubsCount,
+                  thumbnailUrl: g.thumbnailUrl,
+                  createdAt: g.createdAt.toISOString ? g.createdAt.toISOString() : String(g.createdAt),
+                }))}
+              />
             </div>
           )}
           {liveReplays.length > 0 && (
