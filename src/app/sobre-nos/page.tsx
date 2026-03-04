@@ -1,5 +1,8 @@
 import Link from 'next/link';
 
+/** Exibir menções a assinatura/compra/assinante? false = oculto até aprovação nas lojas; true = reativar após aprovação. */
+const SHOW_CONTEUDO_PAGAMENTOS_PATROCINIOS = false;
+
 export default function SobreNosPage() {
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 lg:px-12 bg-futvar-darker">
@@ -19,7 +22,10 @@ export default function SobreNosPage() {
           <h2 className="text-xl font-bold text-white mb-3">O que entregamos</h2>
           <ul className="space-y-2 text-futvar-light list-disc list-inside">
             <li>Transmissões e gravações com qualidade (incluindo drone quando aplicável)</li>
-            <li>Jogos organizados por campeonato/categoria, com acesso por assinatura ou compra</li>
+            <li>
+              Jogos organizados por campeonato/categoria,
+              {SHOW_CONTEUDO_PAGAMENTOS_PATROCINIOS ? ' com acesso por assinatura ou compra' : ' com acesso aos conteúdos'}
+            </li>
             <li>Estreias patrocinadas por clubes, com liberação para a equipe</li>
           </ul>
         </section>
@@ -52,7 +58,7 @@ export default function SobreNosPage() {
               <p className="font-semibold text-white">Thomas J. Ferreira — Cofundador</p>
               <p className="text-futvar-light text-sm mt-1 leading-relaxed">
                 Constrói o Fly Games com foco em produto, tecnologia e crescimento do portal, garantindo uma experiência
-                simples para o assinante e ferramentas claras para o admin.
+                simples para o {SHOW_CONTEUDO_PAGAMENTOS_PATROCINIOS ? 'assinante' : 'usuário'} e ferramentas claras para o admin.
               </p>
             </div>
             <div className="p-4 rounded-lg bg-futvar-dark border border-futvar-green/20">

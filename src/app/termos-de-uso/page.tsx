@@ -1,5 +1,8 @@
 import Link from 'next/link';
 
+/** Exibir seção 4 (Planos, Pagamentos e Renovação)? false = oculto até publicação nas lojas; true = reativar após aprovação. */
+const SHOW_SECAO_4_PLANOS_PAGAMENTOS = false;
+
 export default function TermosDeUsoPage() {
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 lg:px-12 bg-futvar-darker">
@@ -21,10 +24,20 @@ export default function TermosDeUsoPage() {
           <section>
             <h2 className="text-lg font-semibold text-white">2. Serviços Oferecidos</h2>
             <p>
-              A Fly Games oferece, dentre outros serviços, a transmissão e o replay de jogos de futebol de várzea,
-              incluindo filmagens com drones e câmeras em campo, planos de assinatura e compras avulsas de conteúdos
-              digitais. A disponibilidade de funcionalidades, planos e conteúdos pode variar ao longo do tempo, a
-              critério exclusivo da Fly Games.
+              {SHOW_SECAO_4_PLANOS_PAGAMENTOS ? (
+                <>
+                  A Fly Games oferece, dentre outros serviços, a transmissão e o replay de jogos de futebol de várzea,
+                  incluindo filmagens com drones e câmeras em campo, planos de assinatura e compras avulsas de conteúdos
+                  digitais. A disponibilidade de funcionalidades, planos e conteúdos pode variar ao longo do tempo, a
+                  critério exclusivo da Fly Games.
+                </>
+              ) : (
+                <>
+                  A Fly Games oferece, dentre outros serviços, a transmissão e o replay de jogos de futebol de várzea,
+                  incluindo filmagens com drones e câmeras em campo. A disponibilidade de funcionalidades e conteúdos
+                  pode variar ao longo do tempo, a critério exclusivo da Fly Games.
+                </>
+              )}
             </p>
           </section>
 
@@ -41,19 +54,22 @@ export default function TermosDeUsoPage() {
             </ul>
           </section>
 
-          <section>
-            <h2 className="text-lg font-semibold text-white">4. Planos, Pagamentos e Renovação</h2>
-            <p>
-              As condições de cada plano ou compra avulsa (preço, período de acesso, forma de renovação e benefícios)
-              são apresentadas de forma clara na própria plataforma, antes da confirmação do pagamento. Ao concluir a
-              compra, você autoriza a cobrança pelo meio de pagamento selecionado.
-            </p>
-            <p className="mt-2">
-              Nos planos recorrentes, a renovação automática será realizada até que você cancele o plano, seguindo as
-              instruções disponíveis na área &quot;Minha conta&quot; ou pelos canais de suporte. Compras avulsas não
-              são renovadas automaticamente.
-            </p>
-          </section>
+          {/* Seção 4 oculta em todo o site até publicação nas lojas; reativar com SHOW_SECAO_4_PLANOS_PAGAMENTOS = true */}
+          {SHOW_SECAO_4_PLANOS_PAGAMENTOS && (
+            <section>
+              <h2 className="text-lg font-semibold text-white">4. Planos, Pagamentos e Renovação</h2>
+              <p>
+                As condições de cada plano ou compra avulsa (preço, período de acesso, forma de renovação e benefícios)
+                são apresentadas de forma clara na própria plataforma, antes da confirmação do pagamento. Ao concluir a
+                compra, você autoriza a cobrança pelo meio de pagamento selecionado.
+              </p>
+              <p className="mt-2">
+                Nos planos recorrentes, a renovação automática será realizada até que você cancele o plano, seguindo as
+                instruções disponíveis na área &quot;Minha conta&quot; ou pelos canais de suporte. Compras avulsas não
+                são renovadas automaticamente.
+              </p>
+            </section>
+          )}
 
           <section>
             <h2 className="text-lg font-semibold text-white">5. Uso Adequado e Proibições</h2>

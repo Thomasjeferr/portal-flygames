@@ -1,13 +1,17 @@
 import Link from 'next/link';
 
+/** Exibir menções a assinantes/compras/cobranças? false = oculto até aprovação nas lojas; true = reativar após aprovação. */
+const SHOW_CONTEUDO_PAGAMENTOS_PATROCINIOS = false;
+
 export default function SuportePage() {
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 lg:px-12 bg-futvar-darker">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">Suporte e Atendimento</h1>
         <p className="text-futvar-light mb-8">
-          Use os canais abaixo para tirar dúvidas, reportar problemas técnicos, falar sobre cobranças ou sugerir
-          melhorias na plataforma.
+          {SHOW_CONTEUDO_PAGAMENTOS_PATROCINIOS
+            ? 'Use os canais abaixo para tirar dúvidas, reportar problemas técnicos, falar sobre cobranças ou sugerir melhorias na plataforma.'
+            : 'Use os canais abaixo para tirar dúvidas, reportar problemas técnicos ou sugerir melhorias na plataforma.'}
         </p>
 
         <div className="space-y-4 text-futvar-light">
@@ -29,8 +33,10 @@ export default function SuportePage() {
             </a>
           </p>
           <p className="text-sm">
-            <strong className="text-white">Assinantes e compras:</strong> informe sempre o e-mail utilizado na conta
-            para agilizar seu atendimento.
+            <strong className="text-white">
+              {SHOW_CONTEUDO_PAGAMENTOS_PATROCINIOS ? 'Assinantes e compras:' : 'Usuários:'}
+            </strong>{' '}
+            informe sempre o e-mail utilizado na conta para agilizar seu atendimento.
           </p>
         </div>
 

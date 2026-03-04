@@ -1,5 +1,8 @@
 import Link from 'next/link';
 
+/** Exibir trechos sobre pagamentos, planos e patrocínios? false = oculto até aprovação nas lojas; true = reativar após aprovação. */
+const SHOW_CONTEUDO_PAGAMENTOS_PATROCINIOS = false;
+
 export default function PoliticaPrivacidadePage() {
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 lg:px-12 bg-futvar-darker">
@@ -28,14 +31,18 @@ export default function PoliticaPrivacidadePage() {
                 dados de navegação: páginas acessadas, data e hora de acesso, endereço IP, tipo de dispositivo e
                 navegador;
               </li>
-              <li>
-                dados de pagamento: informações de transações (valor, plano/jogo adquirido, status de pagamento). Os
-                dados completos de cartão são processados por provedores externos (como Stripe), não sendo
-                armazenados integralmente pela Fly Games;
-              </li>
-              <li>
-                dados relacionados a clubes, times ou patrocínios, quando você atua como responsável ou patrocinador.
-              </li>
+              {SHOW_CONTEUDO_PAGAMENTOS_PATROCINIOS && (
+                <>
+                  <li>
+                    dados de pagamento: informações de transações (valor, plano/jogo adquirido, status de pagamento). Os
+                    dados completos de cartão são processados por provedores externos (como Stripe), não sendo
+                    armazenados integralmente pela Fly Games;
+                  </li>
+                  <li>
+                    dados relacionados a clubes, times ou patrocínios, quando você atua como responsável ou patrocinador.
+                  </li>
+                </>
+              )}
             </ul>
           </section>
 
@@ -44,7 +51,9 @@ export default function PoliticaPrivacidadePage() {
             <p>Utilizamos seus dados pessoais para as seguintes finalidades principais:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>criar e gerenciar sua conta na plataforma;</li>
-              <li>processar pagamentos, assinaturas e compras avulsas;</li>
+              {SHOW_CONTEUDO_PAGAMENTOS_PATROCINIOS && (
+                <li>processar pagamentos, assinaturas e compras avulsas;</li>
+              )}
               <li>liberar acesso a jogos, lives e demais conteúdos contratados;</li>
               <li>enviar comunicações transacionais (confirmação de cadastro, reset de senha, recibos, etc.);</li>
               <li>cumprir obrigações legais e regulatórias;</li>
@@ -63,7 +72,9 @@ export default function PoliticaPrivacidadePage() {
               serviços, tais como:
             </p>
             <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>provedores de pagamento (por exemplo, Stripe, Woovi);</li>
+              {SHOW_CONTEUDO_PAGAMENTOS_PATROCINIOS && (
+                <li>provedores de pagamento (por exemplo, Stripe, Woovi);</li>
+              )}
               <li>provedores de infraestrutura de hospedagem e banco de dados;</li>
               <li>serviços de envio de e-mail transacional;</li>
               <li>
