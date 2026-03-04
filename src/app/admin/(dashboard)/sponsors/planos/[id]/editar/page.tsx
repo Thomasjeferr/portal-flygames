@@ -33,6 +33,8 @@ export default function EditSponsorPlanPage() {
     featuresFlags: {} as Record<string, boolean>,
     teamPayoutPercent: 0,
     partnerCommissionPercent: 0,
+    grantFullAccess: false,
+    maxScreens: '' as string | number,
     sortOrder: 0,
     isActive: true,
   });
@@ -58,6 +60,8 @@ export default function EditSponsorPlanPage() {
           featuresFlags: { ...mergedFlags, ...flags },
           teamPayoutPercent: data.teamPayoutPercent ?? 0,
           partnerCommissionPercent: data.partnerCommissionPercent ?? 0,
+          grantFullAccess: data.grantFullAccess ?? false,
+          maxScreens: data.maxScreens != null ? data.maxScreens : '',
           sortOrder: data.sortOrder ?? 0,
           isActive: data.isActive ?? true,
         });
@@ -89,6 +93,8 @@ export default function EditSponsorPlanPage() {
           featuresFlags: form.featuresFlags,
           teamPayoutPercent: Number(form.teamPayoutPercent) ?? 0,
           partnerCommissionPercent: Number(form.partnerCommissionPercent) ?? 0,
+          grantFullAccess: form.grantFullAccess,
+          maxScreens: form.maxScreens === '' ? null : Number(form.maxScreens) || null,
           sortOrder: Number(form.sortOrder) || 0,
           isActive: form.isActive,
         }),
@@ -191,6 +197,34 @@ export default function EditSponsorPlanPage() {
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
           <p className="mt-1 text-xs text-netflix-light">Quando alguém patrocinar por indicação de parceiro, este % será a comissão do parceiro (0 = usa o % do cadastro do parceiro).</p>
+        </div>
+        <div className="border-t border-white/10 pt-5">
+          <h3 className="text-sm font-semibold text-white mb-3">Benefício: acesso ao conteúdo (patrocinador empresa)</h3>
+          <label className="flex items-center gap-2 cursor-pointer mb-3">
+            <input
+              type="checkbox"
+              checked={form.grantFullAccess}
+              onChange={(e) => setForm((f) => ({ ...f, grantFullAccess: e.target.checked }))}
+              className="rounded border-white/20"
+            />
+            <span className="text-netflix-light">Liberar acesso total ao conteúdo</span>
+          </label>
+          <p className="text-xs text-netflix-light mb-3">Se ativado, quem comprar este plano (e tiver a conta vinculada) poderá assistir a todos os jogos e lives, além da página de Resultados.</p>
+          {form.grantFullAccess && (
+            <div>
+              <label className="block text-sm font-medium text-netflix-light mb-2">Máximo de telas simultâneas</label>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                placeholder="Ilimitado"
+                value={form.maxScreens === '' ? '' : form.maxScreens}
+                onChange={(e) => setForm((f) => ({ ...f, maxScreens: e.target.value === '' ? '' : Number(e.target.value) || 1 }))}
+                className="w-full max-w-[120px] px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              />
+              <p className="mt-1 text-xs text-netflix-light">Deixe vazio para ilimitado. Ex.: 3 = até 3 dispositivos assistindo ao mesmo tempo.</p>
+            </div>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Ordem de exibição</label>

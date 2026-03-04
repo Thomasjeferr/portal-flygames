@@ -38,6 +38,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       sortOrder: raw.sortOrder !== undefined ? (typeof raw.sortOrder === 'number' ? raw.sortOrder : Number(raw.sortOrder)) : undefined,
       teamPayoutPercent: raw.teamPayoutPercent !== undefined ? (typeof raw.teamPayoutPercent === 'number' ? raw.teamPayoutPercent : Number(raw.teamPayoutPercent)) : undefined,
       partnerCommissionPercent: raw.partnerCommissionPercent !== undefined ? (typeof raw.partnerCommissionPercent === 'number' ? raw.partnerCommissionPercent : Number(raw.partnerCommissionPercent)) : undefined,
+      maxScreens: raw.maxScreens === '' || raw.maxScreens === null ? null : raw.maxScreens !== undefined ? (typeof raw.maxScreens === 'number' ? raw.maxScreens : Number(raw.maxScreens)) : undefined,
     });
     if (!parsed.success)
       return NextResponse.json({ error: parsed.error.errors[0]?.message ?? 'Dados inválidos' }, { status: 400 });
@@ -51,6 +52,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (d.featuresFlags !== undefined) update.featuresFlags = JSON.stringify(typeof d.featuresFlags === 'object' ? d.featuresFlags : {});
     if (d.teamPayoutPercent !== undefined) update.teamPayoutPercent = d.teamPayoutPercent;
     if (d.partnerCommissionPercent !== undefined) update.partnerCommissionPercent = d.partnerCommissionPercent;
+    if (d.grantFullAccess !== undefined) update.grantFullAccess = d.grantFullAccess;
+    if (d.maxScreens !== undefined) update.maxScreens = d.maxScreens;
     if (d.sortOrder !== undefined) update.sortOrder = d.sortOrder;
     if (d.isActive !== undefined) update.isActive = d.isActive;
 

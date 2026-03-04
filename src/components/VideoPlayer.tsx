@@ -55,6 +55,16 @@ export function VideoPlayer({
       if (streamContext.gameSlug) params.set('gameSlug', streamContext.gameSlug);
       if (streamContext.preSaleSlug) params.set('preSaleSlug', streamContext.preSaleSlug);
       if (streamContext.sessionToken) params.set('sessionToken', streamContext.sessionToken);
+      try {
+        let deviceId = typeof localStorage !== 'undefined' ? localStorage.getItem('portal_futvar_device_id') : null;
+        if (!deviceId) {
+          deviceId = `web_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
+          if (typeof localStorage !== 'undefined') localStorage.setItem('portal_futvar_device_id', deviceId);
+        }
+        params.set('deviceId', deviceId);
+      } catch {
+        // ignorar se localStorage não disponível
+      }
       fetch(`/api/video/stream-playback?${params}`, { credentials: 'include' })
         .then((r) => r.json())
         .then((d) => {

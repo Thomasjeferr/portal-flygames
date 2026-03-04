@@ -226,8 +226,8 @@ export function HeroBannerCarousel() {
       const ytId = extractYouTubeVideoId(banner.secondaryMediaUrl);
       if (ytId) {
         const params = buildYouTubeEmbedParams(ytId, {
-          mute: true,
-          loop: true,
+          mute: banner.mute,
+          loop: banner.loop,
           startSeconds: banner.videoStartSeconds,
           endSeconds: banner.videoEndSeconds,
         });

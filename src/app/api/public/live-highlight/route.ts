@@ -7,12 +7,14 @@ export async function GET() {
   try {
     const now = new Date();
 
-    // Só mostra "ao vivo" se não tiver replay (quem tem cloudflarePlaybackId já encerrou).
+    // Só mostra "ao vivo" se não tiver replay (quem tem cloudflarePlaybackId já encerrou)
+    // e se a live não acabou por horário (endAt null ou endAt > now).
     const liveNow = await prisma.live.findFirst({
       where: {
         status: 'LIVE',
         cloudflareLiveInputId: { not: null },
         cloudflarePlaybackId: null,
+        OR: [{ endAt: null }, { endAt: { gt: now } }],
       },
       orderBy: [{ startAt: 'desc' }, { createdAt: 'desc' }],
       include: {
@@ -47,6 +49,7 @@ export async function GET() {
       where: {
         status: 'SCHEDULED',
         startAt: { not: null, lte: now, gte: oneDayAgo },
+        OR: [{ endAt: null }, { endAt: { gt: now } }],
       },
       orderBy: [{ startAt: 'desc' }, { createdAt: 'desc' }],
       include: {

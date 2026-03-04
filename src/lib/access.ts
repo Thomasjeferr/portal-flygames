@@ -74,16 +74,46 @@ export async function hasAnyPurchaseAsCustomer(userId: string, email: string): P
 }
 
 /**
- * Verifica se o usuário pode assistir a qualquer jogo (assinatura ativa com acesso total).
+ * Verifica se o usuário pode assistir a qualquer jogo (assinatura ativa com acesso total OU patrocínio empresa com benefício de acesso total).
  */
 export async function hasFullAccess(userId: string): Promise<boolean> {
   const sub = await prisma.subscription.findUnique({
     where: { userId },
     include: { plan: true },
   });
-  if (!sub?.active || sub.endDate < new Date()) return false;
-  if (!sub.plan) return true; // assinatura legada sem plano = acesso total
-  return sub.plan.acessoTotal;
+  if (sub?.active && sub.endDate >= new Date()) {
+    if (!sub.plan) return true; // assinatura legada sem plano = acesso total
+    if (sub.plan.acessoTotal) return true;
+  }
+
+  // Patrocínio empresa: pelo menos um pedido pago com plano que concede acesso total
+  const paidWithFullAccess = await prisma.sponsorOrder.findFirst({
+    where: {
+      userId,
+      paymentStatus: 'paid',
+      sponsorPlan: { grantFullAccess: true, isActive: true },
+    },
+    select: { id: true },
+  });
+  return !!paidWithFullAccess;
+}
+
+/**
+ * Retorna o limite de telas simultâneas para o usuário quando tem acesso via patrocínio empresa.
+ * Retorna null se não tiver patrocínio com acesso total ou se for ilimitado.
+ */
+export async function getSponsorMaxScreens(userId: string): Promise<number | null> {
+  const order = await prisma.sponsorOrder.findFirst({
+    where: {
+      userId,
+      paymentStatus: 'paid',
+      sponsorPlan: { grantFullAccess: true, isActive: true },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: { sponsorPlan: { select: { maxScreens: true } } },
+  });
+  const max = order?.sponsorPlan?.maxScreens;
+  return max == null ? null : max;
 }
 
 /**

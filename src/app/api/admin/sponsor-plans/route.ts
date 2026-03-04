@@ -58,6 +58,8 @@ export async function POST(request: NextRequest) {
       featuresFlags: raw.featuresFlags && typeof raw.featuresFlags === 'object' ? raw.featuresFlags : {},
       teamPayoutPercent: typeof raw.teamPayoutPercent === 'number' ? raw.teamPayoutPercent : Number(raw.teamPayoutPercent) ?? 0,
       partnerCommissionPercent: typeof raw.partnerCommissionPercent === 'number' ? raw.partnerCommissionPercent : Number(raw.partnerCommissionPercent) ?? 0,
+      grantFullAccess: raw.grantFullAccess ?? false,
+      maxScreens: raw.maxScreens === '' || raw.maxScreens === null ? null : (typeof raw.maxScreens === 'number' ? raw.maxScreens : Number(raw.maxScreens)) || null,
       sortOrder: typeof raw.sortOrder === 'number' ? raw.sortOrder : Number(raw.sortOrder) ?? 0,
       isActive: raw.isActive ?? true,
     });
@@ -73,6 +75,8 @@ export async function POST(request: NextRequest) {
         featuresFlags: JSON.stringify(typeof d.featuresFlags === 'object' ? d.featuresFlags : {}),
         teamPayoutPercent: d.teamPayoutPercent,
         partnerCommissionPercent: d.partnerCommissionPercent,
+        grantFullAccess: d.grantFullAccess ?? false,
+        maxScreens: d.maxScreens ?? null,
         sortOrder: d.sortOrder,
         isActive: d.isActive,
       },

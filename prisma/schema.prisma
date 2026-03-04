@@ -34,6 +34,7 @@ model User {
   favoriteTeam      Team?     @relation("UserFavoriteTeam", fields: [favoriteTeamId], references: [id], onDelete: SetNull)
   sponsorOrders     SponsorOrder[]
   watchProgress     WatchProgress[]
+  streamSessions    UserStreamSession[]
   teamRequests      TeamRequest[]
   tournamentSubscriptions TournamentSubscription[]
 }
@@ -477,6 +478,8 @@ model SponsorPlan {
   featuresFlags     String   @default("{}") @map("features_flags") // JSON ex: { show_in_footer, show_in_player, ... }
   teamPayoutPercent        Int      @default(0) @map("team_payout_percent") // 0-100: % do valor que vai para o time
   partnerCommissionPercent Int      @default(0) @map("partner_commission_percent") // 0-100: % comissão para parceiro que indicar (0 = usa % do cadastro do parceiro)
+  grantFullAccess   Boolean  @default(false) @map("grant_full_access") // se true, usuário com pedido pago ganha acesso total ao conteúdo (jogos, lives, resultados)
+  maxScreens        Int?     @map("max_screens") // máximo de telas simultâneas para esse plano (null = ilimitado)
   sortOrder         Int      @default(0) @map("sort_order")
   isActive          Boolean  @default(true) @map("is_active")
   createdAt         DateTime @default(now()) @map("created_at")
@@ -557,6 +560,20 @@ model Sponsor {
 
   plan SponsorPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
   team Team?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
+}
+
+// Sessões de reprodução por dispositivo (para limite de telas do patrocinador empresa)
+model UserStreamSession {
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  deviceId       String   @map("device_id")
+  lastHeartbeatAt DateTime @map("last_heartbeat_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
 }
 
 // Configurações gerais do site (contato, redes, CNPJ)

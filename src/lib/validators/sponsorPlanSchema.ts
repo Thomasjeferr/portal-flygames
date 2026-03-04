@@ -12,6 +12,8 @@ export const sponsorPlanCreateSchema = z.object({
   featuresFlags: featuresFlagsSchema,
   teamPayoutPercent: z.number().int().min(0).max(100).default(0),
   partnerCommissionPercent: z.number().int().min(0).max(100).default(0),
+  grantFullAccess: z.boolean().default(false),
+  maxScreens: z.number().int().min(1).max(20).nullable().optional(),
   sortOrder: z.number().int().min(0).default(0),
   isActive: z.boolean().default(true),
 });

@@ -333,6 +333,41 @@ export function BannerForm({ games, preSales, lives, initialData, onSubmit }: Ba
                   </button>
                 </>
               )}
+              {(form.mediaType === 'YOUTUBE_VIDEO' || form.mediaType === 'MP4_VIDEO') && (
+                <div className="mt-4 pt-3 border-t border-white/10 space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Início (segundos)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={form.videoStartSeconds}
+                      onChange={(e) => setForm((f) => ({ ...f, videoStartSeconds: parseInt(e.target.value, 10) || 0 }))}
+                      className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Fim (segundos)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={form.videoEndSeconds}
+                      onChange={(e) => setForm((f) => ({ ...f, videoEndSeconds: e.target.value }))}
+                      placeholder="Opcional"
+                      className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={form.loop} onChange={(e) => setForm((f) => ({ ...f, loop: e.target.checked }))} className="rounded" />
+                      <span className="text-white text-sm">Loop (repetir vídeo)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={form.mute} onChange={(e) => setForm((f) => ({ ...f, mute: e.target.checked }))} className="rounded" />
+                      <span className="text-white text-sm">Mudo</span>
+                    </label>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -465,40 +500,6 @@ export function BannerForm({ games, preSales, lives, initialData, onSubmit }: Ba
               className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
             />
           </div>
-        </>
-      )}
-
-      {(form.mediaType === 'YOUTUBE_VIDEO' || form.mediaType === 'MP4_VIDEO') && (
-        <>
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">Início (segundos)</label>
-            <input
-              type="number"
-              min={0}
-              value={form.videoStartSeconds}
-              onChange={(e) => setForm((f) => ({ ...f, videoStartSeconds: parseInt(e.target.value, 10) || 0 }))}
-              className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">Fim (segundos)</label>
-            <input
-              type="number"
-              min={0}
-              value={form.videoEndSeconds}
-              onChange={(e) => setForm((f) => ({ ...f, videoEndSeconds: e.target.value }))}
-              placeholder="Opcional"
-              className="w-full px-4 py-3 rounded bg-netflix-dark border border-white/20 text-white"
-            />
-          </div>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={form.loop} onChange={(e) => setForm((f) => ({ ...f, loop: e.target.checked }))} />
-            <span className="text-white text-sm">Loop</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={form.mute} onChange={(e) => setForm((f) => ({ ...f, mute: e.target.checked }))} />
-            <span className="text-white text-sm">Mudo</span>
-          </label>
         </>
       )}
 

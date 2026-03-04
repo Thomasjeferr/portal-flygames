@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { canAccessGameBySlug, hasFullAccess } from '@/lib/access';
+import { canAccessGameBySlug, getSponsorMaxScreens, hasFullAccess } from '@/lib/access';
 import { prisma } from '@/lib/db';
 import { getSignedPlaybackUrls } from '@/lib/cloudflare-stream';
+
+const STREAM_SESSION_ACTIVE_MS = 15 * 60 * 1000; // 15 min
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -10,6 +12,7 @@ export async function GET(request: NextRequest) {
   const gameSlug = searchParams.get('gameSlug');
   const preSaleSlug = searchParams.get('preSaleSlug');
   const sessionToken = searchParams.get('sessionToken');
+  const deviceId = searchParams.get('deviceId')?.trim() || null;
 
   if (!videoId?.trim()) {
     return NextResponse.json({ error: 'videoId obrigatório' }, { status: 400 });
@@ -25,6 +28,44 @@ export async function GET(request: NextRequest) {
     const hasAccess = await canAccessGameBySlug(session.userId, gameSlug);
     if (!hasAccess) {
       return NextResponse.json({ error: 'Sem acesso a este jogo' }, { status: 403 });
+    }
+
+    // Limite de telas para patrocinador empresa
+    const maxScreens = await getSponsorMaxScreens(session.userId);
+    if (maxScreens != null) {
+      if (!deviceId) {
+        return NextResponse.json(
+          { error: 'Identificador do dispositivo é necessário. Atualize o app e tente novamente.' },
+          { status: 400 }
+        );
+      }
+      const now = new Date();
+      const activeSince = new Date(now.getTime() - STREAM_SESSION_ACTIVE_MS);
+      const activeSessions = await prisma.userStreamSession.findMany({
+        where: {
+          userId: session.userId,
+          lastHeartbeatAt: { gte: activeSince },
+        },
+        select: { deviceId: true },
+      });
+      const isThisDeviceActive = activeSessions.some((s) => s.deviceId === deviceId);
+      if (activeSessions.length >= maxScreens && !isThisDeviceActive) {
+        return NextResponse.json(
+          { error: `Limite de ${maxScreens} tela(s) simultânea(s) atingido. Feche o player em outro dispositivo ou aguarde alguns minutos.` },
+          { status: 403 }
+        );
+      }
+      await prisma.userStreamSession.upsert({
+        where: {
+          userId_deviceId: { userId: session.userId, deviceId },
+        },
+        create: {
+          userId: session.userId,
+          deviceId,
+          lastHeartbeatAt: now,
+        },
+        update: { lastHeartbeatAt: now },
+      });
     }
   } else if (preSaleSlug) {
     const game = await prisma.preSaleGame.findUnique({ where: { slug: preSaleSlug } });
