@@ -6,6 +6,22 @@ import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { formatLiveDatetimeDisplay } from '@/lib/liveTimezone';
 
+function IconAndroid({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48a5.493 5.493 0 0 0-2.64-.66c-.99 0-1.93.23-2.76.66L8.88 1.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.3 1.3a5.49 5.49 0 0 0-2.32 4.49H18c0-1.79-.89-3.37-2.24-4.33zM12 6.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z" />
+    </svg>
+  );
+}
+
+function IconApple({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+    </svg>
+  );
+}
+
 interface User {
   id: string;
   email: string;
@@ -44,6 +60,9 @@ export function Header() {
   const [liveHighlight, setLiveHighlight] = useState<LiveHighlight>({ mode: 'NONE', live: null });
   const [livePreviewOpen, setLivePreviewOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [androidModalOpen, setAndroidModalOpen] = useState(false);
+  const [iosModalOpen, setIosModalOpen] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   const isAdmin = pathname.startsWith('/admin');
   const isAuthPage = ['/entrar', '/cadastro', '/recuperar-senha', '/admin/entrar'].some((p) => pathname.startsWith(p));
@@ -83,6 +102,14 @@ export function Header() {
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, [isAdmin, pathname]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as { standalone?: boolean }).standalone === true;
+    setIsStandalone(standalone);
+  }, []);
 
   useEffect(() => {
     if (isAdmin) return;
@@ -486,12 +513,58 @@ export function Header() {
                   <Link href="/planos" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
                     Planos
                   </Link>
+                  {!isStandalone && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setAndroidModalOpen(true);
+                        }}
+                        className="px-4 py-3 rounded-lg text-sm font-semibold text-futvar-light hover:bg-white/5 text-left flex items-center gap-3 w-full"
+                      >
+                        <IconAndroid className="w-6 h-6 text-[#3DDC84]" />
+                        Android — Baixar e instalar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setIosModalOpen(true);
+                        }}
+                        className="px-4 py-3 rounded-lg text-sm font-semibold text-futvar-light hover:bg-white/5 text-left flex items-center gap-3 w-full"
+                      >
+                        <IconApple className="w-6 h-6 text-white" />
+                        iPhone / iPad — Tela inicial
+                      </button>
+                    </>
+                  )}
                   <button onClick={handleLogout} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-red-900/20 hover:text-red-300 text-left">
                     Sair
                   </button>
                 </>
               ) : (
                 <>
+                  {!isStandalone && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => { setMobileMenuOpen(false); setAndroidModalOpen(true); }}
+                        className="px-4 py-3 rounded-lg text-sm font-semibold text-futvar-light hover:bg-white/5 text-left flex items-center gap-3 w-full"
+                      >
+                        <IconAndroid className="w-6 h-6 text-[#3DDC84]" />
+                        Android — Baixar e instalar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setMobileMenuOpen(false); setIosModalOpen(true); }}
+                        className="px-4 py-3 rounded-lg text-sm font-semibold text-futvar-light hover:bg-white/5 text-left flex items-center gap-3 w-full"
+                      >
+                        <IconApple className="w-6 h-6 text-white" />
+                        iPhone / iPad — Tela inicial
+                      </button>
+                    </>
+                  )}
                   <Link href="/entrar" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
                     Entrar
                   </Link>
@@ -502,6 +575,74 @@ export function Header() {
               )}
             </nav>
           </div>
+          </>,
+          document.body
+        )}
+
+        {androidModalOpen && typeof document !== 'undefined' && createPortal(
+          <>
+            <button
+              type="button"
+              className="fixed inset-0 z-[9998] bg-black/60 cursor-default"
+              onClick={() => setAndroidModalOpen(false)}
+              aria-label="Fechar"
+            />
+            <div className="fixed left-1/2 top-1/2 z-[9999] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-futvar-darker border border-futvar-green/30 shadow-xl p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <IconAndroid className="w-7 h-7 text-[#3DDC84]" />
+                Android — Baixar e instalar
+              </h3>
+              <p className="text-sm text-futvar-light mb-4">
+                Baixe o app Fly Games no seu celular Android e instale. Se o sistema pedir, permita &quot;instalação de fontes desconhecidas&quot; para o navegador ou arquivos. Se aparecer o aviso do Play Protect, toque em <strong>Instalar mesmo assim</strong>.
+              </p>
+              <a
+                href="/downloads/flygames.apk"
+                download
+                className="mt-4 w-full inline-flex justify-center py-3 rounded-lg bg-[#3DDC84] text-gray-900 font-semibold hover:opacity-90 transition-opacity"
+              >
+                Baixar e instalar
+              </a>
+              <button
+                type="button"
+                onClick={() => setAndroidModalOpen(false)}
+                className="mt-3 w-full py-2.5 rounded-lg border border-futvar-green/40 text-futvar-light font-medium hover:bg-white/5 transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </>,
+          document.body
+        )}
+
+        {iosModalOpen && typeof document !== 'undefined' && createPortal(
+          <>
+            <button
+              type="button"
+              className="fixed inset-0 z-[9998] bg-black/60 cursor-default"
+              onClick={() => setIosModalOpen(false)}
+              aria-label="Fechar"
+            />
+            <div className="fixed left-1/2 top-1/2 z-[9999] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-futvar-darker border border-futvar-green/30 shadow-xl p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <IconApple className="w-7 h-7 text-white" />
+                iPhone / iPad — Fixar na tela inicial
+              </h3>
+              <p className="text-sm text-futvar-light mb-4">
+                Use o <strong>Safari</strong> para abrir este site. Depois:
+              </p>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-futvar-light mb-6">
+                <li>Toque no ícone <strong>Compartilhar</strong> (□↑) na barra inferior do Safari.</li>
+                <li>Role e escolha <strong>Adicionar à Tela de Início</strong>.</li>
+                <li>Toque em <strong>Adicionar</strong>. O ícone do Fly Games aparecerá na tela inicial.</li>
+              </ol>
+              <button
+                type="button"
+                onClick={() => setIosModalOpen(false)}
+                className="w-full py-3 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light transition-colors"
+              >
+                Entendi
+              </button>
+            </div>
           </>,
           document.body
         )}

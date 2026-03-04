@@ -5,9 +5,10 @@ node_modules
 
 # build
 .next
-out
 dist
 build
+# out/ é usado pelo Capacitor (webDir); out/index.html é versionado
+# Descomente a linha abaixo se quiser parar de versionar o APK (ex.: public/downloads/*.apk)
 
 # env
 .env

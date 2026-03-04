@@ -18,6 +18,12 @@ export const metadata: Metadata = {
   title: 'Fly Games - Futebol de Várzea Filmado com Drones',
   description: 'Assista aos jogos de futebol de várzea filmados com drones. Visão aérea de cada lance, em campo e na replay.',
   icons: { icon: '/uploads/favicon-fly.png' },
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'Fly Games',
+    statusBarStyle: 'default',
+  },
 };
 
 export default function RootLayout({

@@ -13,12 +13,19 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "db:seed-emails": "tsx prisma/seed-emails.ts"
+    "db:seed-emails": "tsx prisma/seed-emails.ts",
+    "cap:sync": "cap sync android",
+    "android:build": "node scripts/build-android-apk.js",
+    "android:copy-apk": "node scripts/copy-apk.js",
+    "android:apk": "npm run android:build && npm run android:copy-apk"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/cli": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
     "@prisma/client": "^5.22.0",
     "@stripe/react-stripe-js": "^2.4.0",
     "@stripe/stripe-js": "^2.4.0",

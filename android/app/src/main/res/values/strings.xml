@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Fly Games</string>
+    <string name="title_activity_main">Fly Games</string>
+    <string name="package_name">app.flygames.portal</string>
+    <string name="custom_url_scheme">app.flygames.portal</string>
+</resources>

@@ -1,0 +1,25 @@
+{
+  "name": "Fly Games - Futebol de Várzea",
+  "short_name": "Fly Games",
+  "description": "Assista aos jogos de futebol de várzea filmados com drones. Visão aérea de cada lance.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f0d",
+  "theme_color": "#22c55e",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/uploads/favicon-fly.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/uploads/favicon-fly.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
