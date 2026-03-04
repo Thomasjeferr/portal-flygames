@@ -7,6 +7,8 @@ node_modules
 .next
 dist
 build
+# ícones gerados pelo capacitor-assets (cópia em public/icons é versionada)
+icons
 # out/ é usado pelo Capacitor (webDir); out/index.html é versionado
 # Descomente a linha abaixo se quiser parar de versionar o APK (ex.: public/downloads/*.apk)
 

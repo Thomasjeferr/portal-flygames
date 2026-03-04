@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   server: {
     // URL do site em produção. O app abre essa URL no WebView.
     // Para testar em dev, defina CAPACITOR_SERVER_URL no .env (ex.: https://seu-dominio.vercel.app)
-    url: process.env.CAPACITOR_SERVER_URL || 'https://portal.futvar.com.br',
+    url: process.env.CAPACITOR_SERVER_URL || 'https://flygames.app',
     cleartext: true,
   },
   android: {

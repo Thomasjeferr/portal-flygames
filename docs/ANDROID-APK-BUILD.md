@@ -13,7 +13,7 @@ O app Android é uma “casca” (WebView) que abre a URL do site em produção.
 
 ## URL que o app abre
 
-No `capacitor.config.ts` o app usa a URL definida em **`CAPACITOR_SERVER_URL`** (variável de ambiente) ou, se não existir, `https://portal.futvar.com.br`.
+No `capacitor.config.ts` o app usa a URL definida em **`CAPACITOR_SERVER_URL`** (variável de ambiente) ou, se não existir, `https://flygames.app`.
 
 Para usar outro domínio (ex.: seu deploy na Vercel):
 
@@ -26,6 +26,9 @@ Para usar outro domínio (ex.: seu deploy na Vercel):
 Na raiz do projeto:
 
 ```bash
+# (Opcional) Atualizar ícone do app com o ícone Fly Games (assets/ ou public/uploads/favicon-fly.png)
+npm run icons:generate
+
 # 1) Sincronizar o projeto web com o Android e gerar o APK (debug)
 npm run android:build
 
@@ -45,6 +48,10 @@ O APK ficará em **`public/downloads/flygames.apk`**. Faça o deploy do site (in
 
 - **Saída do Gradle:** `android/app/build/outputs/apk/debug/app-debug.apk`
 - **Cópia para o site:** `public/downloads/flygames.apk`
+
+## Ícone do app
+
+O ícone que aparece na tela inicial e na instalação é o **ícone Fly Games**. Ele é gerado a partir de **`public/uploads/favicon-fly.png`** (copiado para `assets/`) ou de **`assets/icon-only.png`** (512×512 px mínimo; 1024×1024 recomendado para Android e iOS). Depois de alterar o ícone, rode `npm run icons:generate` e em seguida `npm run android:apk`.
 
 ## Testar no celular
 
