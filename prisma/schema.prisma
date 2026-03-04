@@ -590,6 +590,7 @@ model SiteSettings {
   gaMeasurementId        String?  @map("ga_measurement_id")
   fbPixelId              String?  @map("fb_pixel_id")
   tiktokPixelId          String?  @map("tiktok_pixel_id")
+  siteUnderDevelopment   Boolean  @default(false) @map("site_under_development") // quando true, visitantes sem ?app=1 veem página "Site em desenvolvimento"
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
 }

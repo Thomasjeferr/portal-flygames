@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
+import { useStoreApp } from '@/lib/StoreAppContext';
 import { TeamPicker, TeamDisplay } from '@/components/account/TeamPicker';
 import { NaoEncontrouTimeCTA } from '@/components/account/NaoEncontrouTimeCTA';
 import type { TeamOption } from '@/components/account/TeamPicker';
@@ -72,6 +73,7 @@ function formatPrice(value: number) {
 
 export default function ContaPage() {
   const router = useRouter();
+  const isStoreApp = useStoreApp();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AccountData | null>(null);
@@ -472,7 +474,7 @@ export default function ContaPage() {
                 <p className="text-futvar-light text-sm">
                   Renovação em: {formatDate(subscription.endDate)}
                 </p>
-                {!subscriptionActive && (
+                {!subscriptionActive && !isStoreApp && (
                   <Link
                     href="/planos"
                     className="inline-flex mt-2 px-4 py-2 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
@@ -480,11 +482,13 @@ export default function ContaPage() {
                     Ver planos
                   </Link>
                 )}
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <Link href="/planos" className="text-sm text-futvar-green hover:underline">
-                    Ver planos
-                  </Link>
-                </div>
+                {!isStoreApp && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <Link href="/planos" className="text-sm text-futvar-green hover:underline">
+                      Ver planos
+                    </Link>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-white/20 bg-white/5 p-6 text-center">
@@ -510,24 +514,28 @@ export default function ContaPage() {
                             <li className="text-futvar-light">+ {paidWithGame.length - 5} outro(s) abaixo</li>
                           )}
                         </ul>
-                        <Link
-                          href="/planos"
-                          className="inline-flex px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
-                        >
-                          Ver planos
-                        </Link>
+                        {!isStoreApp && (
+                          <Link
+                            href="/planos"
+                            className="inline-flex px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
+                          >
+                            Ver planos
+                          </Link>
+                        )}
                       </>
                     );
                   }
                   return (
                     <>
                       <p className="text-futvar-light mb-4">Você ainda não patrocina nenhum time.</p>
-                      <Link
-                        href="/planos"
-                        className="inline-flex px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
-                      >
-                        Ver planos
-                      </Link>
+                      {!isStoreApp && (
+                        <Link
+                          href="/planos"
+                          className="inline-flex px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
+                        >
+                          Ver planos
+                        </Link>
+                      )}
                     </>
                   );
                 })()}
@@ -577,12 +585,14 @@ export default function ContaPage() {
             {purchases.length === 0 ? (
               <div className="rounded-xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
                 <p className="text-futvar-light mb-4">Nenhuma compra ainda.</p>
-                <Link
-                  href="/planos"
-                  className="inline-flex px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
-                >
-                  Ver planos
-                </Link>
+                {!isStoreApp && (
+                  <Link
+                    href="/planos"
+                    className="inline-flex px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
+                  >
+                    Ver planos
+                  </Link>
+                )}
               </div>
             ) : (
               <ul className="space-y-4">
@@ -650,7 +660,7 @@ export default function ContaPage() {
                 ))}
               </ul>
             )}
-            {purchases.length > 0 && (
+            {purchases.length > 0 && !isStoreApp && (
               <Link href="/planos" className="inline-block mt-4 text-futvar-green hover:underline text-sm">
                 Ver planos
               </Link>
@@ -674,7 +684,9 @@ export default function ContaPage() {
         )}
 
         <nav className="mt-8 flex flex-wrap justify-center gap-4 text-sm">
-          <Link href="/planos" className="text-futvar-green hover:underline">Planos</Link>
+          {!isStoreApp && (
+            <Link href="/planos" className="text-futvar-green hover:underline">Planos</Link>
+          )}
           <Link href="/" className="text-futvar-light hover:underline">Início</Link>
           {data?.isTeamManager && (
             <Link href="/painel-time" className="text-futvar-green hover:underline">Área do time</Link>

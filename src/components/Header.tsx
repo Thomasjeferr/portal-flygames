@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { formatLiveDatetimeDisplay } from '@/lib/liveTimezone';
+import { useStoreApp } from '@/lib/StoreAppContext';
 
 function IconAndroid({ className }: { className?: string }) {
   return (
@@ -63,6 +64,7 @@ export function Header() {
   const [androidModalOpen, setAndroidModalOpen] = useState(false);
   const [iosModalOpen, setIosModalOpen] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const isStoreApp = useStoreApp();
 
   const isAdmin = pathname.startsWith('/admin');
   const isAuthPage = ['/entrar', '/cadastro', '/recuperar-senha', '/admin/entrar'].some((p) => pathname.startsWith(p));
@@ -350,6 +352,7 @@ export function Header() {
                     >
                       Minha conta
                     </Link>
+                    {!isStoreApp && (
                     <Link
                       href="/planos"
                       className="block px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
@@ -357,6 +360,7 @@ export function Header() {
                     >
                       Planos
                     </Link>
+                    )}
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-sm text-futvar-light hover:bg-white/5"
@@ -374,12 +378,14 @@ export function Header() {
                 >
                   Entrar
                 </Link>
+                {!isStoreApp && (
                 <Link
                   href="/cadastro"
                   className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg bg-futvar-green text-futvar-darker text-sm font-bold hover:bg-futvar-green-light transition-colors whitespace-nowrap"
                 >
                   Cadastrar
                 </Link>
+                )}
               </>
             )}
             </nav>
@@ -510,10 +516,12 @@ export function Header() {
                   <Link href="/conta" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
                     Minha conta
                   </Link>
+                  {!isStoreApp && (
                   <Link href="/planos" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
                     Planos
                   </Link>
-                  {!isStandalone && (
+                  )}
+                  {!isStandalone && !isStoreApp && (
                     <>
                       <button
                         type="button"
@@ -545,7 +553,7 @@ export function Header() {
                 </>
               ) : (
                 <>
-                  {!isStandalone && (
+                  {!isStandalone && !isStoreApp && (
                     <>
                       <button
                         type="button"
@@ -568,9 +576,11 @@ export function Header() {
                   <Link href="/entrar" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm text-futvar-light hover:bg-white/5">
                     Entrar
                   </Link>
+                  {!isStoreApp && (
                   <Link href="/cadastro" onClick={() => setMobileMenuOpen(false)} className="px-4 py-3 rounded-lg text-sm font-bold text-futvar-green hover:bg-futvar-green/10">
                     Cadastrar
                   </Link>
+                  )}
                 </>
               )}
             </nav>

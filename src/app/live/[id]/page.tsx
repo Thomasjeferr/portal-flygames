@@ -8,6 +8,7 @@ import { getLiveHlsUrl, getReplayHlsUrl } from '@/lib/cloudflare-live';
 import { StreamCustomPlayer } from '@/components/StreamCustomPlayer';
 import { LiveScheduledToLivePlayer } from '@/components/LiveScheduledToLivePlayer';
 import { MatchPlayerPage } from '@/components/match/MatchPlayerPage';
+import { StoreAppNoAccessMessage } from '@/components/StoreAppNoAccessMessage';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -137,6 +138,47 @@ export default async function LivePage({ params }: Props) {
                     Assinatura ou compra necessária para assistir a esta live
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-3">
+                    <StoreAppNoAccessMessage message="Conteúdo disponível para assinantes.">
+                      {session ? (
+                        <Link
+                          href="/planos"
+                          className="inline-flex items-center justify-center rounded-full bg-[#19d37a] px-6 py-3 text-sm font-bold text-[#02130b] shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition-colors"
+                        >
+                          Ver planos e patrocinar
+                        </Link>
+                      ) : (
+                        <Link
+                          href={`/entrar?redirect=/live/${live.id}`}
+                          className="inline-flex items-center justify-center rounded-full bg-[#19d37a] px-6 py-3 text-sm font-bold text-[#02130b] shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition-colors"
+                        >
+                          Entrar ou cadastrar
+                        </Link>
+                      )}
+                      {live.allowOneTimePurchase && (
+                        <Link
+                          href="/planos"
+                          className="inline-flex items-center justify-center rounded-full border-2 border-amber-400/80 px-6 py-3 text-sm font-bold text-amber-300 hover:bg-amber-400/10 transition-colors"
+                        >
+                          Comprar acesso avulso
+                        </Link>
+                      )}
+                    </StoreAppNoAccessMessage>
+                  </div>
+                  {live.homeTeam && live.awayTeam && (
+                    <h3 className="mt-6 text-center text-2xl font-bold text-emerald-50/95">
+                      {live.homeTeam.name}
+                      <span className="mx-2 text-emerald-400/80">•</span>
+                      {live.awayTeam.name}
+                    </h3>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
+                <h1 className="text-center text-xl font-bold text-white sm:text-2xl mb-2">{live.title}</h1>
+                <StoreAppNoAccessMessage message="Conteúdo disponível para assinantes.">
+                  <p className="text-emerald-100/90 mb-6">Faça login e assine ou compre acesso para assistir.</p>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
                     {session ? (
                       <Link
                         href="/planos"
@@ -152,45 +194,8 @@ export default async function LivePage({ params }: Props) {
                         Entrar ou cadastrar
                       </Link>
                     )}
-                    {live.allowOneTimePurchase && (
-                      <Link
-                        href="/planos"
-                        className="inline-flex items-center justify-center rounded-full border-2 border-amber-400/80 px-6 py-3 text-sm font-bold text-amber-300 hover:bg-amber-400/10 transition-colors"
-                      >
-                        Comprar acesso avulso
-                      </Link>
-                    )}
                   </div>
-                  {live.homeTeam && live.awayTeam && (
-                    <h3 className="mt-6 text-center text-2xl font-bold text-emerald-50/95">
-                      {live.homeTeam.name}
-                      <span className="mx-2 text-emerald-400/80">•</span>
-                      {live.awayTeam.name}
-                    </h3>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
-                <h1 className="text-center text-xl font-bold text-white sm:text-2xl mb-2">{live.title}</h1>
-                <p className="text-emerald-100/90 mb-6">Faça login e assine ou compre acesso para assistir.</p>
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  {session ? (
-                    <Link
-                      href="/planos"
-                      className="inline-flex items-center justify-center rounded-full bg-[#19d37a] px-6 py-3 text-sm font-bold text-[#02130b] shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition-colors"
-                    >
-                      Ver planos e patrocinar
-                    </Link>
-                  ) : (
-                    <Link
-                      href={`/entrar?redirect=/live/${live.id}`}
-                      className="inline-flex items-center justify-center rounded-full bg-[#19d37a] px-6 py-3 text-sm font-bold text-[#02130b] shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition-colors"
-                    >
-                      Entrar ou cadastrar
-                    </Link>
-                  )}
-                </div>
+                </StoreAppNoAccessMessage>
                 {live.homeTeam && live.awayTeam && (
                   <h3 className="mt-6 text-center text-2xl font-bold text-emerald-50/95">
                     {live.homeTeam.name}

@@ -20,6 +20,7 @@ export default function AdminSettingsPage() {
     gaMeasurementId: '',
     fbPixelId: '',
     tiktokPixelId: '',
+    siteUnderDevelopment: false,
   });
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function AdminSettingsPage() {
           gaMeasurementId: data.gaMeasurementId ?? '',
           fbPixelId: data.fbPixelId ?? '',
           tiktokPixelId: data.tiktokPixelId ?? '',
+          siteUnderDevelopment: data.siteUnderDevelopment ?? false,
         });
       })
       .catch(() => setError('Erro ao carregar'))
@@ -57,11 +59,12 @@ export default function AdminSettingsPage() {
       const res = await fetch('/api/admin/site-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(form),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || 'Erro ao salvar');
+        setError(data.error || `Erro ao salvar${res.status === 403 ? ' (faça login de novo)' : ''}`);
         return;
       }
       setSuccess(true);
@@ -83,6 +86,23 @@ export default function AdminSettingsPage() {
       </div>
       <h1 className="text-2xl font-bold text-white mb-6">Configurações do site</h1>
       <form onSubmit={handleSubmit} className="space-y-5 bg-netflix-dark border border-white/10 rounded-lg p-6">
+        <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+          <div>
+            <p className="font-medium text-white">Página &quot;Em manutenção&quot;</p>
+            <p className="text-sm text-netflix-light mt-0.5">
+              Quando ligado, quem acessar o site pelo navegador (sem ser pelo app com ?app=1) vê a página de manutenção (&quot;Estamos preparando uma nova experiência...&quot;). Use para revisão das lojas.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.siteUnderDevelopment}
+              onChange={(e) => setForm((f) => ({ ...f, siteUnderDevelopment: e.target.checked }))}
+              className="w-5 h-5 rounded border-white/30 bg-netflix-gray text-netflix-red focus:ring-netflix-red"
+            />
+            <span className="text-sm text-white">Ligado</span>
+          </label>
+        </div>
         {error && (
           <p className="text-netflix-red text-sm bg-red-500/10 border border-red-500/30 rounded px-3 py-2">
             {error}

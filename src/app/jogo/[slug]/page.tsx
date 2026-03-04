@@ -6,6 +6,7 @@ import { GamePlayTracker } from '@/components/GamePlayTracker';
 import { BuyGameButton } from '@/components/BuyGameButton';
 import { GameCard } from '@/components/GameCard';
 import { MatchPlayerPage } from '@/components/match/MatchPlayerPage';
+import { StoreAppNoAccessMessage } from '@/components/StoreAppNoAccessMessage';
 import { getSession } from '@/lib/auth';
 import { canAccessGameBySlug } from '@/lib/access';
 import { prisma } from '@/lib/db';
@@ -128,10 +129,72 @@ export default async function GamePage({ params }: Props) {
                 <p className="mt-2 text-center text-sm text-emerald-100/90">
                   {canWatch
                     ? 'O vídeo deste jogo será publicado em breve. Quando estiver disponível, você poderá assistir aqui.'
-                    : 'O vídeo deste jogo será publicado em breve. Patrocine o time ou compre o acesso para assistir quando estiver disponível.'}
+                    : 'O vídeo deste jogo será publicado em breve.'}
                 </p>
                 {!canWatch && (
                   <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                    <StoreAppNoAccessMessage message="Conteúdo disponível para assinantes.">
+                      {session && isTeamManager ? (
+                        <p className="text-center text-sm text-emerald-50/90 max-w-md">
+                          Esta conta é de responsável pelo time e não pode comprar acesso.
+                          Para assinar ou comprar jogos, use uma conta de cliente.{' '}
+                          <Link href="/cadastro" className="text-emerald-400 hover:underline font-semibold">
+                            Cadastro
+                          </Link>
+                        </p>
+                      ) : (
+                        <>
+                          {session ? (
+                            <Link
+                              href="/planos"
+                              className="inline-flex items-center justify-center rounded-full bg-[#19d37a] px-6 py-3 text-sm font-bold text-[#02130b] shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition-colors"
+                            >
+                              Ver planos e patrocinar
+                            </Link>
+                          ) : (
+                            <Link
+                              href="/entrar?redirect=/planos"
+                              className="inline-flex items-center justify-center rounded-full bg-[#19d37a] px-6 py-3 text-sm font-bold text-[#02130b] shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition-colors"
+                            >
+                              Entrar ou cadastrar para patrocinar
+                            </Link>
+                          )}
+                          <BuyGameButton
+                            gameId={game.id}
+                            className="inline-flex items-center justify-center rounded-full border-2 border-amber-400/80 px-6 py-3 text-sm font-bold text-amber-300 hover:bg-amber-400/10 transition-colors"
+                          />
+                        </>
+                      )}
+                    </StoreAppNoAccessMessage>
+                  </div>
+                )}
+              </div>
+            </div>
+          </MatchPlayerPage>
+        ) : !canWatch ? (
+          /* Tem vídeo mas usuário sem acesso: layout bonito + botões para patrocinar/comprar */
+          <MatchPlayerPage {...matchPlayerCommonProps}>
+            <div className="relative w-full overflow-hidden rounded-2xl border border-emerald-400/25 bg-black shadow-[0_18px_60px_rgba(0,0,0,0.9)] shadow-emerald-500/10 aspect-video">
+              {game.thumbnailUrl ? (
+                <Image
+                  src={game.thumbnailUrl.startsWith('http') ? game.thumbnailUrl : game.thumbnailUrl}
+                  alt={game.title}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-[#0a1f1a] to-[#07130f]" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-4 sm:px-8">
+                <p className="text-center text-lg font-semibold text-white sm:text-xl md:text-2xl">
+                  Assista ao jogo completo
+                </p>
+                <p className="mt-2 text-center text-sm text-emerald-100/90">
+                  Patrocine o time ou compre o acesso para assistir
+                </p>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <StoreAppNoAccessMessage message="Conteúdo disponível para assinantes.">
                     {session && isTeamManager ? (
                       <p className="text-center text-sm text-emerald-50/90 max-w-md">
                         Esta conta é de responsável pelo time e não pode comprar acesso.
@@ -163,65 +226,7 @@ export default async function GamePage({ params }: Props) {
                         />
                       </>
                     )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </MatchPlayerPage>
-        ) : !canWatch ? (
-          /* Tem vídeo mas usuário sem acesso: layout bonito + botões para patrocinar/comprar */
-          <MatchPlayerPage {...matchPlayerCommonProps}>
-            <div className="relative w-full overflow-hidden rounded-2xl border border-emerald-400/25 bg-black shadow-[0_18px_60px_rgba(0,0,0,0.9)] shadow-emerald-500/10 aspect-video">
-              {game.thumbnailUrl ? (
-                <Image
-                  src={game.thumbnailUrl.startsWith('http') ? game.thumbnailUrl : game.thumbnailUrl}
-                  alt={game.title}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-[#0a1f1a] to-[#07130f]" />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-4 sm:px-8">
-                <p className="text-center text-lg font-semibold text-white sm:text-xl md:text-2xl">
-                  Assista ao jogo completo
-                </p>
-                <p className="mt-2 text-center text-sm text-emerald-100/90">
-                  Patrocine o time ou compre o acesso para assistir
-                </p>
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                  {session && isTeamManager ? (
-                    <p className="text-center text-sm text-emerald-50/90 max-w-md">
-                      Esta conta é de responsável pelo time e não pode comprar acesso.
-                      Para assinar ou comprar jogos, use uma conta de cliente.{' '}
-                      <Link href="/cadastro" className="text-emerald-400 hover:underline font-semibold">
-                        Cadastro
-                      </Link>
-                    </p>
-                  ) : (
-                    <>
-                      {session ? (
-                        <Link
-                          href="/planos"
-                          className="inline-flex items-center justify-center rounded-full bg-[#19d37a] px-6 py-3 text-sm font-bold text-[#02130b] shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition-colors"
-                        >
-                          Ver planos e patrocinar
-                        </Link>
-                      ) : (
-                        <Link
-                          href="/entrar?redirect=/planos"
-                          className="inline-flex items-center justify-center rounded-full bg-[#19d37a] px-6 py-3 text-sm font-bold text-[#02130b] shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition-colors"
-                        >
-                          Entrar ou cadastrar para patrocinar
-                        </Link>
-                      )}
-                      <BuyGameButton
-                        gameId={game.id}
-                        className="inline-flex items-center justify-center rounded-full border-2 border-amber-400/80 px-6 py-3 text-sm font-bold text-amber-300 hover:bg-amber-400/10 transition-colors"
-                      />
-                    </>
-                  )}
+                  </StoreAppNoAccessMessage>
                 </div>
               </div>
             </div>

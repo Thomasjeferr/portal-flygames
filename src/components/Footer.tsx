@@ -3,6 +3,8 @@ import Image from 'next/image';
 import { SiPix, SiVisa, SiMastercard } from 'react-icons/si';
 import { prisma } from '@/lib/db';
 import { getCompactSponsors } from '@/services/sponsorsService';
+import { FooterNav } from '@/components/FooterNav';
+import { FooterPatrocinarLink } from '@/components/FooterPatrocinarLink';
 
 async function getSiteSettings() {
   try {
@@ -112,49 +114,24 @@ export async function Footer() {
             </div>
           </div>
 
-          {/* Coluna 2: Navegação */}
-          <div>
-            <h3 className="text-lg font-bold text-white mb-3">Navegação</h3>
-            <nav className="flex flex-col gap-2 text-sm text-futvar-light">
-              <Link href="/" className="hover:text-futvar-green transition-colors">
-                Início
-              </Link>
-              <Link href="/#jogos" className="hover:text-futvar-green transition-colors">
-                Jogos
-              </Link>
-              <Link href="/#pre-estreia" className="hover:text-futvar-green transition-colors">
-                Pré-estreia
-              </Link>
-              <Link href="/planos" className="hover:text-futvar-green transition-colors">
-                Planos
-              </Link>
-              <Link href="/patrocinar" className="hover:text-futvar-green transition-colors">
-                Seja Patrocinador
-              </Link>
-              <Link href="/parceiros" className="hover:text-futvar-green transition-colors">
-                Programa de parceiros
-              </Link>
-              <Link href="/sobre-nos" className="hover:text-futvar-green transition-colors">
-                Sobre nós
-              </Link>
-              <Link href="/entrar" className="hover:text-futvar-green transition-colors">
-                Entrar
-              </Link>
-              <Link href="/conta" className="hover:text-futvar-green transition-colors">
-                Minha conta
-              </Link>
-            </nav>
-          </div>
+          {/* Coluna 2: Navegação (Planos/Patrocinar escondidos no app lojas) */}
+          <FooterNav />
 
-          {/* Coluna 3: Legal */}
+          {/* Coluna 3: Legal e estrutura para validação (Home, Sobre o projeto, Política, Contato) */}
           <div>
             <h3 className="text-lg font-bold text-white mb-3">Legal</h3>
             <nav className="flex flex-col gap-2 text-sm text-futvar-light">
-              <Link href="/termos-de-uso" className="hover:text-futvar-green transition-colors">
-                Termos de uso
+              <Link href="/sobre-o-projeto" className="hover:text-futvar-green transition-colors">
+                Sobre o projeto
               </Link>
               <Link href="/politica-de-privacidade" className="hover:text-futvar-green transition-colors">
                 Política de privacidade
+              </Link>
+              <Link href="/contato" className="hover:text-futvar-green transition-colors">
+                Contato
+              </Link>
+              <Link href="/termos-de-uso" className="hover:text-futvar-green transition-colors">
+                Termos de uso
               </Link>
               <Link href="/contrato-direitos-imagem" className="hover:text-futvar-green transition-colors">
                 Direitos de imagem
@@ -192,9 +169,7 @@ export async function Footer() {
         <div className="mt-10 pt-8 border-t border-white/5">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
             <p className="text-xs text-futvar-light/70 tracking-wider">Patrocinadores</p>
-            <Link href="/patrocinar" className="text-sm text-futvar-green hover:text-futvar-green-light font-medium">
-              Seja um Patrocinador →
-            </Link>
+            <FooterPatrocinarLink />
           </div>
           {sponsors.length > 0 && (
             <div className="flex flex-wrap items-center justify-center gap-6">

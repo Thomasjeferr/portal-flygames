@@ -1,10 +1,15 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import { cookies } from 'next/headers';
 import { Bebas_Neue } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { FooterLegalOnly } from '@/components/FooterLegalOnly';
+import { MaintenanceLayoutShell } from '@/components/MaintenanceLayoutShell';
 import { VisitTracker } from '@/components/VisitTracker';
 import { AnalyticsScripts } from '@/components/AnalyticsScripts';
+import { StoreAppProvider } from '@/lib/StoreAppContext';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,19 +31,31 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const initialMaintenanceView = cookieStore.get('x-maintenance-view')?.value === '1';
+
   return (
     <html lang="pt-BR" className={bebas.variable}>
       <body className="font-sans antialiased">
         <VisitTracker />
         <AnalyticsScripts />
-        <Header />
-        <main className="min-h-screen">{children}</main>
-        <Footer />
+        <Suspense fallback={null}>
+          <StoreAppProvider>
+            <MaintenanceLayoutShell
+              header={<Header />}
+              footer={<Footer />}
+              footerLegal={<FooterLegalOnly />}
+              initialMaintenanceView={initialMaintenanceView}
+            >
+              {children}
+            </MaintenanceLayoutShell>
+          </StoreAppProvider>
+        </Suspense>
       </body>
     </html>
   );

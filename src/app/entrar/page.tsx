@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
+import { useStoreApp } from '@/lib/StoreAppContext';
 
 function safeRedirect(path: string | null): string {
   if (!path || typeof path !== 'string') return '/';
@@ -13,6 +14,7 @@ function safeRedirect(path: string | null): string {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isStoreApp = useStoreApp();
   const redirectTo = safeRedirect(searchParams.get('redirect'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -114,12 +116,14 @@ function LoginForm() {
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
+          {!isStoreApp && (
           <p className="mt-6 text-center text-futvar-light text-sm">
             Não tem conta?{' '}
             <Link href={redirectTo === '/' ? '/cadastro' : `/cadastro?redirect=${encodeURIComponent(redirectTo)}`} className="text-white hover:underline">
               Cadastre-se
             </Link>
           </p>
+          )}
           <p className="mt-3 text-center text-futvar-light text-xs">
             <Link href="/" className="hover:text-white">
               ← Voltar para a página inicial
