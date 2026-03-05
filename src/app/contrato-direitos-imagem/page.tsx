@@ -24,7 +24,7 @@ export default function ContratoDireitosImagemPage() {
           <section>
             <h2 className="text-lg font-semibold text-white">2. Aceitação</h2>
             <p>
-              Ao clicar em &quot;Li e aceito&quot; no fluxo de contratação da pré-estreia, o responsável pelo clube
+              Ao clicar em &quot;Li e aceito&quot; no fluxo de adesão à pré-estreia, o responsável pelo clube
               declara, em nome do clube que representa, ter lido, compreendido e concordado com todos os termos
               deste contrato, autorizando o uso de imagem na forma aqui prevista.
             </p>
@@ -32,7 +32,7 @@ export default function ContratoDireitosImagemPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-white">3. Alcance da Autorização</h2>
-            <p>A autorização concedida compreende, a título gratuito ou oneroso conforme acordado entre as partes:</p>
+            <p>A autorização concedida compreende:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>
                 captação das imagens das partidas por meio de drones, câmeras em campo e outros equipamentos
@@ -66,7 +66,7 @@ export default function ContratoDireitosImagemPage() {
             <h2 className="text-lg font-semibold text-white">5. Prazo e Revogação</h2>
             <p>
               A autorização concedida é válida por prazo indeterminado, limitada ao contexto do projeto Pré-estreia
-              Clubes e às partidas contratadas. A eventual revogação da autorização por parte do clube não terá
+              Clubes e às partidas do programa. A eventual revogação da autorização por parte do clube não terá
               efeitos retroativos sobre transmissões, replays, conteúdos promocionais ou materiais já produzidos e
               divulgados até a data da solicitação.
             </p>

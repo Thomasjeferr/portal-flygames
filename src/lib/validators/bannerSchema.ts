@@ -48,8 +48,21 @@ const baseSchema = {
   preSaleId: z.string().cuid().nullable().optional(),
   liveId: z.string().cuid().nullable().optional(),
   showOnlyWhenReady: z.boolean().optional().default(true),
-  startAt: z.union([z.string().datetime(), z.literal('')]).nullable().optional(),
-  endAt: z.union([z.string().datetime(), z.literal('')]).nullable().optional(),
+  // datetime-local envia "YYYY-MM-DDTHH:mm" (sem Z); aceitar vazio ou data válida
+  startAt: z
+    .union([
+      z.string().refine((v) => v === '' || !isNaN(Date.parse(v)), { message: 'Invalid datetime' }),
+      z.literal(''),
+    ])
+    .nullable()
+    .optional(),
+  endAt: z
+    .union([
+      z.string().refine((v) => v === '' || !isNaN(Date.parse(v)), { message: 'Invalid datetime' }),
+      z.literal(''),
+    ])
+    .nullable()
+    .optional(),
 };
 
 export const createHomeBannerSchema = z

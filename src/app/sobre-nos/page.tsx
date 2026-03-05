@@ -11,7 +11,7 @@ export default function SobreNosPage() {
         <p className="text-futvar-light mb-8 leading-relaxed">
           O Fly Games nasceu de uma demanda simples e ignorada por muito tempo: assistir e registrar o futebol de várzea com
           qualidade, como ela merece. A gente viu clubes lotando campos, atletas se destacando e famílias querendo
-          acompanhar — mas sem transmissão estável, sem replay organizado e sem uma vitrine real para patrocinadores.
+          acompanhar — mas sem transmissão estável, sem replay organizado e sem uma vitrine real para os clubes.
         </p>
         <p className="text-futvar-light mb-10 leading-relaxed">
           Nosso objetivo é transformar cada jogo em conteúdo: ao vivo, replay e melhores momentos, com uma experiência
@@ -26,14 +26,14 @@ export default function SobreNosPage() {
               Jogos organizados por campeonato/categoria,
               {SHOW_CONTEUDO_PAGAMENTOS_PATROCINIOS ? ' com acesso por assinatura ou compra' : ' com acesso aos conteúdos'}
             </li>
-            <li>Estreias patrocinadas por clubes, com liberação para a equipe</li>
+            <li>Pré-estreias com participação dos clubes, com liberação para a equipe</li>
           </ul>
         </section>
 
         <section className="mb-10">
           <h2 className="text-xl font-bold text-white mb-2">Missão</h2>
           <p className="text-futvar-light leading-relaxed">
-            Levar o futebol de várzea para mais gente, com qualidade, organização e monetização justa.
+            Levar o futebol de várzea para mais gente, com qualidade, organização e valorização do esporte.
           </p>
         </section>
 

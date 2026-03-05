@@ -1,0 +1,13 @@
+DESCRIÇÃO CURTA (até 80 caracteres) — Play Store / App Store
+Use exatamente um dos textos abaixo no campo "Descrição curta" / "Subtitle".
+
+Opção 1 (79 caracteres):
+Assista futebol de várzea ao vivo e em replay. Jogos, destaques e sua conta em um só lugar.
+
+Opção 2 (76 caracteres):
+Futebol de várzea ao vivo e em replay. Acompanhe jogos, destaques e seu time do coração.
+
+Opção 3 (72 caracteres):
+Assista jogos de futebol de várzea ao vivo e em replay. Destaques e sua conta.
+
+Regras atendidas: sem ranking, preço, "baixe agora" ou CTAs; resume a função principal.

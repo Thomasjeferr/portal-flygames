@@ -54,7 +54,7 @@ export default function PoliticaPrivacidadePage() {
               {SHOW_CONTEUDO_PAGAMENTOS_PATROCINIOS && (
                 <li>processar pagamentos, assinaturas e compras avulsas;</li>
               )}
-              <li>liberar acesso a jogos, lives e demais conteúdos contratados;</li>
+              <li>liberar acesso a jogos, lives e demais conteúdos a que você tem acesso;</li>
               <li>enviar comunicações transacionais (confirmação de cadastro, reset de senha, recibos, etc.);</li>
               <li>cumprir obrigações legais e regulatórias;</li>
               <li>melhorar a experiência de uso, segurança e desempenho da plataforma;</li>
