@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { StreamCustomPlayer } from '@/components/StreamCustomPlayer';
 
 const POLL_INTERVAL_MS = 4000;
@@ -25,6 +26,7 @@ export function LiveScheduledToLivePlayer({
   title,
   thumbnailUrl,
 }: LiveScheduledToLivePlayerProps) {
+  const router = useRouter();
   const startAtDate = typeof startAt === 'string' ? new Date(startAt) : startAt;
   const [phase, setPhase] = useState<Phase>('counting');
   const [diff, setDiff] = useState<number | null>(null);
@@ -70,6 +72,8 @@ export function LiveScheduledToLivePlayer({
             clearInterval(pollRef.current);
             pollRef.current = null;
           }
+          // Atualiza a página no servidor para o badge "Agendada" mudar para "Ao vivo"
+          router.refresh();
         }
       } catch {
         // continua polling
@@ -82,7 +86,7 @@ export function LiveScheduledToLivePlayer({
       if (pollRef.current) clearInterval(pollRef.current);
       pollRef.current = null;
     };
-  }, [phase, liveId]);
+  }, [phase, liveId, router]);
 
   // Fase: playing
   if (phase === 'playing' && hlsUrl) {
