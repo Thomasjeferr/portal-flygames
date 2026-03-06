@@ -145,14 +145,25 @@ model TeamManager {
 
 // Solicitações de cadastro de time (torcedor não encontrou o time e pediu para o portal/responsável)
 model TeamRequest {
-  id        String   @id @default(cuid())
-  teamName  String?  @map("team_name")
-  userId    String?  @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
+  id         String              @id @default(cuid())
+  teamName   String              @map("team_name")
+  city       String?             @map("city")
+  phone      String?             @map("phone")
+  status     TeamRequestStatus   @default(PENDING)
+  userId     String              @map("user_id")
+  resolvedAt DateTime?           @map("resolved_at")
+  createdAt  DateTime            @default(now()) @map("created_at")
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("team_requests")
+}
+
+enum TeamRequestStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  IGNORED
 }
 
 // Elenco / membros do time (jogadores, comissão técnica, staff)

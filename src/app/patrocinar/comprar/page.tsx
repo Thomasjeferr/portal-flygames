@@ -273,7 +273,7 @@ function PatrocinarComprarContent() {
                 onSelect={(t) => setForm((f) => ({ ...f, teamId: t?.id ?? '' }))}
               />
               <p className="mt-2">
-                <NaoEncontrouTimeCTA />
+                <NaoEncontrouTimeCTA isLoggedIn={true} />
               </p>
             </div>
             <div>

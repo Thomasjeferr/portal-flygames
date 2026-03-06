@@ -481,7 +481,7 @@ function CheckoutContent() {
               onSelect={(t) => setSelectedTeamId(t?.id ?? null)}
             />
             <p className="mt-2">
-              <NaoEncontrouTimeCTA />
+              <NaoEncontrouTimeCTA isLoggedIn={true} />
             </p>
           </div>
 

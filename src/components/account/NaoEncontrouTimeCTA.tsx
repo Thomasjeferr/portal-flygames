@@ -1,14 +1,21 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Link from 'next/link';
 
 const PARA_TIMES_PATH = '/para-times';
 const WHATSAPP_MESSAGE = `Olá! Gostaria que nosso time fosse cadastrado no Portal Futvar. Aqui o link para o responsável cadastrar:`;
 
-export function NaoEncontrouTimeCTA() {
+interface NaoEncontrouTimeCTAProps {
+  isLoggedIn?: boolean;
+}
+
+export function NaoEncontrouTimeCTA({ isLoggedIn = false }: NaoEncontrouTimeCTAProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [requestTeamName, setRequestTeamName] = useState('');
+  const [requestCity, setRequestCity] = useState('');
+  const [requestPhone, setRequestPhone] = useState('');
   const [requestSending, setRequestSending] = useState(false);
   const [requestDone, setRequestDone] = useState(false);
   const [requestError, setRequestError] = useState('');
@@ -33,6 +40,10 @@ export function NaoEncontrouTimeCTA() {
   }, [fullUrl]);
 
   const handleSolicitar = useCallback(async () => {
+    if (!requestTeamName.trim()) {
+      setRequestError('Informe o nome do time.');
+      return;
+    }
     setRequestError('');
     setRequestSending(true);
     try {
@@ -41,13 +52,17 @@ export function NaoEncontrouTimeCTA() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          teamName: requestTeamName.trim() || undefined,
+          teamName: requestTeamName.trim(),
+          city: requestCity.trim() || undefined,
+          phone: requestPhone.trim() || undefined,
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
         setRequestDone(true);
         setRequestTeamName('');
+        setRequestCity('');
+        setRequestPhone('');
       } else {
         setRequestError(data.error || 'Erro ao enviar. Tente de novo.');
       }
@@ -56,7 +71,7 @@ export function NaoEncontrouTimeCTA() {
     } finally {
       setRequestSending(false);
     }
-  }, [requestTeamName]);
+  }, [requestTeamName, requestCity, requestPhone]);
 
   return (
     <>
@@ -77,7 +92,7 @@ export function NaoEncontrouTimeCTA() {
           aria-labelledby="modal-title"
         >
           <div
-            className="bg-futvar-dark border border-futvar-green/30 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4"
+            className="bg-futvar-dark border border-futvar-green/30 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="modal-title" className="text-lg font-semibold text-white">
@@ -104,25 +119,73 @@ export function NaoEncontrouTimeCTA() {
               </button>
             </div>
 
-            <div className="pt-3 border-t border-white/10 space-y-2">
+            <div className="pt-3 border-t border-white/10 space-y-3">
               <p className="text-futvar-light text-xs font-medium">Solicitar ao portal</p>
-              {requestDone ? (
-                <p className="text-futvar-green text-sm">Solicitação registrada. Obrigado!</p>
+              
+              {!isLoggedIn ? (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 text-center">
+                  <p className="text-amber-200 text-sm mb-3">
+                    Faça login para solicitar o cadastro do seu time.
+                  </p>
+                  <Link
+                    href="/entrar"
+                    className="inline-block px-4 py-2 rounded-lg bg-futvar-green text-futvar-darker text-sm font-medium hover:bg-futvar-green/90"
+                    onClick={() => setOpen(false)}
+                  >
+                    Fazer login
+                  </Link>
+                </div>
+              ) : requestDone ? (
+                <div className="bg-futvar-green/10 border border-futvar-green/30 rounded-lg p-4 text-center">
+                  <p className="text-futvar-green text-sm font-medium">Solicitação registrada!</p>
+                  <p className="text-futvar-light text-xs mt-1">
+                    Você receberá um e-mail quando o time for cadastrado.
+                  </p>
+                </div>
               ) : (
                 <>
-                  <input
-                    type="text"
-                    value={requestTeamName}
-                    onChange={(e) => setRequestTeamName(e.target.value)}
-                    placeholder="Nome do time (opcional)"
-                    className="w-full px-3 py-2 rounded-lg bg-futvar-darker border border-white/20 text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-futvar-green"
-                  />
+                  <div>
+                    <label className="block text-white/70 text-xs mb-1">
+                      Nome do time <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={requestTeamName}
+                      onChange={(e) => setRequestTeamName(e.target.value)}
+                      placeholder="Ex: Esporte Clube Exemplo"
+                      className="w-full px-3 py-2 rounded-lg bg-futvar-darker border border-white/20 text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-futvar-green"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white/70 text-xs mb-1">
+                      Cidade / Estado (opcional)
+                    </label>
+                    <input
+                      type="text"
+                      value={requestCity}
+                      onChange={(e) => setRequestCity(e.target.value)}
+                      placeholder="Ex: Porto Alegre - RS"
+                      className="w-full px-3 py-2 rounded-lg bg-futvar-darker border border-white/20 text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-futvar-green"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white/70 text-xs mb-1">
+                      WhatsApp / Telefone (opcional)
+                    </label>
+                    <input
+                      type="text"
+                      value={requestPhone}
+                      onChange={(e) => setRequestPhone(e.target.value)}
+                      placeholder="Ex: (51) 99999-9999"
+                      className="w-full px-3 py-2 rounded-lg bg-futvar-darker border border-white/20 text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-futvar-green"
+                    />
+                  </div>
                   {requestError && <p className="text-red-400 text-xs">{requestError}</p>}
                   <button
                     type="button"
                     onClick={handleSolicitar}
-                    disabled={requestSending}
-                    className="w-full py-2 rounded-lg bg-futvar-green/20 text-futvar-green hover:bg-futvar-green/30 text-sm font-medium disabled:opacity-50"
+                    disabled={requestSending || !requestTeamName.trim()}
+                    className="w-full py-2.5 rounded-lg bg-futvar-green text-futvar-darker text-sm font-medium hover:bg-futvar-green/90 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {requestSending ? 'Enviando...' : 'Enviar solicitação'}
                   </button>

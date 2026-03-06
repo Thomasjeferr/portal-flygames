@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useRef, useState, useEffect, Suspense } from 'react';
 
-export default function NewTeamPage() {
+function NewTeamForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const fileInput = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -21,6 +22,13 @@ export default function NewTeamPage() {
     description: '',
     isActive: true,
   });
+
+  useEffect(() => {
+    const teamNameFromUrl = searchParams.get('teamName');
+    if (teamNameFromUrl) {
+      setForm((f) => ({ ...f, name: teamNameFromUrl }));
+    }
+  }, [searchParams]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -231,5 +239,13 @@ export default function NewTeamPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function NewTeamPage() {
+  return (
+    <Suspense fallback={<div className="text-white p-6">Carregando...</div>}>
+      <NewTeamForm />
+    </Suspense>
   );
 }

@@ -564,7 +564,7 @@ export default function ContaPage() {
                   placeholder="Buscar time..."
                 />
                 <p className="mt-2">
-                  <NaoEncontrouTimeCTA />
+                  <NaoEncontrouTimeCTA isLoggedIn={true} />
                 </p>
                 {showTeamPicker && (
                   <button
