@@ -1,13 +1,17 @@
 -- Melhorias na tabela team_requests: novos campos e status
 
--- Criar enum de status
-CREATE TYPE "TeamRequestStatus" AS ENUM ('PENDING', 'IN_PROGRESS', 'RESOLVED', 'IGNORED');
+-- Criar enum de status (se não existir)
+DO $$ BEGIN
+  CREATE TYPE "TeamRequestStatus" AS ENUM ('PENDING', 'IN_PROGRESS', 'RESOLVED', 'IGNORED');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
--- Adicionar novos campos
-ALTER TABLE "team_requests" ADD COLUMN "city" TEXT;
-ALTER TABLE "team_requests" ADD COLUMN "phone" TEXT;
-ALTER TABLE "team_requests" ADD COLUMN "status" "TeamRequestStatus" NOT NULL DEFAULT 'PENDING';
-ALTER TABLE "team_requests" ADD COLUMN "resolved_at" TIMESTAMP(3);
+-- Adicionar novos campos (se não existirem)
+ALTER TABLE "team_requests" ADD COLUMN IF NOT EXISTS "city" TEXT;
+ALTER TABLE "team_requests" ADD COLUMN IF NOT EXISTS "phone" TEXT;
+ALTER TABLE "team_requests" ADD COLUMN IF NOT EXISTS "status" "TeamRequestStatus" NOT NULL DEFAULT 'PENDING';
+ALTER TABLE "team_requests" ADD COLUMN IF NOT EXISTS "resolved_at" TIMESTAMP(3);
 
 -- Atualizar team_name para NOT NULL (definir valor padrão para registros existentes sem nome)
 UPDATE "team_requests" SET "team_name" = 'Não informado' WHERE "team_name" IS NULL;
@@ -19,4 +23,4 @@ ALTER TABLE "team_requests" ALTER COLUMN "user_id" SET NOT NULL;
 
 -- Atualizar foreign key para CASCADE
 ALTER TABLE "team_requests" DROP CONSTRAINT IF EXISTS "team_requests_user_id_fkey";
-ALTER TABLE "team_requests" ADD CONSTRAINT "team_requests_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "team_requests" ADD CONSTRAINT "team_requests_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

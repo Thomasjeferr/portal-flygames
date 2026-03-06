@@ -1,0 +1,2 @@
+-- Migração já aplicada anteriormente ao banco.
+-- Este arquivo foi recriado para sincronizar o histórico local com o banco de produção.
