@@ -561,7 +561,7 @@ export function VideoPlayerCard({
       className={
         isFakeFullscreen
           ? 'fixed inset-0 z-[9999] bg-black flex items-center justify-center p-0'
-          : 'flex justify-center px-4 sm:px-6'
+          : 'flex justify-center w-full'
       }
     >
       <div

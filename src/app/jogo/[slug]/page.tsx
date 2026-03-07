@@ -134,7 +134,7 @@ export default async function GamePage({ params }: Props) {
                 </p>
                 {!canWatch && (
                   <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                    <StoreAppNoAccessMessage message="Este conteúdo não está disponível no momento.">
+                    <StoreAppNoAccessMessage message="Conteúdo exclusivo para quem tem acesso." isLoggedIn={!!session}>
                       {session && isTeamManager ? (
                         <p className="text-center text-sm text-emerald-50/90 max-w-md">
                           Esta conta é de responsável pelo time e não pode comprar acesso.
@@ -198,7 +198,7 @@ export default async function GamePage({ params }: Props) {
                   />
                 </p>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                  <StoreAppNoAccessMessage message="Este conteúdo não está disponível no momento.">
+                  <StoreAppNoAccessMessage message="Conteúdo exclusivo para quem tem acesso." isLoggedIn={!!session}>
                     {session && isTeamManager ? (
                       <p className="text-center text-sm text-emerald-50/90 max-w-md">
                         Esta conta é de responsável pelo time e não pode comprar acesso.

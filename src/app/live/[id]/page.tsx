@@ -143,7 +143,7 @@ export default async function LivePage({ params }: Props) {
                     />
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-3">
-                    <StoreAppNoAccessMessage message="Este conteúdo não está disponível no momento.">
+                    <StoreAppNoAccessMessage message="Conteúdo exclusivo para quem tem acesso." isLoggedIn={!!session}>
                       {session ? (
                         <Link
                           href="/planos"
@@ -181,7 +181,7 @@ export default async function LivePage({ params }: Props) {
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
                 <h1 className="text-center text-xl font-bold text-white sm:text-2xl mb-2">{live.title}</h1>
-                <StoreAppNoAccessMessage message="Este conteúdo não está disponível no momento.">
+                <StoreAppNoAccessMessage message="Conteúdo exclusivo para quem tem acesso." isLoggedIn={!!session}>
                   <p className="text-emerald-100/90 mb-6">Faça login e assine ou compre acesso para assistir.</p>
                   <div className="flex flex-wrap items-center justify-center gap-3">
                     {session ? (
