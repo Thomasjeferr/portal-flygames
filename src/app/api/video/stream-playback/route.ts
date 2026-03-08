@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { canAccessGameBySlug, getSponsorMaxScreens, hasFullAccess } from '@/lib/access';
+import { canAccessGameBySlug, getSponsorMaxScreens, getSubscriptionMaxScreens, hasFullAccess } from '@/lib/access';
 import { prisma } from '@/lib/db';
 import { getSignedPlaybackUrls } from '@/lib/cloudflare-stream';
 
@@ -30,8 +30,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Sem acesso a este jogo' }, { status: 403 });
     }
 
-    // Limite de telas para patrocinador empresa
-    const maxScreens = await getSponsorMaxScreens(session.userId);
+    // Limite de telas: patrocínio tem prioridade; senão assinatura
+    let maxScreens = await getSponsorMaxScreens(session.userId);
+    if (maxScreens == null) maxScreens = await getSubscriptionMaxScreens(session.userId);
     if (maxScreens != null) {
       if (!deviceId) {
         return NextResponse.json(

@@ -56,6 +56,7 @@ model Subscription {
   active                Boolean   @default(false)
   startDate             DateTime  @map("start_date")
   endDate               DateTime  @map("end_date")
+  maxConcurrentStreams  Int?      @map("max_concurrent_streams") // null = ilimitado; sobrescreve plano se definido
   paymentGateway        String?   @map("payment_gateway") // stripe | woovi | manual
   externalSubscriptionId String?  @map("external_subscription_id")
   createdAt             DateTime  @default(now()) @map("created_at")

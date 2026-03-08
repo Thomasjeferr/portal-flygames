@@ -117,6 +117,26 @@ export async function getSponsorMaxScreens(userId: string): Promise<number | nul
 }
 
 /**
+ * Retorna o limite de telas simultâneas para o usuário quando tem acesso via assinatura ativa.
+ * Usa subscription.maxConcurrentStreams se definido, senão plan.maxConcurrentStreams.
+ * Retorna null se não tiver assinatura ativa ou se for ilimitado.
+ */
+export async function getSubscriptionMaxScreens(userId: string): Promise<number | null> {
+  const sub = await prisma.subscription.findUnique({
+    where: { userId },
+    select: {
+      active: true,
+      endDate: true,
+      maxConcurrentStreams: true,
+      plan: { select: { maxConcurrentStreams: true } },
+    },
+  });
+  if (!sub?.active || sub.endDate < new Date()) return null;
+  const max = sub.maxConcurrentStreams ?? sub.plan?.maxConcurrentStreams ?? null;
+  return max == null ? null : max;
+}
+
+/**
  * Pode ver a página de Resultados aprovados (súmulas oficiais)?
  * Sim se: assinatura ativa com acesso total OU tem pelo menos um SponsorOrder pago vinculado à conta (patrocinador empresa).
  */

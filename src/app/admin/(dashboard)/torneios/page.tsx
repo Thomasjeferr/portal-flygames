@@ -40,6 +40,17 @@ export default function AdminTournamentsPage() {
     setLoading(false);
   };
 
+  const handleDelete = async (tournament: Tournament) => {
+    if (!confirm(`Excluir o torneio "${tournament.name}"? Esta ação não pode ser desfeita. Inscrições, jogos e chaveamento serão removidos.`)) return;
+    const res = await fetch(`/api/admin/tournaments/${tournament.id}`, { method: 'DELETE' });
+    if (res.ok) {
+      fetchTournaments();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || 'Erro ao excluir torneio.');
+    }
+  };
+
   useEffect(() => {
     fetchTournaments();
   }, [page, statusFilter]);
@@ -108,6 +119,13 @@ export default function AdminTournamentsPage() {
                   <Link href={`/admin/torneios/${t.id}/editar`} className="px-3 py-1.5 rounded bg-netflix-gray text-white text-sm hover:bg-white/20">
                     Editar
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(t)}
+                    className="px-3 py-1.5 rounded bg-red-500/20 text-red-400 text-sm hover:bg-red-500/30"
+                  >
+                    Excluir
+                  </button>
                 </div>
               </div>
             ))}

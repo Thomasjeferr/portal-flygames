@@ -402,6 +402,30 @@ export default function EditTournamentPage() {
           <button type="submit" disabled={loading} className="px-6 py-3 rounded bg-netflix-red text-white font-semibold disabled:opacity-50">{loading ? 'Salvando...' : 'Salvar'}</button>
           <Link href="/admin/torneios" className="px-6 py-3 rounded bg-netflix-gray text-white font-semibold">Cancelar</Link>
         </div>
+
+        <div className="mt-12 pt-8 border-t border-white/10">
+          <p className="text-sm text-netflix-light mb-2">Excluir este torneio remove inscrições, jogos e chaveamento. Não pode ser desfeito.</p>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!confirm(`Excluir o torneio "${form.name}"? Esta ação não pode ser desfeita.`)) return;
+              setLoading(true);
+              const res = await fetch(`/api/admin/tournaments/${id}`, { method: 'DELETE' });
+              if (res.ok) {
+                router.push('/admin/torneios');
+                router.refresh();
+              } else {
+                const data = await res.json().catch(() => ({}));
+                setError(data.error || 'Erro ao excluir torneio.');
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+            className="px-4 py-2 rounded bg-red-500/20 text-red-400 text-sm font-medium hover:bg-red-500/30 disabled:opacity-50"
+          >
+            Excluir torneio
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -12,7 +12,12 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const userId = body.userId as string;
-    const months = Math.max(1, Math.min(12, Number(body.months) || 1));
+    const days = body.days != null ? Math.max(1, Math.min(365, Number(body.days) || 1)) : null;
+    const months = body.months != null ? Math.max(1, Math.min(12, Number(body.months) || 1)) : null;
+    const maxConcurrentStreams =
+      body.maxConcurrentStreams != null && body.maxConcurrentStreams !== ''
+        ? Math.max(1, Math.min(10, Number(body.maxConcurrentStreams) || 1))
+        : null;
 
     if (!userId) {
       return NextResponse.json({ error: 'userId obrigatório' }, { status: 400 });
@@ -20,12 +25,16 @@ export async function POST(request: NextRequest) {
 
     const startDate = new Date();
     const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + months);
+    if (days != null && days > 0) {
+      endDate.setDate(endDate.getDate() + days);
+    } else {
+      endDate.setMonth(endDate.getMonth() + (months ?? 1));
+    }
 
     await prisma.subscription.upsert({
       where: { userId },
-      create: { userId, active: true, startDate, endDate },
-      update: { active: true, startDate, endDate },
+      create: { userId, active: true, startDate, endDate, maxConcurrentStreams: maxConcurrentStreams ?? undefined },
+      update: { active: true, startDate, endDate, maxConcurrentStreams: maxConcurrentStreams ?? undefined },
     });
 
     return NextResponse.json({ message: 'Assinatura ativada.', endDate: endDate.toISOString() });

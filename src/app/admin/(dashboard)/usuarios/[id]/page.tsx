@@ -45,7 +45,8 @@ export default function AdminUserDetailPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [form, setForm] = useState({ name: '', role: 'user' as 'user' | 'admin' });
-  const [months, setMonths] = useState(1);
+  const [activatePeriod, setActivatePeriod] = useState<'7' | '1' | '3' | '6' | '12'>('1');
+  const [maxScreens, setMaxScreens] = useState<string>('');
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -98,10 +99,20 @@ export default function AdminUserDetailPage() {
   const handleActivateSubscription = async () => {
     setSubscriptionAction('activate');
     try {
+      const body: { userId: string; months?: number; days?: number; maxConcurrentStreams?: number | null } = {
+        userId: id,
+      };
+      if (activatePeriod === '7') {
+        body.days = 7;
+      } else {
+        body.months = Number(activatePeriod);
+      }
+      const screens = maxScreens.trim() ? Math.max(1, Math.min(10, parseInt(maxScreens, 10) || 1)) : null;
+      if (screens != null) body.maxConcurrentStreams = screens;
       const res = await fetch('/api/subscription/activate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: id, months }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -316,16 +327,26 @@ export default function AdminUserDetailPage() {
                 ) : (
                   <>
                     <select
-                      value={months}
-                      onChange={(e) => setMonths(Number(e.target.value))}
+                      value={activatePeriod}
+                      onChange={(e) => setActivatePeriod(e.target.value as '7' | '1' | '3' | '6' | '12')}
                       className="px-3 py-2 rounded bg-netflix-gray border border-white/20 text-white text-sm"
                     >
-                      {[1, 3, 6, 12].map((m) => (
-                        <option key={m} value={m}>
-                          {m} {m === 1 ? 'mês' : 'meses'}
-                        </option>
-                      ))}
+                      <option value="7">7 dias (degustação)</option>
+                      <option value="1">1 mês</option>
+                      <option value="3">3 meses</option>
+                      <option value="6">6 meses</option>
+                      <option value="12">12 meses</option>
                     </select>
+                    <span className="text-netflix-light text-sm">Telas:</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      placeholder="Ilimitado"
+                      value={maxScreens}
+                      onChange={(e) => setMaxScreens(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                      className="w-20 px-2 py-2 rounded bg-netflix-gray border border-white/20 text-white text-sm placeholder-netflix-light"
+                    />
                     <button
                       onClick={handleActivateSubscription}
                       disabled={subscriptionAction !== null}
@@ -345,18 +366,28 @@ export default function AdminUserDetailPage() {
                   {user.paidPurchasesCount} compra(s) avulsa(s) paga(s) (acesso a jogo(s)).
                 </p>
               )}
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <select
-                  value={months}
-                  onChange={(e) => setMonths(Number(e.target.value))}
+                  value={activatePeriod}
+                  onChange={(e) => setActivatePeriod(e.target.value as '7' | '1' | '3' | '6' | '12')}
                   className="px-3 py-2 rounded bg-netflix-gray border border-white/20 text-white text-sm"
                 >
-                  {[1, 3, 6, 12].map((m) => (
-                    <option key={m} value={m}>
-                      {m} {m === 1 ? 'mês' : 'meses'}
-                    </option>
-                  ))}
+                  <option value="7">7 dias (degustação)</option>
+                  <option value="1">1 mês</option>
+                  <option value="3">3 meses</option>
+                  <option value="6">6 meses</option>
+                  <option value="12">12 meses</option>
                 </select>
+                <span className="text-netflix-light text-sm">Telas:</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  placeholder="Ilimitado"
+                  value={maxScreens}
+                  onChange={(e) => setMaxScreens(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                  className="w-20 px-2 py-2 rounded bg-netflix-gray border border-white/20 text-white text-sm placeholder-netflix-light"
+                />
                 <button
                   onClick={handleActivateSubscription}
                   disabled={subscriptionAction !== null}
