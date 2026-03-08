@@ -31,6 +31,8 @@ export async function GET(
         createdAt: true,
         updatedAt: true,
         subscription: true,
+        favoriteTeamId: true,
+        favoriteTeam: { select: { id: true, name: true, shortName: true } },
       },
     }),
     prisma.purchase.count({

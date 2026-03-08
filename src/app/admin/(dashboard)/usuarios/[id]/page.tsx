@@ -18,6 +18,12 @@ interface ManagedTeam {
   role: string;
 }
 
+interface FavoriteTeam {
+  id: string;
+  name: string;
+  shortName: string | null;
+}
+
 interface User {
   id: string;
   email: string;
@@ -30,6 +36,8 @@ interface User {
   paidPurchasesCount?: number;
   isTeamResponsible?: boolean;
   managedTeams?: ManagedTeam[];
+  favoriteTeamId?: string | null;
+  favoriteTeam?: FavoriteTeam | null;
 }
 
 export default function AdminUserDetailPage() {
@@ -266,6 +274,24 @@ export default function AdminUserDetailPage() {
               {saving ? 'Salvando...' : 'Salvar alterações'}
             </button>
           </form>
+        </div>
+
+        {/* Time do coração */}
+        <div className="bg-netflix-dark border border-white/10 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-white mb-2">Time do coração</h2>
+          {user.favoriteTeam ? (
+            <p className="text-netflix-light text-sm">
+              <Link
+                href={`/admin/times/${user.favoriteTeam.id}/editar`}
+                className="text-futvar-green hover:underline font-medium"
+              >
+                {user.favoriteTeam.name}
+                {user.favoriteTeam.shortName ? ` (${user.favoriteTeam.shortName})` : ''}
+              </Link>
+            </p>
+          ) : (
+            <p className="text-netflix-light text-sm">Usuário ainda não escolheu um time do coração.</p>
+          )}
         </div>
 
         {/* Conta de responsável de time */}
