@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
           <p>Olá${user.name?.trim() ? `, ${user.name.trim()}` : ''},</p>
           <p>Recebemos os dados do time <strong>${team.name}</strong>. Seu cadastro será analisado pela nossa equipe.</p>
           <p>Quando o time for aprovado, você poderá acessar a <strong>Área do time</strong> entrando no site com sua conta (comissões e elenco).</p>
+          <p><em>Para assinar ou patrocinar o time com seu e-mail pessoal, use outra conta de cliente no site.</em></p>
           <p>Atenciosamente,<br/>Fly Games</p>
         </div>
       `;

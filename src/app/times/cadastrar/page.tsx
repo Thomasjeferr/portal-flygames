@@ -202,9 +202,16 @@ export default function CadastrarTimePage() {
     <div className="pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Cadastrar time</h1>
-        <p className="text-futvar-light mb-6 text-sm sm:text-base">
+        <p className="text-futvar-light mb-4 text-sm sm:text-base">
           Preencha os dados do seu time para análise. O responsável será a sua conta ({user?.email}). Após aprovação, você acessa a Área do time entrando no site com sua conta.
         </p>
+
+        <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200/95 text-sm">
+          <p className="font-medium mb-1">Conta responsável não compra</p>
+          <p>
+            Esta conta ficará vinculada ao painel do time e <strong>não poderá</strong> ser usada para assinar, comprar jogos ou patrocinar. Quer poder patrocinar o time com seu e-mail pessoal? Saia e crie uma conta com o e-mail do time (ex: contato@time.com), depois volte aqui para cadastrar.
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 bg-futvar-dark border border-white/10 rounded-2xl p-6 sm:p-8">
           {error && (
@@ -338,7 +345,7 @@ export default function CadastrarTimePage() {
               placeholder="E-mail da sua conta"
             />
             <p className="text-futvar-light/80 text-xs mt-1">
-              É o e-mail da sua conta. O painel do time ficará vinculado a ela após aprovação.
+              É o e-mail da sua conta. O painel do time ficará vinculado a ela após aprovação. Esta conta não poderá realizar compras (assinatura ou patrocínio); para patrocinar depois, use outra conta com seu e-mail pessoal.
             </p>
           </div>
 

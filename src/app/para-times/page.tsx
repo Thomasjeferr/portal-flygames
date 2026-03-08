@@ -22,6 +22,9 @@ export default function ParaTimesPage() {
           <p className="text-futvar-light text-sm mb-4">
             Você é responsável por um time? Faça login (ou crie uma conta), verifique seu e-mail e acesse o formulário de cadastro.
           </p>
+          <p className="text-amber-200/90 text-sm mb-4 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+            <strong>Dica:</strong> Prefira criar uma conta com o e-mail do time (ex: contato@time.com). Assim seu e-mail pessoal continua livre para você usar como torcedor ou patrocinador.
+          </p>
           <Link
             href={CADASTRAR_LINK}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light transition-colors"
