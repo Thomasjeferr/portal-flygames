@@ -8,6 +8,7 @@ import { getLiveHlsUrl, getReplayHlsUrl } from '@/lib/cloudflare-live';
 import { StreamCustomPlayer } from '@/components/StreamCustomPlayer';
 import { LiveScheduledToLivePlayer } from '@/components/LiveScheduledToLivePlayer';
 import { MatchPlayerPage } from '@/components/match/MatchPlayerPage';
+import { PlayerEngagement } from '@/components/player/PlayerEngagement';
 import { StoreAppNoAccessMessage } from '@/components/StoreAppNoAccessMessage';
 import { StoreAppOptionalText } from '@/components/StoreAppOptionalText';
 import { LiveAccessBadges } from '@/components/LiveAccessBadges';
@@ -312,6 +313,12 @@ export default async function LivePage({ params }: Props) {
             <LiveAccessBadges
               requireSubscription={!!live.requireSubscription}
               allowOneTimePurchase={!!live.allowOneTimePurchase}
+            />
+            <PlayerEngagement
+              type="live"
+              entityId={live.id}
+              title={live.title}
+              shareText={`Ao vivo: ${live.title}${live.homeTeam && live.awayTeam ? ` – ${live.homeTeam.name} x ${live.awayTeam.name}` : ''}`}
             />
           </>
         )}

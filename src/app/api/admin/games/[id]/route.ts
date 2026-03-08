@@ -46,7 +46,25 @@ export async function GET(
     },
   });
   if (!game) return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
-  return NextResponse.json(game);
+  let pendingComments = 0;
+  let likeCount = 0;
+  let commentCount = 0;
+  try {
+    [pendingComments, likeCount, commentCount] = await Promise.all([
+      prisma.gameComment.count({ where: { gameId: game.id, status: 'pending' } }),
+      prisma.gameLike.count({ where: { gameId: game.id } }),
+      prisma.gameComment.count({ where: { gameId: game.id } }),
+    ]);
+  } catch {
+    // Tabelas de engajamento podem não existir se a migração não foi aplicada
+  }
+  return NextResponse.json({
+    ...game,
+    shareCount: game.shareCount ?? 0,
+    pendingComments,
+    likeCount,
+    commentCount,
+  });
 }
 
 export async function PATCH(

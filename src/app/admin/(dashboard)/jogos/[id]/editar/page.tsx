@@ -17,6 +17,7 @@ export default function EditGamePage() {
   const [error, setError] = useState('');
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [teams, setTeams] = useState<Array<{ id: string; name: string; shortName: string | null; crestUrl: string | null }>>([]);
+  const [engagement, setEngagement] = useState<{ shareCount: number; likeCount: number; commentCount: number; pendingComments: number } | null>(null);
   const [form, setForm] = useState({
     title: '',
     championship: '',
@@ -77,6 +78,12 @@ export default function EditGamePage() {
           awayScore: data.awayScore != null ? String(data.awayScore) : '',
           venue: data.venue || '',
           referee: data.referee || '',
+        });
+        setEngagement({
+          shareCount: data.shareCount ?? 0,
+          likeCount: data.likeCount ?? 0,
+          commentCount: data.commentCount ?? 0,
+          pendingComments: data.pendingComments ?? 0,
         });
       })
       .catch(() => setError('Erro ao carregar'))
@@ -155,6 +162,19 @@ export default function EditGamePage() {
         </Link>
       </div>
       <h1 className="text-2xl font-bold text-white mb-6">Editar jogo</h1>
+      {engagement != null && (
+        <div className="mb-6 p-4 rounded-lg bg-netflix-dark border border-white/10">
+          <h2 className="text-sm font-semibold text-white mb-2">Engajamento</h2>
+          <div className="flex flex-wrap gap-4 text-sm text-netflix-light">
+            <span>Compartilhamentos: <strong className="text-white">{engagement.shareCount}</strong></span>
+            <span>Curtidas: <strong className="text-white">{engagement.likeCount}</strong></span>
+            <span>Comentários: <strong className="text-white">{engagement.commentCount}</strong>{engagement.pendingComments > 0 && <span className="text-amber-400"> ({engagement.pendingComments} pendentes)</span>}</span>
+            <Link href={`/admin/comentarios?type=game&gameId=${id}`} className="text-netflix-red hover:underline">
+              Ver comentários →
+            </Link>
+          </div>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-5 bg-netflix-dark border border-white/10 rounded-lg p-6">
         {error && (
           <p className="text-netflix-red text-sm bg-red-500/10 border border-red-500/30 rounded px-3 py-2">

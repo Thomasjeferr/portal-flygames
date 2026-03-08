@@ -13,6 +13,7 @@ interface Game {
   thumbnailUrl: string | null;
   featured: boolean;
   categoryId: string | null;
+  shareCount?: number;
   category?: { id: string; name: string } | null;
 }
 
@@ -157,6 +158,11 @@ export default function AdminGamesPage() {
           {game.championship} • {formatDate(game.gameDate)}
           {game.category && (
             <span className="ml-2 px-2 py-0.5 rounded bg-white/10 text-xs">{game.category.name}</span>
+          )}
+          {(game as Game & { shareCount?: number }).shareCount != null && (
+            <span className="ml-2 text-white/70" title="Compartilhamentos">
+              • {(game as Game & { shareCount?: number }).shareCount} compartilhamentos
+            </span>
           )}
         </p>
       </div>

@@ -3,16 +3,18 @@ import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { canAccessGameBySlug } from '@/lib/access';
 
+/** GET /api/games/[gameId] – retorna jogo por id ou slug (compatível com chamadas por slug). */
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ gameId: string }> }
 ) {
-  const slug = (await params).slug;
-  const game = await prisma.game.findUnique({ where: { slug } });
+  const idOrSlug = (await params).gameId;
+  const game = await prisma.game.findUnique({ where: { id: idOrSlug } })
+    ?? await prisma.game.findUnique({ where: { slug: idOrSlug } });
   if (!game) return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
 
   const session = await getSession();
-  const canWatch = session ? await canAccessGameBySlug(session.userId, slug) : false;
+  const canWatch = session ? await canAccessGameBySlug(session.userId, game.slug) : false;
 
   return NextResponse.json({
     ...game,

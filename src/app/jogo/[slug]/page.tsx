@@ -6,6 +6,7 @@ import { GamePlayTracker } from '@/components/GamePlayTracker';
 import { BuyGameButton } from '@/components/BuyGameButton';
 import { GameCard } from '@/components/GameCard';
 import { MatchPlayerPage } from '@/components/match/MatchPlayerPage';
+import { PlayerEngagement } from '@/components/player/PlayerEngagement';
 import { StoreAppNoAccessMessage } from '@/components/StoreAppNoAccessMessage';
 import { StoreAppOptionalText } from '@/components/StoreAppOptionalText';
 import { getSession } from '@/lib/auth';
@@ -250,6 +251,12 @@ export default async function GamePage({ params }: Props) {
                 gameId={game.id}
               />
             </MatchPlayerPage>
+            <PlayerEngagement
+              type="game"
+              entityId={game.id}
+              title={game.title}
+              shareText={`Assista: ${game.title}. ${game.homeTeam && game.awayTeam ? `${game.homeTeam.shortName || game.homeTeam.name} x ${game.awayTeam.shortName || game.awayTeam.name}` : ''}`.trim()}
+            />
           </>
         )}
 

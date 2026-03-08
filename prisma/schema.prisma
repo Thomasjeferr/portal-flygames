@@ -37,6 +37,10 @@ model User {
   streamSessions    UserStreamSession[]
   teamRequests      TeamRequest[]
   tournamentSubscriptions TournamentSubscription[]
+  gameLikes         GameLike[]
+  liveLikes         LiveLike[]
+  gameComments      GameComment[]
+  liveComments      LiveComment[]
 }
 
 model Session {
@@ -219,6 +223,9 @@ model Game {
   watchProgress WatchProgress[]
   sumulaApprovals GameSumulaApproval[]
   playerMatchStats PlayerMatchStats[]
+  shareCount      Int       @default(0) @map("share_count")
+  gameLikes       GameLike[]
+  gameComments    GameComment[]
 }
 
 // Aprovação da súmula por time (mandante e visitante aprovam ou rejeitam)
@@ -262,6 +269,38 @@ model PlayerMatchStats {
 
   @@unique([gameId, teamMemberId])
   @@map("player_match_stats")
+}
+
+// Curtida no jogo (player de vídeo)
+model GameLike {
+  id        String   @id @default(cuid())
+  gameId    String   @map("game_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, userId])
+  @@map("game_likes")
+}
+
+// Comentário no jogo (player de vídeo); moderação no admin
+model GameComment {
+  id          String    @id @default(cuid())
+  gameId      String    @map("game_id")
+  userId      String    @map("user_id")
+  body        String    @map("body")
+  status      String    @default("pending") @map("status") // pending | approved | rejected
+  reviewedAt  DateTime? @map("reviewed_at")
+  reviewedBy  String?   @map("reviewed_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("game_comments")
 }
 
 model Plan {
@@ -950,6 +989,9 @@ model Live {
   awayTeam    Team?         @relation("AwayLive", fields: [awayTeamId], references: [id], onDelete: SetNull)
   purchases   LivePurchase[]
   homeBanners HomeBanner[]
+  shareCount  Int           @default(0) @map("share_count")
+  liveLikes   LiveLike[]
+  liveComments LiveComment[]
 }
 
 model LivePurchase {
@@ -964,6 +1006,38 @@ model LivePurchase {
 
   @@unique([userId, liveId])
   @@map("live_purchases")
+}
+
+// Curtida na live (player de vídeo)
+model LiveLike {
+  id        String   @id @default(cuid())
+  liveId    String   @map("live_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  live Live @relation(fields: [liveId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([liveId, userId])
+  @@map("live_likes")
+}
+
+// Comentário na live (player de vídeo); moderação no admin
+model LiveComment {
+  id          String    @id @default(cuid())
+  liveId      String    @map("live_id")
+  userId      String    @map("user_id")
+  body        String    @map("body")
+  status      String    @default("pending") @map("status") // pending | approved | rejected
+  reviewedAt  DateTime? @map("reviewed_at")
+  reviewedBy  String?   @map("reviewed_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  live Live @relation(fields: [liveId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("live_comments")
 }
 
 // ========== FIM LIVES ==========

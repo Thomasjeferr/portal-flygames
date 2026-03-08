@@ -18,6 +18,7 @@ export default function EditLivePage() {
   const [showStreamKey, setShowStreamKey] = useState(false);
   const [credentials, setCredentials] = useState<{ ingestUrl: string; streamKey: string } | null>(null);
   const [teams, setTeams] = useState<Array<{ id: string; name: string; shortName: string | null }>>([]);
+  const [engagement, setEngagement] = useState<{ shareCount: number; likeCount: number; commentCount: number; pendingComments: number } | null>(null);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -62,6 +63,12 @@ export default function EditLivePage() {
           cloudflarePlaybackId: data.cloudflarePlaybackId ?? '',
           homeTeamId: data.homeTeamId ?? data.homeTeam?.id ?? '',
           awayTeamId: data.awayTeamId ?? data.awayTeam?.id ?? '',
+        });
+        setEngagement({
+          shareCount: data.shareCount ?? 0,
+          likeCount: data._count?.liveLikes ?? 0,
+          commentCount: data._count?.liveComments ?? 0,
+          pendingComments: data.pendingComments ?? 0,
         });
       })
       .catch(() => setError('Erro ao carregar'))
@@ -244,6 +251,19 @@ export default function EditLivePage() {
         </Link>
       </div>
       <h1 className="text-2xl font-bold text-white mb-6">Editar Live</h1>
+      {engagement != null && (
+        <div className="mb-6 p-4 rounded-lg bg-netflix-dark border border-white/10">
+          <h2 className="text-sm font-semibold text-white mb-2">Engajamento</h2>
+          <div className="flex flex-wrap gap-4 text-sm text-netflix-light">
+            <span>Compartilhamentos: <strong className="text-white">{engagement.shareCount}</strong></span>
+            <span>Curtidas: <strong className="text-white">{engagement.likeCount}</strong></span>
+            <span>Comentários: <strong className="text-white">{engagement.commentCount}</strong>{engagement.pendingComments > 0 && <span className="text-amber-400"> ({engagement.pendingComments} pendentes)</span>}</span>
+            <Link href={`/admin/comentarios?type=live&liveId=${id}`} className="text-netflix-red hover:underline">
+              Ver comentários →
+            </Link>
+          </div>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-5 bg-netflix-dark border border-white/10 rounded-lg p-6">
         {error && (
           <p className="text-netflix-red text-sm bg-red-500/10 border border-red-500/30 rounded px-3 py-2">

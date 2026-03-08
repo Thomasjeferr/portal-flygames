@@ -16,6 +16,7 @@ interface Live {
   requireSubscription: boolean;
   allowOneTimePurchase: boolean;
   allowChat: boolean;
+  shareCount?: number;
   createdAt: string;
 }
 
@@ -114,6 +115,9 @@ export default function AdminLivesPage() {
                   >
                     {statusLabel[live.status] ?? live.status}
                   </span>
+                  {live.shareCount != null && live.shareCount > 0 && (
+                    <span className="ml-2 text-white/70">• {live.shareCount} compartilhamentos</span>
+                  )}
                   {live.cloudflareLiveInputId ? (
                     <span className="ml-2 px-2 py-0.5 rounded bg-white/10 text-xs">OBS configurado</span>
                   ) : (

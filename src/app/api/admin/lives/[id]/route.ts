@@ -41,10 +41,12 @@ export async function GET(
     include: {
       homeTeam: { select: { id: true, name: true, slug: true } },
       awayTeam: { select: { id: true, name: true, slug: true } },
+      _count: { select: { liveLikes: true, liveComments: true } },
     },
   });
   if (!live) return NextResponse.json({ error: 'Live não encontrada' }, { status: 404 });
-  return NextResponse.json(live);
+  const pendingComments = await prisma.liveComment.count({ where: { liveId: id, status: 'pending' } });
+  return NextResponse.json({ ...live, pendingComments });
 }
 
 export async function PATCH(
