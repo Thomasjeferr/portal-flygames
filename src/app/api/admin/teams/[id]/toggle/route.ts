@@ -11,9 +11,16 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   try {
     const team = await prisma.team.findUnique({ where: { id } });
     if (!team) return NextResponse.json({ error: 'Time não encontrado' }, { status: 404 });
+    const willBeActive = !team.isActive;
     const updated = await prisma.team.update({
       where: { id },
-      data: { isActive: !team.isActive },
+      data: {
+        isActive: willBeActive,
+        // Ao ativar, marcar como aprovado se ainda estiver pendente (evita "Pendente" + "Ativo: Sim")
+        ...(willBeActive && team.approvalStatus === 'pending'
+          ? { approvalStatus: 'approved' as const }
+          : {}),
+      },
     });
     revalidatePath('/');
     return NextResponse.json(updated);

@@ -160,15 +160,22 @@ export default function CadastrarTimePage() {
       <div className="pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Cadastrar time</h1>
-          <p className="text-futvar-light mb-6">
+          <p className="text-futvar-light mb-4">
             Para cadastrar um time você precisa ter uma conta e ter verificado seu e-mail.
           </p>
+          <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200/95 text-sm">
+            <p className="font-medium mb-1">Use o e-mail do time, não o pessoal</p>
+            <p>
+              Crie a conta (ou entre) com um <strong>e-mail institucional do time</strong> (ex: contato@seudotime.com). 
+              A conta responsável pelo time não pode ser usada para assinar ou patrocinar. Assim, seu e-mail pessoal continua livre para você usar como torcedor ou patrocinador.
+            </p>
+          </div>
           <div className="flex flex-wrap gap-3">
             <Link
               href={`/cadastro?redirect=${encodeURIComponent(redirectCadastrar)}`}
               className="inline-flex px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
             >
-              Criar conta
+              Criar conta (com e-mail do time)
             </Link>
             <Link
               href={`/entrar?redirect=${encodeURIComponent(redirectCadastrar)}`}
@@ -187,8 +194,11 @@ export default function CadastrarTimePage() {
       <div className="pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Cadastrar time</h1>
-          <p className="text-futvar-light mb-6">
+          <p className="text-futvar-light mb-4">
             Verifique seu e-mail antes de cadastrar um time. Confira sua caixa de entrada (e pasta de spam) e clique no link de confirmação que enviamos para <strong className="text-white">{user?.email}</strong>.
+          </p>
+          <p className="text-futvar-light/90 text-sm mb-4">
+            Usou e-mail pessoal por engano? <Link href={`/sair?redirect=${encodeURIComponent('/cadastro?redirect=' + encodeURIComponent(redirectCadastrar))}`} className="text-futvar-green hover:underline">Saia da conta</Link> e crie uma nova com o e-mail do time (ex: contato@time.com).
           </p>
           <p className="text-futvar-light text-sm">
             Já verificou? <Link href="/times/cadastrar" className="text-futvar-green hover:underline">Atualize a página</Link>.
