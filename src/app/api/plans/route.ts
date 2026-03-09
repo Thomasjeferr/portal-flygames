@@ -13,17 +13,11 @@ export async function GET() {
     { price: 'asc' as const },
   ];
 
-  // Preferencialmente, só planos ativos
-  let plans = await prisma.plan.findMany({
+  // Apenas planos ativos: inativos não aparecem na página /planos nem no checkout.
+  const plans = await prisma.plan.findMany({
     where: { active: true },
     orderBy,
   });
-
-  // Fallback defensivo: se por algum motivo não houver nenhum marcado como ativo,
-  // retorna todos os planos existentes (para evitar tela vazia em produção).
-  if (!plans.length) {
-    plans = await prisma.plan.findMany({ orderBy });
-  }
 
   const res = NextResponse.json(plans);
   res.headers.set('Cache-Control', 'private, no-store, max-age=0');
