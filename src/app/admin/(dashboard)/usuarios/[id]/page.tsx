@@ -9,6 +9,7 @@ interface Subscription {
   active: boolean;
   startDate: string;
   endDate: string;
+  maxConcurrentStreams?: number | null;
 }
 
 interface ManagedTeam {
@@ -49,6 +50,7 @@ export default function AdminUserDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [subscriptionAction, setSubscriptionAction] = useState<'activate' | 'deactivate' | null>(null);
+  const [savingScreens, setSavingScreens] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -68,6 +70,9 @@ export default function AdminUserDetailPage() {
       const data = await res.json();
       setUser(data);
       setForm({ name: data.name || '', role: data.role });
+      setMaxScreens(
+        data.subscription?.maxConcurrentStreams != null ? String(data.subscription.maxConcurrentStreams) : ''
+      );
     } else {
       setError('Usuário não encontrado');
     }
@@ -132,6 +137,29 @@ export default function AdminUserDetailPage() {
       setError('Erro de conexão');
     } finally {
       setSubscriptionAction(null);
+    }
+  };
+
+  const handleSaveMaxScreens = async () => {
+    setSavingScreens(true);
+    setError('');
+    try {
+      const screens = maxScreens.trim() ? Math.max(1, Math.min(10, parseInt(maxScreens, 10) || 1)) : null;
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maxConcurrentStreams: screens }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Erro ao atualizar telas');
+        return;
+      }
+      setUser(data);
+    } catch {
+      setError('Erro de conexão');
+    } finally {
+      setSavingScreens(false);
     }
   };
 
@@ -341,15 +369,34 @@ export default function AdminUserDetailPage() {
                 Início: {formatDate(user.subscription.startDate)} • Fim:{' '}
                 {formatDate(user.subscription.endDate)}
               </p>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {isSubscriptionActive ? (
-                  <button
-                    onClick={handleDeactivateSubscription}
-                    disabled={subscriptionAction !== null}
-                    className="px-4 py-2 rounded bg-red-900/50 text-red-300 text-sm hover:bg-red-900 disabled:opacity-50"
-                  >
-                    {subscriptionAction === 'deactivate' ? 'Desativando...' : 'Desativar assinatura'}
-                  </button>
+                  <>
+                    <span className="text-netflix-light text-sm">Telas:</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      placeholder="Ilimitado"
+                      value={maxScreens}
+                      onChange={(e) => setMaxScreens(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                      className="w-20 px-2 py-2 rounded bg-netflix-gray border border-white/20 text-white text-sm placeholder-netflix-light"
+                    />
+                    <button
+                      onClick={handleSaveMaxScreens}
+                      disabled={savingScreens}
+                      className="px-3 py-2 rounded bg-netflix-gray border border-white/20 text-white text-sm hover:bg-white/10 disabled:opacity-50"
+                    >
+                      {savingScreens ? 'Salvando...' : 'Salvar telas'}
+                    </button>
+                    <button
+                      onClick={handleDeactivateSubscription}
+                      disabled={subscriptionAction !== null}
+                      className="px-4 py-2 rounded bg-red-900/50 text-red-300 text-sm hover:bg-red-900 disabled:opacity-50"
+                    >
+                      {subscriptionAction === 'deactivate' ? 'Desativando...' : 'Desativar assinatura'}
+                    </button>
+                  </>
                 ) : (
                   <>
                     <select

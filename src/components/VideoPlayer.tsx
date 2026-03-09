@@ -56,17 +56,16 @@ export function VideoPlayer({
       if (streamContext.gameSlug) params.set('gameSlug', streamContext.gameSlug);
       if (streamContext.preSaleSlug) params.set('preSaleSlug', streamContext.preSaleSlug);
       if (streamContext.sessionToken) params.set('sessionToken', streamContext.sessionToken);
+      // deviceId estável por dispositivo (estilo Netflix): localStorage = mesmo ID em todas as abas do mesmo browser/PC
       try {
-        // deviceId por aba (sessionStorage) para o limite de telas contar cada aba como uma tela
-        let deviceId =
-          typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('portal_futvar_device_id') : null;
+        let deviceId = typeof localStorage !== 'undefined' ? localStorage.getItem('portal_futvar_device_id') : null;
         if (!deviceId) {
           deviceId = `web_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
-          if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('portal_futvar_device_id', deviceId);
+          if (typeof localStorage !== 'undefined') localStorage.setItem('portal_futvar_device_id', deviceId);
         }
         params.set('deviceId', deviceId);
       } catch {
-        // ignorar se sessionStorage não disponível
+        // ignorar se localStorage não disponível
       }
       setStreamError(null);
       fetch(`/api/video/stream-playback?${params}`, { credentials: 'include' })

@@ -7,6 +7,7 @@ import { z } from 'zod';
 const updateSchema = z.object({
   name: z.string().min(1, 'Nome obrigatório').optional().or(z.literal('')),
   role: z.enum(['user', 'admin']).optional(),
+  maxConcurrentStreams: z.number().int().min(1).max(10).nullable().optional(),
 });
 
 export async function GET(
@@ -113,7 +114,20 @@ export async function PATCH(
       data: update,
       include: { subscription: true },
     });
-    const { passwordHash: _, ...safe } = user;
+
+    if (data.maxConcurrentStreams !== undefined) {
+      await prisma.subscription.updateMany({
+        where: { userId: id },
+        data: { maxConcurrentStreams: data.maxConcurrentStreams },
+      });
+    }
+    const out = data.maxConcurrentStreams !== undefined
+      ? await prisma.user.findUnique({
+          where: { id },
+          include: { subscription: true },
+        })
+      : user;
+    const { passwordHash: _, ...safe } = out!;
     return NextResponse.json(safe);
   } catch (e) {
     console.error(e);

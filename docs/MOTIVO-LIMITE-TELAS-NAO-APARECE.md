@@ -24,13 +24,14 @@ O **deviceId** usado para contar “telas simultâneas” é **guardado e lido d
 
 ---
 
-## Correção aplicada
+## Comportamento atual: limite por dispositivo (estilo Netflix)
 
 - **Frontend (`src/components/VideoPlayer.tsx`):**
-  - **deviceId por aba:** passou a usar **`sessionStorage`** em vez de `localStorage` para a chave `portal_futvar_device_id`. Cada aba tem seu próprio sessionStorage, então cada uma envia um deviceId diferente; o backend passa a contar 2 ou 3 sessões e bloqueia quando excede o limite.
-  - **Exibição do erro:** quando a API retorna 403 (ou outro erro), a mensagem `d.error` é exibida no player (ex.: “Limite de 2 tela(s) simultânea(s) atingido…”), com uma dica para fechar outra aba ou aguardar.
+  - **deviceId estável por dispositivo:** usa **`localStorage`** com a chave `portal_futvar_device_id`. O mesmo navegador no mesmo aparelho (PC, celular, TV) envia sempre o mesmo ID; várias abas no mesmo PC contam como **1 dispositivo**.
+  - Plano “2 telas” = no máximo **2 dispositivos diferentes** tocando ao mesmo tempo (ex.: 1 PC + 1 celular). No mesmo PC o usuário pode abrir várias abas = 1 dispositivo.
+  - **Exibição do erro:** quando a API retorna 403 (limite excedido), a mensagem é exibida no player, com dica para fechar o player em outro dispositivo ou aguardar.
   - Resposta da API lida com `res.text()` + `JSON.parse` para evitar falha ao receber 403 com corpo JSON.
-- **Backend:** Nenhuma alteração; a lógica em `/api/video/stream-playback` já bloqueia e retorna a mensagem correta.
+- **Backend:** Conta sessões por `userId` + `deviceId`; bloqueia quando há mais de `maxScreens` **dispositivos** diferentes ativos.
 
 ---
 
@@ -44,7 +45,7 @@ O **deviceId** usado para contar “telas simultâneas” é **guardado e lido d
 
 ---
 
-## Onde corrigir (referência)
+## Resumo
 
-- **Frontend:** Gerar ou associar um **deviceId por aba** (por exemplo usando `sessionStorage` ou um ID gerado por instância do player), em vez de um único valor fixo por origem no `localStorage`, para que cada aba seja contada como uma “tela” distinta.
-- **Backend:** Nenhuma alteração necessária para a lógica de limite; ele já bloqueia quando há mais de `maxScreens` **deviceIds** diferentes ativos.
+- **“Dispositivo”** na prática = mesmo navegador na mesma máquina (localStorage é por origem). Outro navegador no mesmo PC ou o app no celular = outro dispositivo.
+- **Backend:** já bloqueia quando há mais de `maxScreens` deviceIds diferentes ativos; não é necessário alterar.

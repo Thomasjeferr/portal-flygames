@@ -42,6 +42,7 @@ export function VideoPlayerCard({
   const hideControlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPlayingRef = useRef(false);
   const isSettingsOpenRef = useRef(false);
+  const wakeLockRef = useRef<{ release: () => Promise<void> } | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -66,6 +67,23 @@ export function VideoPlayerCard({
   isSettingsOpenRef.current = isSettingsOpen;
 
   const isHlsSource = /\.m3u8($|\?)/i.test(videoSrc);
+
+  const requestWakeLock = useCallback(() => {
+    const nav = typeof navigator !== 'undefined' ? navigator : null;
+    const wakeLock = nav && 'wakeLock' in nav ? (nav as Navigator & { wakeLock: { request: (type: 'screen') => Promise<{ release: () => Promise<void> }> } }).wakeLock : null;
+    if (!wakeLock) return;
+    wakeLock.request('screen').then((sentinel) => {
+      if (wakeLockRef.current) wakeLockRef.current.release().catch(() => {});
+      wakeLockRef.current = sentinel;
+    }).catch(() => {});
+  }, []);
+
+  const releaseWakeLock = useCallback(() => {
+    if (wakeLockRef.current) {
+      wakeLockRef.current.release().catch(() => {});
+      wakeLockRef.current = null;
+    }
+  }, []);
 
   const updateBuffered = useCallback(() => {
     const video = videoRef.current;
@@ -194,9 +212,11 @@ export function VideoPlayerCard({
 
     const onPlay = () => {
       setIsPlaying(true);
+      requestWakeLock();
     };
     const onPause = () => {
       setIsPlaying(false);
+      releaseWakeLock();
       saveProgress();
     };
 
@@ -252,7 +272,10 @@ export function VideoPlayerCard({
 
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
+        releaseWakeLock();
         saveProgress();
+      } else if (document.visibilityState === 'visible' && videoRef.current && !videoRef.current.paused && !videoRef.current.ended) {
+        requestWakeLock();
       }
     };
 
@@ -269,6 +292,7 @@ export function VideoPlayerCard({
 
     return () => {
       mountedRef.current = false;
+      releaseWakeLock();
       video.removeEventListener('webkitbeginfullscreen', onWebkitBeginFullscreen);
       video.removeEventListener('webkitendfullscreen', onWebkitEndFullscreen);
       if (saveIntervalRef.current !== null) {
@@ -289,7 +313,7 @@ export function VideoPlayerCard({
         hlsRef.current = null;
       }
     };
-  }, [videoSrc, isHlsSource, autoplay, saveProgress, updateBuffered]);
+  }, [videoSrc, isHlsSource, autoplay, saveProgress, updateBuffered, requestWakeLock, releaseWakeLock]);
 
   // Aplicar "continuar assistindo" quando a API de progresso responder depois do vídeo já ter carregado
   useEffect(() => {
