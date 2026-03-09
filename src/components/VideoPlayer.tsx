@@ -32,6 +32,7 @@ export function VideoPlayer({
 }: VideoPlayerProps) {
   const [streamUrl, setStreamUrl] = useState<string | null>(streamPlaybackUrl ?? null);
   const [hlsUrl, setHlsUrl] = useState<string | null>(streamHlsUrl ?? null);
+  const [streamError, setStreamError] = useState<string | null>(null);
   const [initialTimeSeconds, setInitialTimeSeconds] = useState(0);
   const isStream = isStreamVideo(videoUrl);
   const videoId = extractStreamVideoId(videoUrl);
@@ -56,22 +57,31 @@ export function VideoPlayer({
       if (streamContext.preSaleSlug) params.set('preSaleSlug', streamContext.preSaleSlug);
       if (streamContext.sessionToken) params.set('sessionToken', streamContext.sessionToken);
       try {
-        let deviceId = typeof localStorage !== 'undefined' ? localStorage.getItem('portal_futvar_device_id') : null;
+        // deviceId por aba (sessionStorage) para o limite de telas contar cada aba como uma tela
+        let deviceId =
+          typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('portal_futvar_device_id') : null;
         if (!deviceId) {
           deviceId = `web_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
-          if (typeof localStorage !== 'undefined') localStorage.setItem('portal_futvar_device_id', deviceId);
+          if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('portal_futvar_device_id', deviceId);
         }
         params.set('deviceId', deviceId);
       } catch {
-        // ignorar se localStorage não disponível
+        // ignorar se sessionStorage não disponível
       }
+      setStreamError(null);
       fetch(`/api/video/stream-playback?${params}`, { credentials: 'include' })
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.playbackUrl) setStreamUrl(d.playbackUrl);
-          if (d.hlsUrl) setHlsUrl(d.hlsUrl);
+        .then((r) => r.text().then((text) => ({ ok: r.ok, text })))
+        .then(({ ok, text }) => {
+          const d = text ? (() => { try { return JSON.parse(text); } catch { return {}; } })() : {};
+          if (ok) {
+            if (d.playbackUrl) setStreamUrl(d.playbackUrl);
+            if (d.hlsUrl) setHlsUrl(d.hlsUrl);
+            setStreamError(null);
+          } else {
+            setStreamError(d.error || 'Não foi possível carregar o vídeo.');
+          }
         })
-        .catch(() => {});
+        .catch(() => setStreamError('Erro de conexão.'));
     }
   }, [isStream, videoId, streamPlaybackUrl, streamHlsUrl, streamContext?.gameSlug, streamContext?.preSaleSlug, streamContext?.sessionToken]);
 
@@ -107,10 +117,17 @@ export function VideoPlayer({
     );
   }
 
-  if (isStream && !streamUrl) {
+  if (isStream && !streamUrl && !hlsUrl) {
     return (
-      <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
-        <p className="text-futvar-light">Carregando vídeo...</p>
+      <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden flex flex-col items-center justify-center gap-3 p-4">
+        {streamError ? (
+          <>
+            <p className="text-amber-300 text-center text-sm font-medium">{streamError}</p>
+            <p className="text-white/60 text-center text-xs">Feche o player em outra aba ou aguarde alguns minutos e tente novamente.</p>
+          </>
+        ) : (
+          <p className="text-futvar-light">Carregando vídeo...</p>
+        )}
       </div>
     );
   }
