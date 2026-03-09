@@ -24,6 +24,14 @@ export async function POST(request: NextRequest) {
     if (!slot) return NextResponse.json({ error: 'Código do clube inválido' }, { status: 400 });
     if (slot.paymentStatus === 'PAID') return NextResponse.json({ error: 'Este slot já foi pago' }, { status: 400 });
 
+    const maxMembers = slot.preSaleGame.maxSimultaneousPerClub ?? 999;
+    if (teamMemberCount > maxMembers) {
+      return NextResponse.json(
+        { error: `A quantidade de membros não pode ser maior que ${maxMembers} (limite de telas deste jogo).` },
+        { status: 400 }
+      );
+    }
+
     const price = slot.slotIndex === 1 ? slot.preSaleGame.clubAPrice : slot.preSaleGame.clubBPrice;
     const amountCents = Math.round(price * 100);
     const externalId = `presale-${slot.id}`;

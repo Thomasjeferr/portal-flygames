@@ -50,7 +50,9 @@ export async function PATCH(
       duracaoDias: body.duracaoDias != null ? Number(body.duracaoDias) : undefined,
       teamPayoutPercent: body.teamPayoutPercent != null ? Number(body.teamPayoutPercent) : undefined,
       partnerCommissionPercent: body.partnerCommissionPercent != null ? Number(body.partnerCommissionPercent) : undefined,
-      maxConcurrentStreams: body.maxConcurrentStreams != null ? Number(body.maxConcurrentStreams) : undefined,
+      maxConcurrentStreams: 'maxConcurrentStreams' in body
+        ? (body.maxConcurrentStreams == null || body.maxConcurrentStreams === '' ? null : Number(body.maxConcurrentStreams))
+        : undefined,
     });
     if (!parsed.success) {
       return NextResponse.json(

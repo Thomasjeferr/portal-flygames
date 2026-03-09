@@ -15,6 +15,7 @@ interface Plan {
   duracaoDias: number | null;
   renovacaoAuto: boolean;
   featured?: boolean;
+  maxConcurrentStreams?: number | null;
 }
 
 const typeLabel: Record<string, string> = {
@@ -124,6 +125,7 @@ export default function AdminPlansPage() {
                   {plan.acessoTotal ? ' • Acesso total' : ' • Acesso parcial'}
                   {plan.duracaoDias != null && ` • ${plan.duracaoDias} dias`}
                   {plan.renovacaoAuto && ' • Renovação automática'}
+                  {plan.maxConcurrentStreams != null && plan.maxConcurrentStreams > 0 && ` • ${plan.maxConcurrentStreams} tela${plan.maxConcurrentStreams > 1 ? 's' : ''} simultânea${plan.maxConcurrentStreams > 1 ? 's' : ''}`}
                 </p>
                 {plan.description && <p className="text-xs text-netflix-light mt-1 line-clamp-1">{plan.description}</p>}
               </div>

@@ -12,6 +12,7 @@ interface PreSaleGame {
   thumbnailUrl: string;
   clubAPrice: number;
   clubBPrice: number;
+  maxSimultaneousPerClub: number;
   clubSlots: { slotIndex: number; clubCode: string; paymentStatus: string }[];
 }
 
@@ -47,6 +48,10 @@ export default function PreEstreiaCheckoutPage() {
     setError('');
     if (!form.termsAccepted) {
       setError('Aceite os termos para continuar.');
+      return;
+    }
+    if (exceedsMemberLimit) {
+      setError(`A quantidade de membros não pode ser maior que ${maxMembers} (limite de telas deste jogo).`);
       return;
     }
     setSubmitting(true);
@@ -85,6 +90,9 @@ export default function PreEstreiaCheckoutPage() {
   const slot = game.clubSlots.find((s) => s.clubCode === clubCode.trim());
   const isCodeValid = slot && slot.paymentStatus === 'PENDING';
   const price = slot?.slotIndex === 1 ? game.clubAPrice : game.clubBPrice;
+  const maxMembers = game.maxSimultaneousPerClub ?? 999;
+  const memberCount = parseInt(form.teamMemberCount, 10) || 0;
+  const exceedsMemberLimit = isCodeValid && memberCount > maxMembers;
 
   if (pixQr) {
     return (
@@ -169,12 +177,21 @@ export default function PreEstreiaCheckoutPage() {
                 <label className="block text-sm font-medium text-white mb-2">Quantidade de membros *</label>
                 <input
                   type="number"
-                  min="1"
+                  min={1}
+                  max={maxMembers}
                   value={form.teamMemberCount}
                   onChange={(e) => setForm((f) => ({ ...f, teamMemberCount: e.target.value }))}
                   required
-                  className="w-full px-4 py-3 rounded bg-futvar-dark border border-futvar-green/20 text-white"
+                  className={`w-full px-4 py-3 rounded bg-futvar-dark border text-white ${exceedsMemberLimit ? 'border-red-400' : 'border-futvar-green/20'}`}
                 />
+                <p className="text-xs text-futvar-light mt-1">
+                  Máximo: {maxMembers} membros (igual ao limite de telas simultâneas deste jogo).
+                </p>
+                {exceedsMemberLimit && (
+                  <p className="text-amber-400 text-sm mt-1 font-medium">
+                    Você está excedendo o limite. Informe no máximo {maxMembers} membros.
+                  </p>
+                )}
               </div>
               <label className="flex items-start gap-2">
                 <input
@@ -191,7 +208,7 @@ export default function PreEstreiaCheckoutPage() {
               <p className="text-futvar-green font-semibold">Valor: R$ {price?.toFixed(2).replace('.', ',')}</p>
               <button
                 type="submit"
-                disabled={submitting || !form.termsAccepted}
+                disabled={submitting || !form.termsAccepted || exceedsMemberLimit}
                 className="w-full py-4 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light disabled:opacity-50"
               >
                 {submitting ? 'Gerando Pix...' : 'Gerar QR Code Pix'}
