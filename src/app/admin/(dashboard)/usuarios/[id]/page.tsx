@@ -51,6 +51,7 @@ export default function AdminUserDetailPage() {
   const [saving, setSaving] = useState(false);
   const [subscriptionAction, setSubscriptionAction] = useState<'activate' | 'deactivate' | null>(null);
   const [savingScreens, setSavingScreens] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -86,6 +87,7 @@ export default function AdminUserDetailPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/users/${id}`, {
@@ -111,6 +113,7 @@ export default function AdminUserDetailPage() {
 
   const handleActivateSubscription = async () => {
     setSubscriptionAction('activate');
+    setSuccessMessage('');
     try {
       const body: { userId: string; months?: number; days?: number; maxConcurrentStreams?: number | null } = {
         userId: id,
@@ -143,6 +146,7 @@ export default function AdminUserDetailPage() {
   const handleSaveMaxScreens = async () => {
     setSavingScreens(true);
     setError('');
+    setSuccessMessage('');
     try {
       const screens = maxScreens.trim() ? Math.max(1, Math.min(10, parseInt(maxScreens, 10) || 1)) : null;
       const res = await fetch(`/api/admin/users/${id}`, {
@@ -156,6 +160,8 @@ export default function AdminUserDetailPage() {
         return;
       }
       setUser(data);
+      setSuccessMessage('Telas salvas com sucesso.');
+      setTimeout(() => setSuccessMessage(''), 4000);
     } catch {
       setError('Erro de conexão');
     } finally {
@@ -166,6 +172,7 @@ export default function AdminUserDetailPage() {
   const handleDeactivateSubscription = async () => {
     if (!confirm('Desativar a assinatura deste usuário?')) return;
     setSubscriptionAction('deactivate');
+    setSuccessMessage('');
     try {
       const res = await fetch('/api/admin/subscription/deactivate', {
         method: 'POST',
@@ -252,6 +259,12 @@ export default function AdminUserDetailPage() {
       {error && (
         <p className="text-netflix-red text-sm bg-red-500/10 border border-red-500/30 rounded px-3 py-2 mb-6">
           {error}
+        </p>
+      )}
+
+      {successMessage && (
+        <p className="text-green-300 text-sm bg-green-500/10 border border-green-500/30 rounded px-3 py-2 mb-6">
+          {successMessage}
         </p>
       )}
 

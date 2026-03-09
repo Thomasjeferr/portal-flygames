@@ -29,17 +29,18 @@ export async function GET(request: NextRequest) {
     if (!hasAccess) {
       return NextResponse.json({ error: 'Sem acesso a este jogo' }, { status: 403 });
     }
+    // Para jogos, deviceId é obrigatório (web e app): permite aplicar limite de telas e sessão única por dispositivo.
+    if (!deviceId) {
+      return NextResponse.json(
+        { error: 'Identificador do dispositivo é necessário. Atualize o app e tente novamente.' },
+        { status: 400 }
+      );
+    }
 
     // Limite de telas: patrocínio tem prioridade; senão assinatura
     let maxScreens = await getSponsorMaxScreens(session.userId);
     if (maxScreens == null) maxScreens = await getSubscriptionMaxScreens(session.userId);
     if (maxScreens != null) {
-      if (!deviceId) {
-        return NextResponse.json(
-          { error: 'Identificador do dispositivo é necessário. Atualize o app e tente novamente.' },
-          { status: 400 }
-        );
-      }
       const now = new Date();
       const activeSince = new Date(now.getTime() - STREAM_SESSION_ACTIVE_MS);
       const activeSessions = await prisma.userStreamSession.findMany({

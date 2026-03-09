@@ -10,7 +10,7 @@ import { PlayerEngagement } from '@/components/player/PlayerEngagement';
 import { StoreAppNoAccessMessage } from '@/components/StoreAppNoAccessMessage';
 import { StoreAppOptionalText } from '@/components/StoreAppOptionalText';
 import { getSession } from '@/lib/auth';
-import { canAccessGameBySlug } from '@/lib/access';
+import { canAccessGameBySlug, getSubscriptionMaxScreens, getSponsorMaxScreens } from '@/lib/access';
 import { prisma } from '@/lib/db';
 import { isStreamVideo, extractStreamVideoId, getSignedPlaybackUrls } from '@/lib/cloudflare-stream';
 
@@ -55,15 +55,24 @@ export default async function GamePage({ params }: Props) {
   const isTeamManager = teamManagerCount > 0;
   let streamPlaybackUrl: string | undefined;
   let streamHlsUrl: string | undefined;
-  if (canWatch && game.videoUrl && isStreamVideo(game.videoUrl)) {
+  // Só preenchemos URLs no servidor quando NÃO há limite de telas; senão o cliente deve buscar via /api/video/stream-playback para o limite ser aplicado.
+  if (canWatch && game.videoUrl && isStreamVideo(game.videoUrl) && session) {
     try {
-      const vid = extractStreamVideoId(game.videoUrl);
-      if (vid) {
-        const urls = await getSignedPlaybackUrls(vid, 3600);
-        streamPlaybackUrl = urls.iframeUrl;
-        streamHlsUrl = urls.hlsUrl;
+      const [subScreens, sponsorScreens] = await Promise.all([
+        getSubscriptionMaxScreens(session.userId),
+        getSponsorMaxScreens(session.userId),
+      ]);
+      const hasScreenLimit = subScreens != null || sponsorScreens != null;
+      if (!hasScreenLimit) {
+        const vid = extractStreamVideoId(game.videoUrl);
+        if (vid) {
+          const urls = await getSignedPlaybackUrls(vid, 3600);
+          streamPlaybackUrl = urls.iframeUrl;
+          streamHlsUrl = urls.hlsUrl;
+        }
       }
     } catch {
+      // Em caso de erro ao verificar limite ou gerar URLs, não preencher — cliente usará /api/video/stream-playback.
       streamPlaybackUrl = undefined;
       streamHlsUrl = undefined;
     }
@@ -248,6 +257,7 @@ export default async function GamePage({ params }: Props) {
                 posterUrl={game.thumbnailUrl ?? undefined}
                 streamPlaybackUrl={streamPlaybackUrl}
                 streamHlsUrl={streamHlsUrl}
+                streamContext={isStreamVideo(game.videoUrl!) ? { gameSlug: game.slug } : undefined}
                 gameId={game.id}
               />
             </MatchPlayerPage>
