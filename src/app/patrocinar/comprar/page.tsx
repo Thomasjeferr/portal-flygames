@@ -334,6 +334,7 @@ function PatrocinarComprarContent() {
             </div>
 
             {(() => {
+              if (!plan) return null;
               const needsAcceptance = (plan.hasLoyalty && (plan.loyaltyMonths ?? 0) > 0) || plan.requireContractAcceptance;
               if (!needsAcceptance) return null;
               const typeLabel = plan.type === 'sponsor_fan' ? 'Patrocínio torcedor' : 'Patrocínio empresarial';
