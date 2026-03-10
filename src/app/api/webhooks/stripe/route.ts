@@ -39,7 +39,13 @@ export async function POST(request: NextRequest) {
     // Se no futuro houver renovação de patrocínio (Stripe Subscription com metadata sponsorPlanId + userId),
     // usar o favoriteTeamId atual do usuário para a comissão; se favoriteTeamId for null, não criar TeamSponsorshipEarning.
     if (event.type === 'invoice.paid') {
-      const invoice = event.data.object as { id: string; subscription?: string | { id: string }; amount_paid?: number };
+      const invoice = event.data.object as {
+        id: string;
+        subscription?: string | { id: string };
+        amount_paid?: number;
+        lines?: { data?: Array<{ metadata?: Record<string, string> }> };
+        parent?: { subscription_details?: { metadata?: Record<string, string> } };
+      };
       const sub = invoice.subscription;
       const subscriptionId = typeof sub === 'string' ? sub : sub != null && typeof sub === 'object' ? sub.id : null;
       if (!subscriptionId) return NextResponse.json({ received: true });
@@ -48,7 +54,14 @@ export async function POST(request: NextRequest) {
       if (!stripe) return NextResponse.json({ received: true });
 
       const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
-      const metadata = stripeSubscription.metadata || {};
+      let metadata = stripeSubscription.metadata || {};
+      // Fallback: Stripe pode enviar userId/planId no evento (line item ou parent) e não na subscription
+      if (!metadata.userId || !metadata.planId) {
+        const fromLine = invoice.lines?.data?.[0]?.metadata;
+        const fromParent = invoice.parent?.subscription_details?.metadata;
+        if (fromLine?.userId && fromLine?.planId) metadata = { ...metadata, ...fromLine };
+        else if (fromParent?.userId && fromParent?.planId) metadata = { ...metadata, ...fromParent };
+      }
       const tournamentId = metadata.tournamentId;
       const teamIdMeta = metadata.teamId;
       const planIdMeta = metadata.planId;

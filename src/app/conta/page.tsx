@@ -64,7 +64,13 @@ function SkeletonCard({ className = '' }: { className?: string }) {
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'America/Sao_Paulo' });
+  try {
+    const date = new Date(d);
+    if (Number.isNaN(date.getTime())) return d;
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'America/Sao_Paulo' });
+  } catch {
+    return d;
+  }
 }
 
 function formatPrice(value: number) {
