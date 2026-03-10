@@ -41,6 +41,7 @@ interface PurchaseItem {
   purchasedAt: string;
   paymentStatus: string;
   expiresAt: string | null;
+  amountCents?: number | null;
   plan: { name: string; type: string; price?: number; teamPayoutPercent?: number };
   game: { id: string; title: string; slug: string } | null;
   team: TeamOption | null;
@@ -51,6 +52,32 @@ interface AccountData {
   isTeamManager: boolean;
   subscription: SubscriptionData | null;
   purchases: PurchaseItem[];
+  sponsorOrders?: SponsorOrderItem[];
+}
+
+interface SponsorOrderItem {
+  id: string;
+  companyName: string;
+  amountCents: number;
+  paymentStatus: string;
+  createdAt: string;
+  contractAcceptedAt: string | null;
+  contractSnapshot: string | null;
+  sponsorPlan: { id: string; name: string; price: number; billingPeriod: string; type?: string };
+  sponsor: {
+    id: string;
+    isActive: boolean;
+    startAt: string | null;
+    endAt: string | null;
+    planType: string | null;
+    hasLoyalty: boolean;
+    loyaltyMonths: number;
+    loyaltyStartDate: string | null;
+    loyaltyEndDate: string | null;
+    contractStatus: string | null;
+    cancellationRequestedAt: string | null;
+  } | null;
+  team: { id: string; name: string; crestUrl: string | null } | null;
 }
 
 function SkeletonCard({ className = '' }: { className?: string }) {
@@ -96,6 +123,7 @@ export default function ContaPage() {
   const [savingTeamId, setSavingTeamId] = useState<string | null>(null);
   const [teamsForPurchase, setTeamsForPurchase] = useState<TeamOption[]>([]);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [cancellingSubscription, setCancellingSubscription] = useState(false);
 
   const loadAccount = useCallback(async () => {
     setError(null);
@@ -237,6 +265,27 @@ export default function ContaPage() {
     }
   };
 
+  const handleCancelRenewal = async () => {
+    if (!confirm('Deseja cancelar a renovação? Você mantém acesso até o fim do período atual e não será mais cobrado depois.')) return;
+    setCancellingSubscription(true);
+    setProfileMessage(null);
+    try {
+      const res = await fetch('/api/subscription/cancel', { method: 'POST', credentials: 'include' });
+      const result = await res.json();
+      if (!res.ok) {
+        setProfileMessage({ type: 'error', text: result.error || 'Não foi possível cancelar a renovação.' });
+        return;
+      }
+      const endStr = result.endDate ? formatDate(result.endDate) : 'o fim do período';
+      setProfileMessage({ type: 'success', text: `Renovação cancelada. Você mantém acesso até ${endStr}.` });
+      loadAccount();
+    } catch {
+      setProfileMessage({ type: 'error', text: 'Erro de conexão.' });
+    } finally {
+      setCancellingSubscription(false);
+    }
+  };
+
   const canChooseTeam = (p: PurchaseItem) => {
     const payoutPercent = p.plan?.teamPayoutPercent ?? 0;
     return p.paymentStatus === 'paid' && payoutPercent > 0 && !p.team;
@@ -321,6 +370,7 @@ export default function ContaPage() {
   const user = data.user;
   const subscription = data.subscription;
   const purchases = data.purchases ?? [];
+  const sponsorOrders = data.sponsorOrders ?? [];
   const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'Usuário';
   const subscriptionActive = !!subscription?.active && new Date(subscription.endDate) >= new Date();
 
@@ -488,6 +538,24 @@ export default function ContaPage() {
                     Ver planos
                   </Link>
                 )}
+                {subscriptionActive && !isStoreApp && (
+                  <Link
+                    href="/conta/trocar-plano"
+                    className="inline-flex mt-2 px-4 py-2 rounded-lg border border-futvar-green/60 text-futvar-green font-semibold hover:bg-futvar-green/10"
+                  >
+                    Trocar plano
+                  </Link>
+                )}
+                {subscriptionActive && !isStoreApp && subscription?.paymentGateway === 'stripe' && (
+                  <button
+                    type="button"
+                    onClick={handleCancelRenewal}
+                    disabled={cancellingSubscription}
+                    className="block mt-2 text-sm text-futvar-light hover:text-red-400 transition-colors disabled:opacity-50"
+                  >
+                    {cancellingSubscription ? 'Cancelando...' : 'Cancelar renovação'}
+                  </button>
+                )}
                 {!isStoreApp && (
                   <div className="flex flex-wrap gap-2 pt-2">
                     <Link href="/planos" className="text-sm text-futvar-green hover:underline">
@@ -548,6 +616,88 @@ export default function ContaPage() {
               </div>
             )}
           </section>
+
+          {/* Patrocínio / Contrato */}
+          {sponsorOrders.length > 0 && (
+            <section className="rounded-2xl border border-white/10 bg-futvar-dark p-6 shadow-lg md:col-span-2">
+              <h2 className="text-lg font-semibold text-white mb-4">Patrocínio / Contrato</h2>
+              <div className="space-y-4">
+                {sponsorOrders.map((so) => {
+                  const sp = so.sponsor;
+                  const isActive = !!sp?.isActive && sp.endAt && new Date(sp.endAt) >= new Date();
+                  const typeLabel = sp?.planType === 'sponsor_fan' ? 'Torcedor' : 'Empresarial';
+                  const loyaltyEnd = sp?.loyaltyEndDate ? new Date(sp.loyaltyEndDate) : null;
+                  const inLoyalty = sp?.hasLoyalty && loyaltyEnd && new Date() < loyaltyEnd;
+                  const daysLeft = loyaltyEnd ? Math.ceil((loyaltyEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                  const recLabel = so.sponsorPlan.billingPeriod === 'monthly' ? 'Mensal' : so.sponsorPlan.billingPeriod === 'quarterly' ? 'Trimestral' : 'Anual';
+                  return (
+                    <div
+                      key={so.id}
+                      className="rounded-xl border border-futvar-green/20 bg-futvar-darker/80 p-4 space-y-3"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="text-white font-medium">{so.companyName}</p>
+                          <p className="text-futvar-light text-sm">{so.sponsorPlan.name}</p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${isActive ? 'bg-green-900/40 text-green-300' : 'bg-amber-900/40 text-amber-300'}`}>
+                            {isActive ? 'Ativo' : 'Inativo'}
+                          </span>
+                          <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-futvar-light">
+                            {typeLabel}
+                          </span>
+                          {sp?.hasLoyalty && (
+                            <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-futvar-green/20 text-futvar-green">
+                              Fidelidade {inLoyalty ? 'vigente' : 'encerrada'}
+                            </span>
+                          )}
+                          {sp?.contractStatus === 'cancellation_requested' && (
+                            <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-amber-900/40 text-amber-300">
+                              Cancelamento solicitado
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm text-futvar-light">
+                        <div><span className="text-white/70">Início:</span> {sp?.startAt ? formatDate(sp.startAt) : '-'}</div>
+                        <div><span className="text-white/70">Próxima cobrança:</span> {sp?.endAt ? formatDate(sp.endAt) : '-'}</div>
+                        <div><span className="text-white/70">Valor:</span> {formatPrice(so.amountCents / 100)}</div>
+                        <div><span className="text-white/70">Recorrência:</span> {recLabel}</div>
+                      </div>
+                      {sp?.hasLoyalty && loyaltyEnd && (
+                        <div className="text-sm border-t border-white/10 pt-3">
+                          <p className="text-futvar-light">
+                            {inLoyalty ? (
+                              <>Fidelidade até <strong className="text-white">{formatDate(loyaltyEnd.toISOString())}</strong>. Faltam <strong className="text-futvar-green">{daysLeft} dias</strong>.</>
+                            ) : (
+                              <>Período de fidelidade encerrado em {formatDate(loyaltyEnd.toISOString())}.</>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                      {so.contractSnapshot && (
+                        <details className="text-xs text-futvar-light border-t border-white/10 pt-2">
+                          <summary className="cursor-pointer hover:text-white">Termo aceito na contratação</summary>
+                          <p className="mt-1 whitespace-pre-wrap">{so.contractSnapshot}</p>
+                        </details>
+                      )}
+                      {isActive && !sp?.cancellationRequestedAt && (
+                        <div className="pt-2">
+                          <Link
+                            href="/conta/patrocinio/cancelar"
+                            className="text-sm text-futvar-green hover:underline"
+                          >
+                            Solicitar cancelamento
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           {/* Time do Coração */}
           <section className="rounded-2xl border border-white/10 bg-futvar-dark p-6 shadow-lg md:col-span-2">
@@ -615,8 +765,10 @@ export default function ContaPage() {
                         <p className="text-futvar-light text-sm">{formatDate(p.purchasedAt)}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        {!isStoreApp && p.plan?.price != null && (
-                          <span className="text-futvar-light text-sm">{formatPrice(p.plan.price)}</span>
+                        {!isStoreApp && (p.amountCents != null || p.plan?.price != null) && (
+                          <span className="text-futvar-light text-sm">
+                            {p.amountCents != null ? formatPrice(p.amountCents / 100) : formatPrice(p.plan!.price!)}
+                          </span>
                         )}
                         <span
                           className={`text-sm font-medium ${

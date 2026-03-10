@@ -4,11 +4,9 @@ import { sendTransactionalEmail } from '@/lib/email/emailService';
 /**
  * Marca uma purchase Woovi como paga e aplica todos os efeitos
  * colaterais (time do coração, comissões, assinatura, e-mail).
- *
- * Esta função é usada tanto pelo webhook Woovi quanto por fluxos
- * de sincronização/manual (fallback) que consultam o status direto na API.
+ * Se amountCents for informado, atualiza o valor pago na purchase (valor realmente cobrado).
  */
-export async function markWooviPurchaseAsPaid(purchaseId: string): Promise<void> {
+export async function markWooviPurchaseAsPaid(purchaseId: string, amountCents?: number): Promise<void> {
   const purchase = await prisma.purchase.findUnique({
     where: { id: purchaseId },
     include: { plan: true, partner: true },
@@ -20,7 +18,10 @@ export async function markWooviPurchaseAsPaid(purchaseId: string): Promise<void>
 
   await prisma.purchase.update({
     where: { id: purchase.id },
-    data: { paymentStatus: 'paid' },
+    data: {
+      paymentStatus: 'paid',
+      ...(amountCents != null && amountCents >= 0 ? { amountCents } : {}),
+    },
   });
 
   // Atualiza time do coração do usuário quando a compra tem time
@@ -44,8 +45,8 @@ export async function markWooviPurchaseAsPaid(purchaseId: string): Promise<void>
   }
 
   // Comissão para parceiro (quando houver parceiro aprovado e comissão > 0)
+  const grossAmountCents = amountCents ?? purchase.amountCents ?? Math.round((purchase.plan.price ?? 0) * 100);
   if (purchase.partnerId && purchase.partner && purchase.partner.status === 'approved') {
-    const planPriceCents = Math.round((purchase.plan.price ?? 0) * 100);
     const planPartnerPercent = purchase.plan.partnerCommissionPercent ?? 0;
     let commissionPercent =
       planPartnerPercent > 0
@@ -57,14 +58,14 @@ export async function markWooviPurchaseAsPaid(purchaseId: string): Promise<void>
     if (commissionPercent < 0) commissionPercent = 0;
     if (commissionPercent > 100) commissionPercent = 100;
 
-    const partnerAmountCents = Math.round((planPriceCents * commissionPercent) / 100);
+    const partnerAmountCents = Math.round((grossAmountCents * commissionPercent) / 100);
     if (partnerAmountCents > 0) {
       await prisma.partnerEarning.create({
         data: {
           partnerId: purchase.partnerId,
           sourceType: 'purchase',
           sourceId: purchase.id,
-          grossAmountCents: planPriceCents,
+          grossAmountCents,
           commissionPercent,
           amountCents: partnerAmountCents,
           status: 'pending',
@@ -109,14 +110,14 @@ export async function markWooviPurchaseAsPaid(purchaseId: string): Promise<void>
   // E-mail de confirmação de compra
   const user = await prisma.user.findUnique({ where: { id: purchase.userId } });
   if (user?.email) {
-    const planPrice = (purchase.plan.price ?? 0).toFixed(2).replace('.', ',');
+    const amountForEmail = (grossAmountCents / 100).toFixed(2).replace('.', ',');
     sendTransactionalEmail({
       to: user.email,
       templateKey: 'PURCHASE_CONFIRMATION',
       vars: {
         name: user.name || user.email.split('@')[0],
         plan_name: purchase.plan.name,
-        amount: planPrice,
+        amount: amountForEmail,
       },
       userId: user.id,
     }).catch((e) => console.error('[Woovi] Email compra:', e));

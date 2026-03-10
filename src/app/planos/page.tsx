@@ -38,6 +38,7 @@ export default function PlanosPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isTeamManager, setIsTeamManager] = useState(false);
+  const [subscription, setSubscription] = useState<{ active: boolean; planId: string | null } | null>(null);
 
   // Persiste ref do parceiro na sessão para não perder a indicação se a URL do checkout não tiver ref
   useEffect(() => {
@@ -58,6 +59,11 @@ export default function PlanosPage() {
       .then(([plansData, authData]) => {
         setPlans(Array.isArray(plansData) ? plansData : []);
         setIsTeamManager(!!authData?.isTeamManager);
+        setSubscription(
+          authData?.subscription && typeof authData.subscription.active === 'boolean'
+            ? { active: authData.subscription.active, planId: authData.subscription.planId ?? null }
+            : null
+        );
       })
       .finally(() => setLoading(false));
   }, []);
@@ -177,16 +183,32 @@ export default function PlanosPage() {
                   )}
                 </ul>
                 <div className="mt-auto">
-                  <Link
-                    href={`/checkout?planId=${plan.id}${plan.type === 'unitario' ? '&gameId=' : ''}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}`}
-                    className={`block w-full py-3 rounded-lg font-bold text-center transition-colors ${
-                      plan.id === recommendedPlanId
-                        ? 'bg-futvar-green text-futvar-darker hover:bg-futvar-green-light'
-                        : 'border-2 border-futvar-green/60 text-futvar-green bg-transparent hover:bg-futvar-green/10'
-                    }`}
-                  >
-                    {plan.type === 'unitario' ? 'Comprar este jogo' : 'Patrocinar'}
-                  </Link>
+                  {plan.type === 'recorrente' && subscription?.active && subscription.planId === plan.id ? (
+                    <Link
+                      href="/conta"
+                      className="block w-full py-3 rounded-lg font-bold text-center border-2 border-green-500/60 text-green-400 bg-green-900/20 hover:bg-green-900/30 transition-colors"
+                    >
+                      Plano atual — Ver minha conta
+                    </Link>
+                  ) : plan.type === 'recorrente' && subscription?.active ? (
+                    <Link
+                      href="/conta/trocar-plano"
+                      className="block w-full py-3 rounded-lg font-bold text-center border-2 border-futvar-green/60 text-futvar-green bg-transparent hover:bg-futvar-green/10 transition-colors"
+                    >
+                      Trocar para este plano
+                    </Link>
+                  ) : (
+                    <Link
+                      href={`/checkout?planId=${plan.id}${plan.type === 'unitario' ? '&gameId=' : ''}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}`}
+                      className={`block w-full py-3 rounded-lg font-bold text-center transition-colors ${
+                        plan.id === recommendedPlanId
+                          ? 'bg-futvar-green text-futvar-darker hover:bg-futvar-green-light'
+                          : 'border-2 border-futvar-green/60 text-futvar-green bg-transparent hover:bg-futvar-green/10'
+                      }`}
+                    >
+                      {plan.type === 'unitario' ? 'Comprar este jogo' : 'Assinar'}
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}

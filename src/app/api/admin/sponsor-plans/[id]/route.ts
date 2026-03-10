@@ -39,6 +39,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       teamPayoutPercent: raw.teamPayoutPercent !== undefined ? (typeof raw.teamPayoutPercent === 'number' ? raw.teamPayoutPercent : Number(raw.teamPayoutPercent)) : undefined,
       partnerCommissionPercent: raw.partnerCommissionPercent !== undefined ? (typeof raw.partnerCommissionPercent === 'number' ? raw.partnerCommissionPercent : Number(raw.partnerCommissionPercent)) : undefined,
       maxScreens: raw.maxScreens === '' || raw.maxScreens === null ? null : raw.maxScreens !== undefined ? (typeof raw.maxScreens === 'number' ? raw.maxScreens : Number(raw.maxScreens)) : undefined,
+      loyaltyMonths: raw.loyaltyMonths !== undefined ? Math.max(0, Number(raw.loyaltyMonths) || 0) : undefined,
+      loyaltyNoticeText: raw.loyaltyNoticeText !== undefined ? (raw.loyaltyNoticeText?.trim() || null) : undefined,
     });
     if (!parsed.success)
       return NextResponse.json({ error: parsed.error.errors[0]?.message ?? 'Dados inválidos' }, { status: 400 });
@@ -56,6 +58,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (d.maxScreens !== undefined) update.maxScreens = d.maxScreens;
     if (d.sortOrder !== undefined) update.sortOrder = d.sortOrder;
     if (d.isActive !== undefined) update.isActive = d.isActive;
+    if (d.type !== undefined) update.type = d.type;
+    if (d.hasLoyalty !== undefined) update.hasLoyalty = d.hasLoyalty;
+    if (d.loyaltyMonths !== undefined) update.loyaltyMonths = d.loyaltyMonths;
+    if (d.loyaltyNoticeText !== undefined) update.loyaltyNoticeText = d.loyaltyNoticeText;
+    if (d.requireContractAcceptance !== undefined) update.requireContractAcceptance = d.requireContractAcceptance;
 
     const plan = await prisma.sponsorPlan.update({
       where: { id },

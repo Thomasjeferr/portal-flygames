@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { hasAnyPurchaseAsCustomer } from '@/lib/access';
+import { hasAnyPurchaseAsCustomer, isTeamResponsible } from '@/lib/access';
 import { uniqueSlug } from '@/lib/slug';
 import { teamCreateSchema } from '@/lib/validators/teamSchema';
 import { sendEmailToMany } from '@/lib/email/emailService';
@@ -67,6 +67,17 @@ export async function POST(request: NextRequest) {
   if (!user.emailVerified) {
     return NextResponse.json(
       { error: 'Verifique seu e-mail antes de cadastrar um time. Confira sua caixa de entrada (e spam).' },
+      { status: 403 }
+    );
+  }
+
+  const alreadyResponsible = await isTeamResponsible(session.userId);
+  if (alreadyResponsible) {
+    return NextResponse.json(
+      {
+        error:
+          'Esta conta já é responsável por um time. Cada e-mail pode cadastrar apenas um time. Para cadastrar outro clube, use outra conta com outro e-mail.',
+      },
       { status: 403 }
     );
   }

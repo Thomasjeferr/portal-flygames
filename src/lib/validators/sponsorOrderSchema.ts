@@ -9,6 +9,7 @@ export const sponsorOrderCheckoutSchema = z.object({
   instagram: z.string().optional(),
   logoUrl: z.string().min(1, 'Logo é obrigatória'),
   teamId: z.string().nullable().optional(),
+  contractAccepted: z.boolean().optional(),
   utmSource: z.string().optional(),
   utmMedium: z.string().optional(),
   utmCampaign: z.string().optional(),

@@ -7,7 +7,7 @@ const redirectCadastrar = '/times/cadastrar';
 
 export default function CadastrarTimePage() {
   const crestFileRef = useRef<HTMLInputElement>(null);
-  const [authCheck, setAuthCheck] = useState<'loading' | 'guest' | 'unverified' | 'ok'>('loading');
+  const [authCheck, setAuthCheck] = useState<'loading' | 'guest' | 'unverified' | 'already_responsible' | 'ok'>('loading');
   const [user, setUser] = useState<{ email: string; name: string | null } | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploadingCrest, setUploadingCrest] = useState(false);
@@ -39,6 +39,10 @@ export default function CadastrarTimePage() {
         setUser({ email: data.user.email, name: data.user.name ?? null });
         if (!data.user.emailVerified) {
           setAuthCheck('unverified');
+          return;
+        }
+        if (data.isTeamManager) {
+          setAuthCheck('already_responsible');
           return;
         }
         setAuthCheck('ok');
@@ -203,6 +207,31 @@ export default function CadastrarTimePage() {
           <p className="text-futvar-light text-sm">
             Já verificou? <Link href="/times/cadastrar" className="text-futvar-green hover:underline">Atualize a página</Link>.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authCheck === 'already_responsible') {
+    return (
+      <div className="pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Cadastrar time</h1>
+          <p className="text-futvar-light mb-4">
+            Esta conta (<strong className="text-white">{user?.email}</strong>) já é responsável por um time. Cada e-mail pode cadastrar apenas um time.
+          </p>
+          <p className="text-futvar-light mb-6">
+            Para cadastrar outro clube, use outra conta com outro e-mail. Para gerenciar o time atual, acesse a Área do time.
+          </p>
+          <Link
+            href="/painel-time"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light transition-colors"
+          >
+            Ir para a Área do time
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
         </div>
       </div>
     );

@@ -21,6 +21,15 @@ export interface StripeSubscriptionInput {
   metadata?: Record<string, string>;
 }
 
+/** Patrocínio: assinatura recorrente com billingPeriod (monthly | quarterly | yearly) */
+export interface StripeSponsorSubscriptionInput {
+  customerEmail: string;
+  sponsorOrderId: string;
+  planName: string;
+  amountCents: number;
+  billingPeriod: string;
+}
+
 /** Stripe instance (typed minimally for what we use). */
 export interface StripeClient {
   paymentIntents: { create: (opts: unknown) => Promise<{ client_secret: string; id: string; invoice?: string }> };
@@ -29,7 +38,7 @@ export interface StripeClient {
   subscriptions: {
     create: (opts: {
       customer: string;
-      items: { price_data: { currency: string; unit_amount: number; recurring: { interval: 'month' | 'year' }; product: string } }[];
+      items: { price_data: { currency: string; unit_amount: number; recurring: { interval: 'month' | 'year'; interval_count?: number }; product: string } }[];
       payment_behavior?: string;
       metadata: Record<string, string>;
       expand?: string[];
@@ -38,6 +47,8 @@ export interface StripeClient {
       latest_invoice?: string | { payment_intent?: { client_secret: string; id: string }; id: string };
     }>;
     retrieve: (id: string, opts?: { expand?: string[] }) => Promise<{ metadata: Record<string, string> }>;
+    update: (id: string, opts: { cancel_at_period_end?: boolean }) => Promise<unknown>;
+    cancel: (id: string) => Promise<unknown>;
   };
   invoices: {
     retrieve: (id: string, opts?: { expand?: string[] }) => Promise<{ id: string; subscription: string | { id: string }; amount_paid?: number; lines?: { data?: Array<{ metadata?: Record<string, string> }> } }>;
@@ -153,6 +164,109 @@ export async function createStripeSubscription(input: StripeSubscriptionInput): 
     const msg = e && typeof e === 'object' && 'message' in e ? (e as { message: string }).message : String(e);
     console.error('Stripe createSubscription error:', msg);
     return null;
+  }
+}
+
+/** Patrocínio: monthly -> month/1, quarterly -> month/3, yearly -> year/1 */
+const BILLING_PERIOD_STRIPE: Record<string, { interval: 'month' | 'year'; interval_count: number }> = {
+  monthly: { interval: 'month', interval_count: 1 },
+  quarterly: { interval: 'month', interval_count: 3 },
+  yearly: { interval: 'year', interval_count: 1 },
+};
+
+/**
+ * Cria assinatura recorrente para patrocínio. Metadata: sponsorOrderId, type: 'sponsor'.
+ * Webhook invoice.paid cria/atualiza Sponsor; subscription.deleted revoga acesso (isActive = false).
+ */
+export async function createStripeSponsorSubscription(input: StripeSponsorSubscriptionInput): Promise<{ clientSecret: string; subscriptionId: string } | null> {
+  const stripe = await getStripe();
+  if (!stripe) {
+    console.warn('Stripe não configurado');
+    return null;
+  }
+
+  const recurring = BILLING_PERIOD_STRIPE[input.billingPeriod.toLowerCase()] ?? BILLING_PERIOD_STRIPE.monthly;
+
+  try {
+    let customerId: string;
+    const list = await stripe.customers.list({ email: input.customerEmail });
+    if (list.data.length > 0) {
+      customerId = list.data[0].id;
+    } else {
+      const customer = await stripe.customers.create({ email: input.customerEmail });
+      customerId = customer.id;
+    }
+
+    const product = await stripe.products.create({ name: input.planName });
+
+    const sub = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [
+        {
+          price_data: {
+            currency: 'brl',
+            unit_amount: input.amountCents,
+            recurring: { interval: recurring.interval, interval_count: recurring.interval_count },
+            product: product.id,
+          },
+        },
+      ],
+      payment_behavior: 'default_incomplete',
+      metadata: {
+        sponsorOrderId: input.sponsorOrderId,
+        type: 'sponsor',
+      },
+      expand: ['latest_invoice.payment_intent'],
+    });
+
+    const latestInvoice = sub.latest_invoice;
+    const paymentIntent =
+      typeof latestInvoice === 'object' && latestInvoice?.payment_intent
+        ? typeof latestInvoice.payment_intent === 'object'
+          ? latestInvoice.payment_intent
+          : null
+        : null;
+    const clientSecret = paymentIntent?.client_secret ?? null;
+
+    if (!clientSecret) {
+      console.error('Stripe sponsor subscription created but no payment_intent client_secret');
+      return null;
+    }
+
+    return {
+      clientSecret,
+      subscriptionId: sub.id,
+    };
+  } catch (e) {
+    const msg = e && typeof e === 'object' && 'message' in e ? (e as { message: string }).message : String(e);
+    console.error('Stripe createStripeSponsorSubscription error:', msg);
+    return null;
+  }
+}
+
+/** Cancela assinatura no Stripe imediatamente (para troca de plano: nova assinatura já foi ativada). */
+export async function cancelStripeSubscription(subscriptionId: string): Promise<boolean> {
+  const stripe = await getStripe();
+  if (!stripe) return false;
+  try {
+    await stripe.subscriptions.cancel(subscriptionId);
+    return true;
+  } catch (e) {
+    console.error('Stripe cancelSubscription error:', e);
+    return false;
+  }
+}
+
+/** Marca assinatura para cancelar ao fim do período (usuário mantém acesso até endDate). */
+export async function cancelStripeSubscriptionAtPeriodEnd(subscriptionId: string): Promise<boolean> {
+  const stripe = await getStripe();
+  if (!stripe) return false;
+  try {
+    await stripe.subscriptions.update(subscriptionId, { cancel_at_period_end: true });
+    return true;
+  } catch (e) {
+    console.error('Stripe cancelAtPeriodEnd error:', e);
+    return false;
   }
 }
 

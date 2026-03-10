@@ -14,8 +14,29 @@ interface SponsorOrder {
   amountCents: number;
   createdAt: string;
   paymentStatus: string;
-  sponsorPlan: { name: string; price: number; teamPayoutPercent: number };
+  contractAcceptedAt: string | null;
+  contractSnapshot: string | null;
+  sponsorPlan: {
+    name: string;
+    price: number;
+    teamPayoutPercent: number;
+    type?: string;
+    hasLoyalty?: boolean;
+    loyaltyMonths?: number;
+  };
   team: { id: string; name: string } | null;
+  sponsor?: {
+    id: string;
+    isActive: boolean;
+    endAt: string | null;
+    planType: string | null;
+    hasLoyalty: boolean;
+    loyaltyMonths: number;
+    loyaltyStartDate: string | null;
+    loyaltyEndDate: string | null;
+    contractStatus: string | null;
+    cancellationRequestedAt: string | null;
+  } | null;
 }
 
 interface Team {
@@ -35,11 +56,16 @@ export default function AdminSponsorOrdersPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [viewAll, setViewAll] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     setError('');
-    const params = new URLSearchParams({ missingTeam: 'true', page: String(page), limit: String(PAGE_SIZE) });
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(PAGE_SIZE),
+      ...(viewAll ? {} : { missingTeam: 'true' }),
+    });
     Promise.all([
       fetch(`/api/admin/sponsor-orders?${params}`),
       fetch('/api/public/teams', { cache: 'no-store' }),
@@ -64,7 +90,7 @@ export default function AdminSponsorOrdersPage() {
       })
       .catch(() => setError('Erro ao carregar pedidos de patrocínio.'))
       .finally(() => setLoading(false));
-  }, [router, page]);
+  }, [router, page, viewAll]);
 
   const handleAssignTeam = async (orderId: string, teamId: string) => {
     if (!teamId) return;
@@ -90,8 +116,19 @@ export default function AdminSponsorOrdersPage() {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">Pedidos de patrocínio sem time</h1>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+        <h1 className="text-2xl font-bold text-white">
+          {viewAll ? 'Pedidos de patrocínio' : 'Pedidos de patrocínio sem time'}
+        </h1>
+        <label className="flex items-center gap-2 cursor-pointer text-netflix-light text-sm">
+          <input
+            type="checkbox"
+            checked={viewAll}
+            onChange={(e) => { setViewAll(e.target.checked); setPage(1); }}
+            className="rounded border-white/20"
+          />
+          Ver todos os pedidos pagos
+        </label>
       </div>
       {loading ? (
         <p className="text-netflix-light">Carregando...</p>
@@ -106,6 +143,10 @@ export default function AdminSponsorOrdersPage() {
               <tr>
                 <th className="px-4 py-2 text-left">Empresa</th>
                 <th className="px-4 py-2 text-left">Plano</th>
+                <th className="px-4 py-2 text-left">Tipo</th>
+                <th className="px-4 py-2 text-left">Fidelidade</th>
+                <th className="px-4 py-2 text-left">Status</th>
+                <th className="px-4 py-2 text-left">Aceite</th>
                 <th className="px-4 py-2 text-left">Valor</th>
                 <th className="px-4 py-2 text-left">Data</th>
                 <th className="px-4 py-2 text-left">Instagram / Site / WhatsApp</th>
@@ -124,6 +165,36 @@ export default function AdminSponsorOrdersPage() {
                   </td>
                   <td className="px-4 py-2 text-netflix-light">
                     {o.sponsorPlan?.name ?? '-'}
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${o.sponsorPlan?.type === 'sponsor_fan' ? 'bg-blue-900/40 text-blue-300' : 'bg-amber-900/40 text-amber-300'}`}>
+                      {o.sponsorPlan?.type === 'sponsor_fan' ? 'Torcedor' : 'Empresa'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    {o.sponsorPlan?.hasLoyalty && (o.sponsorPlan?.loyaltyMonths ?? 0) > 0 ? (
+                      <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-green-900/40 text-green-300">
+                        {o.sponsorPlan.loyaltyMonths} meses
+                      </span>
+                    ) : (
+                      <span className="text-netflix-light text-xs">Sem fidelidade</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2">
+                    {o.sponsor ? (
+                      o.sponsor.cancellationRequestedAt ? (
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-amber-900/40 text-amber-300">Cancel. solicitado</span>
+                      ) : o.sponsor.isActive ? (
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-green-900/40 text-green-300">Ativo</span>
+                      ) : (
+                        <span className="text-netflix-light text-xs">Inativo</span>
+                      )
+                    ) : (
+                      <span className="text-netflix-light text-xs">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-netflix-light text-xs">
+                    {o.contractAcceptedAt ? 'Sim' : '—'}
                   </td>
                   <td className="px-4 py-2 text-netflix-light">
                     R$ {(o.amountCents / 100).toFixed(2).replace('.', ',')}
@@ -160,19 +231,23 @@ export default function AdminSponsorOrdersPage() {
                     {o.team?.name ?? '—'}
                   </td>
                   <td className="px-4 py-2">
-                    <select
-                      defaultValue=""
-                      disabled={savingId === o.id || teams.length === 0}
-                      onChange={(e) => handleAssignTeam(o.id, e.target.value || '')}
-                      className="px-3 py-1 rounded bg-netflix-gray border border-white/20 text-xs text-white focus:outline-none focus:ring-1 focus:ring-netflix-red"
-                    >
-                      <option value="">Vincular time...</option>
-                      {teams.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
+                    {o.teamId ? (
+                      <span className="text-netflix-light">{o.team?.name ?? '—'}</span>
+                    ) : (
+                      <select
+                        defaultValue=""
+                        disabled={savingId === o.id || teams.length === 0}
+                        onChange={(e) => handleAssignTeam(o.id, e.target.value || '')}
+                        className="px-3 py-1 rounded bg-netflix-gray border border-white/20 text-xs text-white focus:outline-none focus:ring-1 focus:ring-netflix-red"
+                      >
+                        <option value="">Vincular time...</option>
+                        {teams.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -9,6 +9,8 @@ import {
   ensurePortalSubscriptionForGoalSupporter,
   deactivatePortalSubscriptionByStripeId,
 } from '@/lib/tournamentGoalPayment';
+import { cancelStripeSubscription } from '@/lib/payments/stripe';
+import { recalculatePreSaleGameStatus } from '@/services/pre-sale-status.service';
 
 function addMonths(date: Date, months: number): Date {
   const d = new Date(date);
@@ -75,6 +77,135 @@ export async function POST(request: NextRequest) {
           if (lineMeta?.userId && lineMeta?.planId) metadata = { ...metadata, ...lineMeta };
         } catch (_) { /* ignore */ }
       }
+
+      // Patrocínio recorrente: type === 'sponsor' e sponsorOrderId no metadata
+      if (metadata.type === 'sponsor' && metadata.sponsorOrderId) {
+        const sponsorOrderId = metadata.sponsorOrderId;
+        const order = await prisma.sponsorOrder.findUnique({
+          where: { id: sponsorOrderId },
+          include: { sponsorPlan: true, partner: true },
+        });
+        if (!order) {
+          console.warn('[Stripe] invoice.paid sponsor: pedido não encontrado', { sponsorOrderId });
+          return NextResponse.json({ received: true });
+        }
+
+        const existingSponsor = await prisma.sponsor.findUnique({
+          where: { externalSubscriptionId: subscriptionId },
+        });
+        const startAt = new Date();
+        let endAt = new Date();
+        const period = order.sponsorPlan.billingPeriod;
+        if (period === 'monthly') endAt = addMonths(startAt, 1);
+        else if (period === 'quarterly') endAt = addMonths(startAt, 3);
+        else if (period === 'yearly') endAt = addMonths(startAt, 12);
+        else endAt = addMonths(startAt, 1);
+
+        const hasLoyalty = order.sponsorPlan.hasLoyalty && (order.sponsorPlan.loyaltyMonths ?? 0) > 0;
+        const loyaltyMonths = hasLoyalty ? (order.sponsorPlan.loyaltyMonths ?? 0) : 0;
+        const loyaltyStartDate = startAt;
+        const loyaltyEndDate = hasLoyalty ? addMonths(startAt, loyaltyMonths) : null;
+        const contractStatus = hasLoyalty ? 'loyalty_active' : 'active';
+
+        if (existingSponsor) {
+          await prisma.sponsor.update({
+            where: { id: existingSponsor.id },
+            data: { endAt },
+          });
+          console.info('[Stripe] invoice.paid sponsor: renovação', { sponsorOrderId, subscriptionId });
+          return NextResponse.json({ received: true });
+        }
+
+        if (order.paymentStatus !== 'paid') {
+          await prisma.sponsorOrder.update({
+            where: { id: order.id },
+            data: { paymentStatus: 'paid', externalId: subscriptionId },
+          });
+        }
+
+        const sponsorByOrder = await prisma.sponsor.findUnique({
+          where: { sponsorOrderId: order.id },
+        });
+        if (!sponsorByOrder) {
+          await prisma.sponsor.create({
+            data: {
+              name: order.companyName,
+              websiteUrl: order.websiteUrl,
+              whatsapp: order.whatsapp,
+              instagram: order.instagram,
+              logoUrl: order.logoUrl,
+              tier: 'APOIO',
+              priority: 0,
+              isActive: true,
+              startAt,
+              endAt,
+              planId: order.sponsorPlanId,
+              teamId: order.teamId,
+              sponsorOrderId: order.id,
+              externalSubscriptionId: subscriptionId,
+              planType: order.sponsorPlan.type ?? 'sponsor_company',
+              hasLoyalty,
+              loyaltyMonths,
+              loyaltyStartDate,
+              loyaltyEndDate,
+              contractStatus,
+            },
+          });
+
+          if (order.teamId && order.amountToTeamCents > 0) {
+            await prisma.teamSponsorshipEarning.create({
+              data: {
+                teamId: order.teamId,
+                sponsorOrderId: order.id,
+                amountCents: order.amountToTeamCents,
+                status: 'pending',
+              },
+            });
+          }
+
+          if (order.userId && order.teamId) {
+            await prisma.user.update({
+              where: { id: order.userId },
+              data: { favoriteTeamId: order.teamId },
+            }).catch(() => {});
+          }
+
+          if (order.partnerId && order.partner && order.partner.status === 'approved') {
+            const grossAmountCents = order.amountCents;
+            const planPartnerPercent = order.sponsorPlan.partnerCommissionPercent ?? 0;
+            let commissionPercent = planPartnerPercent > 0 ? planPartnerPercent : (order.partner.sponsorCommissionPercent ?? 0);
+            if (commissionPercent < 0) commissionPercent = 0;
+            if (commissionPercent > 100) commissionPercent = 100;
+            const partnerAmountCents = Math.round((grossAmountCents * commissionPercent) / 100);
+            if (partnerAmountCents > 0) {
+              await prisma.partnerEarning.create({
+                data: {
+                  partnerId: order.partnerId,
+                  sourceType: 'sponsor',
+                  sourceId: order.id,
+                  grossAmountCents,
+                  commissionPercent,
+                  amountCents: partnerAmountCents,
+                  status: 'pending',
+                },
+              });
+            }
+          }
+
+          const amountFormatted = (order.amountCents / 100).toFixed(2).replace('.', ',');
+          sendTransactionalEmail({
+            to: order.email,
+            templateKey: 'SPONSOR_CONFIRMATION',
+            vars: {
+              company_name: order.companyName,
+              plan_name: order.sponsorPlan.name,
+              amount: amountFormatted,
+            },
+          }).catch((e) => console.error('[Stripe] Email patrocínio:', e));
+        }
+        return NextResponse.json({ received: true });
+      }
+
       const tournamentId = metadata.tournamentId;
       const teamIdMeta = metadata.teamId;
       const planIdMeta = metadata.planId;
@@ -141,6 +272,7 @@ export async function POST(request: NextRequest) {
             planId: plan.id,
             gameId: null,
             teamId,
+            amountCents,
             amountToTeamCents,
             paymentStatus: 'paid',
             paymentGateway: 'stripe',
@@ -165,6 +297,16 @@ export async function POST(request: NextRequest) {
       else if (plan.periodicity === 'anual') endDate.setFullYear(endDate.getFullYear() + 1);
       else endDate.setDate(endDate.getDate() + (plan.duracaoDias ?? 30));
 
+      // Troca de plano: cancelar a assinatura antiga no Stripe para não cobrar duas vezes.
+      const currentSub = await prisma.subscription.findUnique({
+        where: { userId: user.id },
+        select: { externalSubscriptionId: true },
+      });
+      if (currentSub?.externalSubscriptionId && currentSub.externalSubscriptionId !== subscriptionId) {
+        await cancelStripeSubscription(currentSub.externalSubscriptionId);
+        console.info('[Stripe] invoice.paid: assinatura antiga cancelada (troca de plano)', { oldId: currentSub.externalSubscriptionId });
+      }
+
       await prisma.subscription.upsert({
         where: { userId: user.id },
         create: {
@@ -176,10 +318,30 @@ export async function POST(request: NextRequest) {
           paymentGateway: 'stripe',
           externalSubscriptionId: subscriptionId,
         },
-        update: { active: true, startDate, endDate, planId: plan.id },
+        update: { active: true, startDate, endDate, planId: plan.id, externalSubscriptionId: subscriptionId },
       });
 
       console.info('[Stripe] invoice.paid: assinatura ativada', { userId: user.id, planId: plan.id, subscriptionId });
+
+      // Pré-estreia Meta: recalcular status dos jogos em que o time do usuário participa (pode liberar FUNDED/PUBLISHED)
+      if (user.favoriteTeamId && plan.type === 'recorrente') {
+        const metaGames = await prisma.preSaleGame.findMany({
+          where: {
+            metaEnabled: true,
+            status: 'PRE_SALE',
+            OR: [
+              { homeTeamId: user.favoriteTeamId },
+              { awayTeamId: user.favoriteTeamId },
+            ],
+          },
+          select: { id: true },
+        });
+        for (const g of metaGames) {
+          recalculatePreSaleGameStatus(g.id).catch((e) =>
+            console.error('[Stripe] invoice.paid recalculate pre-sale meta:', g.id, e)
+          );
+        }
+      }
 
       if (isNewPurchase) {
         const planPrice = (amountCents / 100).toFixed(2).replace('.', ',');
@@ -214,6 +376,31 @@ export async function POST(request: NextRequest) {
           await recalculateGoalSupportersAndConfirm(metadata.tournamentId, metadata.teamId);
           await deactivatePortalSubscriptionByStripeId(subscriptionId);
           console.info('[Stripe] Assinatura GOAL cancelada, contagem atualizada:', metadata.tournamentId, metadata.teamId);
+        }
+      } else if (metadata.userId && metadata.planId) {
+        // Assinatura de plano do portal: desativar nosso registro para não renovar acesso após o fim no Stripe.
+        const ourSub = await prisma.subscription.findFirst({
+          where: { externalSubscriptionId: subscriptionId },
+          select: { id: true, userId: true },
+        });
+        if (ourSub) {
+          await prisma.subscription.update({
+            where: { id: ourSub.id },
+            data: { active: false },
+          });
+          console.info('[Stripe] Assinatura portal cancelada/encerrada', { userId: ourSub.userId });
+        }
+      } else if (metadata.type === 'sponsor' || metadata.sponsorOrderId) {
+        const sponsor = await prisma.sponsor.findFirst({
+          where: { externalSubscriptionId: subscriptionId },
+          select: { id: true },
+        });
+        if (sponsor) {
+          await prisma.sponsor.update({
+            where: { id: sponsor.id },
+            data: { isActive: false, contractStatus: 'cancelled' },
+          });
+          console.info('[Stripe] Patrocínio cancelado no Stripe: acesso revogado', { subscriptionId });
         }
       }
       return NextResponse.json({ received: true });
@@ -267,6 +454,7 @@ export async function POST(request: NextRequest) {
                           planId: plan.id,
                           gameId: null,
                           teamId,
+                          amountCents,
                           amountToTeamCents,
                           paymentStatus: 'paid',
                           paymentGateway: 'stripe',
@@ -340,10 +528,15 @@ export async function POST(request: NextRequest) {
           else if (period === 'yearly') endAt = addMonths(startAt, 12);
           else endAt = addMonths(startAt, 1);
 
+          const hasLoyaltyLegacy = order.sponsorPlan.hasLoyalty && (order.sponsorPlan.loyaltyMonths ?? 0) > 0;
+          const loyaltyMonthsLegacy = hasLoyaltyLegacy ? (order.sponsorPlan.loyaltyMonths ?? 0) : 0;
+
           await prisma.sponsor.create({
             data: {
               name: order.companyName,
               websiteUrl: order.websiteUrl,
+              whatsapp: order.whatsapp,
+              instagram: order.instagram,
               logoUrl: order.logoUrl,
               tier: 'APOIO',
               priority: 0,
@@ -352,6 +545,13 @@ export async function POST(request: NextRequest) {
               endAt,
               planId: order.sponsorPlanId,
               teamId: order.teamId,
+              sponsorOrderId: order.id,
+              planType: order.sponsorPlan.type ?? 'sponsor_company',
+              hasLoyalty: hasLoyaltyLegacy,
+              loyaltyMonths: loyaltyMonthsLegacy,
+              loyaltyStartDate: startAt,
+              loyaltyEndDate: hasLoyaltyLegacy ? addMonths(startAt, loyaltyMonthsLegacy) : null,
+              contractStatus: hasLoyaltyLegacy ? 'loyalty_active' : 'active',
             },
           });
 

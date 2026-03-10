@@ -10,6 +10,11 @@ const BILLING_OPTIONS = [
   { value: 'yearly', label: 'Anual' },
 ];
 
+const PLAN_TYPE_OPTIONS = [
+  { value: 'sponsor_company', label: 'Patrocínio empresarial' },
+  { value: 'sponsor_fan', label: 'Patrocínio torcedor' },
+];
+
 const DEFAULT_FEATURE_FLAGS = [
   { key: 'show_in_footer', label: 'Logo no footer' },
   { key: 'show_in_player', label: 'No player' },
@@ -37,6 +42,11 @@ export default function EditSponsorPlanPage() {
     maxScreens: '' as string | number,
     sortOrder: 0,
     isActive: true,
+    type: 'sponsor_company' as string,
+    hasLoyalty: false,
+    loyaltyMonths: 0,
+    loyaltyNoticeText: '',
+    requireContractAcceptance: false,
   });
 
   useEffect(() => {
@@ -64,6 +74,11 @@ export default function EditSponsorPlanPage() {
           maxScreens: data.maxScreens != null ? data.maxScreens : '',
           sortOrder: data.sortOrder ?? 0,
           isActive: data.isActive ?? true,
+          type: data.type ?? 'sponsor_company',
+          hasLoyalty: data.hasLoyalty ?? false,
+          loyaltyMonths: data.loyaltyMonths ?? 0,
+          loyaltyNoticeText: data.loyaltyNoticeText ?? '',
+          requireContractAcceptance: data.requireContractAcceptance ?? false,
         });
       })
       .catch(() => setError('Erro ao carregar'))
@@ -95,8 +110,13 @@ export default function EditSponsorPlanPage() {
           partnerCommissionPercent: Number(form.partnerCommissionPercent) ?? 0,
           grantFullAccess: form.grantFullAccess,
           maxScreens: form.maxScreens === '' ? null : Number(form.maxScreens) || null,
-          sortOrder: Number(form.sortOrder) || 0,
+          sortOrder: Number(form.sortOrder) ?? 0,
           isActive: form.isActive,
+          type: form.type,
+          hasLoyalty: form.type === 'sponsor_fan' ? false : form.hasLoyalty,
+          loyaltyMonths: form.type === 'sponsor_fan' ? 0 : Math.max(0, Number(form.loyaltyMonths) || 0),
+          loyaltyNoticeText: form.loyaltyNoticeText?.trim() || null,
+          requireContractAcceptance: form.requireContractAcceptance,
         }),
       });
       const data = await res.json();
@@ -235,6 +255,81 @@ export default function EditSponsorPlanPage() {
             onChange={(e) => setForm((f) => ({ ...f, sortOrder: Number(e.target.value) || 0 }))}
             className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
           />
+        </div>
+        <div className="border-t border-white/10 pt-5">
+          <h3 className="text-sm font-semibold text-white mb-3">Tipo do plano</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-netflix-light mb-2">Tipo</label>
+              <select
+                value={form.type}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm((f) => ({
+                    ...f,
+                    type: v,
+                    hasLoyalty: v === 'sponsor_fan' ? false : f.hasLoyalty,
+                    loyaltyMonths: v === 'sponsor_fan' ? 0 : f.loyaltyMonths,
+                  }));
+                }}
+                className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+              >
+                {PLAN_TYPE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-netflix-light">
+                Empresarial: pode ter fidelidade. Torcedor: sem fidelidade.
+              </p>
+            </div>
+            {form.type === 'sponsor_company' && (
+              <>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.hasLoyalty}
+                    onChange={(e) => setForm((f) => ({ ...f, hasLoyalty: e.target.checked }))}
+                    className="rounded border-white/20"
+                  />
+                  <span className="text-netflix-light">Possui fidelidade mínima</span>
+                </label>
+                {form.hasLoyalty && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-netflix-light mb-2">Meses de fidelidade</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={120}
+                        value={form.loyaltyMonths}
+                        onChange={(e) => setForm((f) => ({ ...f, loyaltyMonths: Math.max(0, Number(e.target.value) || 0) }))}
+                        className="w-full max-w-[120px] px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-netflix-light mb-2">Texto resumido da fidelidade (opcional)</label>
+                      <textarea
+                        value={form.loyaltyNoticeText}
+                        onChange={(e) => setForm((f) => ({ ...f, loyaltyNoticeText: e.target.value }))}
+                        rows={2}
+                        placeholder="Ex.: Compromisso mínimo de 6 meses."
+                        className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white placeholder-netflix-light focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                      />
+                    </div>
+                  </>
+                )}
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.requireContractAcceptance}
+                    onChange={(e) => setForm((f) => ({ ...f, requireContractAcceptance: e.target.checked }))}
+                    className="rounded border-white/20"
+                  />
+                  <span className="text-netflix-light">Exigir aceite contratual no checkout</span>
+                </label>
+              </>
+            )}
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">Benefícios</label>

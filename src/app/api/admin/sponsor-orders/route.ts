@@ -35,15 +35,41 @@ export async function GET(request: NextRequest) {
       take: limit,
       include: {
         sponsorPlan: {
-          select: { name: true, price: true, teamPayoutPercent: true },
+          select: { name: true, price: true, teamPayoutPercent: true, type: true, hasLoyalty: true, loyaltyMonths: true },
         },
         team: { select: { id: true, name: true } },
       },
     }),
   ]);
 
+  const orderIds = orders.map((o) => o.id);
+  const sponsors = orderIds.length > 0
+    ? await prisma.sponsor.findMany({
+        where: { sponsorOrderId: { in: orderIds } },
+        select: {
+          sponsorOrderId: true,
+          id: true,
+          isActive: true,
+          endAt: true,
+          planType: true,
+          hasLoyalty: true,
+          loyaltyMonths: true,
+          loyaltyStartDate: true,
+          loyaltyEndDate: true,
+          contractStatus: true,
+          cancellationRequestedAt: true,
+        },
+      })
+    : [];
+
+  const sponsorByOrderId = new Map(sponsors.map((s) => [s.sponsorOrderId, s]));
+  const ordersWithSponsor = orders.map((order) => ({
+    ...order,
+    sponsor: sponsorByOrderId.get(order.id) ?? null,
+  }));
+
   return NextResponse.json({
-    orders,
+    orders: ordersWithSponsor,
     total,
     page,
     limit,

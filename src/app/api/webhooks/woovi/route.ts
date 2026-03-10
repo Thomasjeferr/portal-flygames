@@ -78,6 +78,12 @@ export async function POST(request: NextRequest) {
 
     console.info('[Woovi webhook] CHARGE_COMPLETED correlationID=', correlationId);
 
+    // Valor realmente pago (centavos), para gravar na purchase e exibir na área do usuário
+    const wooviChargeValueCents =
+      typeof (charge as { value?: number })?.value === 'number'
+        ? Math.round((charge as { value: number }).value)
+        : undefined;
+
     // Pré-estreia: externalId = presale-{slotId}
     if (typeof correlationId === 'string' && correlationId.startsWith('presale-')) {
       const slotId = correlationId.replace('presale-', '');
@@ -101,7 +107,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    await markWooviPurchaseAsPaid(correlationId);
+    await markWooviPurchaseAsPaid(correlationId, wooviChargeValueCents);
     console.info('[Woovi webhook] Compra marcada como paga:', correlationId);
     return NextResponse.json({ received: true });
   } catch (e) {

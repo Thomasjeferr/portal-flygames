@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { isTeamResponsible } from '@/lib/access';
+import { isTeamResponsible, hasFullAccess } from '@/lib/access';
 import { clearPaymentConfigCache } from '@/lib/payment-config';
 import { createWooviCharge } from '@/lib/payments/woovi';
 import { createStripePaymentIntent, createStripeSubscription } from '@/lib/payments/stripe';
@@ -60,6 +60,55 @@ export async function POST(request: NextRequest) {
 
     if (plan.type === 'unitario' && !gameId) {
       return NextResponse.json({ error: 'Plano unitário exige gameId' }, { status: 400 });
+    }
+
+    // Bloquear compra do mesmo jogo quando o usuário já tem acesso (assinatura com acesso total ou compra avulsa paga).
+    if (plan.type === 'unitario' && gameId) {
+      const fullAccess = await hasFullAccess(session.userId);
+      if (fullAccess) {
+        return NextResponse.json(
+          { error: 'Você já tem acesso a todo o catálogo pela sua assinatura. Não é necessário comprar este jogo avulso.' },
+          { status: 403 }
+        );
+      }
+      const existingGamePurchase = await prisma.purchase.findFirst({
+        where: {
+          userId: session.userId,
+          gameId,
+          paymentStatus: 'paid',
+          plan: { active: true },
+          OR: [{ expiresAt: null }, { expiresAt: { gte: new Date() } }],
+        },
+        select: { id: true },
+      });
+      if (existingGamePurchase) {
+        return NextResponse.json(
+          { error: 'Você já possui acesso a este jogo. Confira em "Minha conta" > Histórico de compras.' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Bloquear nova assinatura recorrente se o usuário já tem assinatura ativa (evitar cobrança duplicada).
+    if (plan.type === 'recorrente') {
+      const existingSub = await prisma.subscription.findUnique({
+        where: { userId: session.userId },
+        include: { plan: { select: { id: true, name: true } } },
+      });
+      const now = new Date();
+      const isActive = !!existingSub?.active && existingSub.endDate >= now;
+      if (isActive) {
+        if (existingSub.planId === planId) {
+          return NextResponse.json(
+            { error: 'Você já assina este plano. Acesse sua conta para ver sua assinatura ou cancele para assinar novamente após o fim do período.' },
+            { status: 403 }
+          );
+        }
+        return NextResponse.json(
+          { error: 'Você já tem uma assinatura ativa. Para trocar de plano, use "Trocar plano" na sua conta ou cancele a assinatura atual.' },
+          { status: 403 }
+        );
+      }
     }
 
     // Regras de forma de pagamento:
@@ -145,6 +194,7 @@ export async function POST(request: NextRequest) {
         gameId: plan.type === 'unitario' ? gameId : null,
         teamId: amountToTeamCents > 0 && chosenTeamId ? chosenTeamId : null,
         partnerId,
+        amountCents,
         amountToTeamCents,
         paymentStatus: 'pending',
         expiresAt,

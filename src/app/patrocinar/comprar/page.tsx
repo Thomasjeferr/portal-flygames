@@ -28,6 +28,11 @@ type Plan = {
   billingPeriod: string;
   benefits?: string[];
   teamPayoutPercent?: number | null;
+  type?: string;
+  hasLoyalty?: boolean;
+  loyaltyMonths?: number;
+  loyaltyNoticeText?: string | null;
+  requireContractAcceptance?: boolean;
 };
 
 function PatrocinarComprarContent() {
@@ -51,6 +56,7 @@ function PatrocinarComprarContent() {
     instagram: '',
     teamId: '',
     logoUrl: '',
+    contractAccepted: false,
   });
 
   useEffect(() => {
@@ -128,6 +134,11 @@ function PatrocinarComprarContent() {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!plan) return;
+    const needsAcceptance = (plan.hasLoyalty && (plan.loyaltyMonths ?? 0) > 0) || plan.requireContractAcceptance;
+    if (needsAcceptance && !form.contractAccepted) {
+      setError('É necessário aceitar os termos do plano para continuar.');
+      return;
+    }
     setError('');
     setSubmitting(true);
     try {
@@ -143,6 +154,7 @@ function PatrocinarComprarContent() {
           instagram: form.instagram.trim() || undefined,
           logoUrl: form.logoUrl.trim(),
           teamId: form.teamId || null,
+          contractAccepted: needsAcceptance ? form.contractAccepted : undefined,
           utmSource: searchParams.get('utm_source') || undefined,
           utmMedium: searchParams.get('utm_medium') || undefined,
           utmCampaign: searchParams.get('utm_campaign') || undefined,
@@ -320,9 +332,42 @@ function PatrocinarComprarContent() {
                 </div>
               )}
             </div>
+
+            {(() => {
+              const needsAcceptance = (plan.hasLoyalty && (plan.loyaltyMonths ?? 0) > 0) || plan.requireContractAcceptance;
+              if (!needsAcceptance) return null;
+              const typeLabel = plan.type === 'sponsor_fan' ? 'Patrocínio torcedor' : 'Patrocínio empresarial';
+              return (
+                <div className="rounded-xl border-2 border-futvar-green/40 bg-futvar-dark/80 p-4 space-y-3">
+                  <h4 className="text-sm font-semibold text-white">Termos do plano</h4>
+                  <ul className="text-sm text-futvar-light space-y-1">
+                    <li><strong>Tipo:</strong> {typeLabel}</li>
+                    {plan.hasLoyalty && (plan.loyaltyMonths ?? 0) > 0 && (
+                      <li><strong>Fidelidade mínima:</strong> {plan.loyaltyMonths} meses</li>
+                    )}
+                    <li><strong>Recorrência:</strong> {BILLING_LABEL[plan.billingPeriod] ?? plan.billingPeriod}</li>
+                    {plan.loyaltyNoticeText?.trim() && (
+                      <li className="mt-2 pt-2 border-t border-white/10">{plan.loyaltyNoticeText}</li>
+                    )}
+                  </ul>
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={form.contractAccepted}
+                      onChange={(e) => setForm((f) => ({ ...f, contractAccepted: e.target.checked }))}
+                      className="mt-1 rounded border-white/20 text-futvar-green focus:ring-futvar-green"
+                    />
+                    <span className="text-sm text-futvar-light group-hover:text-white">
+                      Li e concordo com os termos do plano e, quando aplicável, com o prazo mínimo de fidelidade.
+                    </span>
+                  </label>
+                </div>
+              );
+            })()}
+
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || (((plan.hasLoyalty && (plan.loyaltyMonths ?? 0) > 0) || plan.requireContractAcceptance) && !form.contractAccepted)}
               className="w-full py-3 rounded bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light disabled:opacity-50"
             >
               {submitting ? 'Gerando pagamento...' : 'Ir para pagamento'}

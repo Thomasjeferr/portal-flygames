@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { createStripePaymentIntent } from '@/lib/payments/stripe';
+import { createStripeSponsorSubscription } from '@/lib/payments/stripe';
 import { isTeamResponsible } from '@/lib/access';
 import { sponsorOrderCheckoutSchema } from '@/lib/validators/sponsorOrderSchema';
 import { checkSponsorCheckoutRateLimit, incrementSponsorCheckoutRateLimit } from '@/lib/email/rateLimit';
@@ -50,6 +50,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Plano não encontrado ou inativo' }, { status: 404 });
     }
 
+    const requiresAcceptance = plan.requireContractAcceptance || (plan.hasLoyalty && (plan.loyaltyMonths ?? 0) > 0);
+    if (requiresAcceptance && !d.contractAccepted) {
+      return NextResponse.json(
+        { error: 'É necessário aceitar os termos do plano e, quando aplicável, o prazo mínimo de fidelidade para continuar.' },
+        { status: 400 }
+      );
+    }
+
+    const emailNorm = d.email.trim().toLowerCase();
+
+    // Regra duplicata: mesmo e-mail + mesmo plano com patrocínio ainda ativo
+    const now = new Date();
+    const paidOrders = await prisma.sponsorOrder.findMany({
+      where: {
+        email: emailNorm,
+        sponsorPlanId: d.sponsorPlanId,
+        paymentStatus: 'paid',
+      },
+      select: { id: true, sponsorPlan: { select: { name: true } } },
+    });
+    if (paidOrders.length > 0) {
+      const activeSponsor = await prisma.sponsor.findFirst({
+        where: {
+          sponsorOrderId: { in: paidOrders.map((o) => o.id) },
+          isActive: true,
+          endAt: { gte: now },
+        },
+        select: { id: true },
+      });
+      if (activeSponsor) {
+        return NextResponse.json(
+          {
+            error: `Este e-mail já possui patrocínio ativo do plano ${paidOrders[0]?.sponsorPlan?.name ?? 'este plano'}. Aguarde o fim do período ou use a opção de upgrade na sua conta.`,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     const amountCents = Math.round(plan.price * 100);
     let amountToTeamCents = 0;
     let partnerId: string | null = null;
@@ -73,13 +112,27 @@ export async function POST(request: NextRequest) {
 
     await incrementSponsorCheckoutRateLimit(ip);
 
+    const contractVersion = '1';
+    const contractSnapshot = requiresAcceptance
+      ? [
+          `Tipo: ${plan.type === 'sponsor_fan' ? 'Patrocínio torcedor' : 'Patrocínio empresarial'}`,
+          plan.hasLoyalty && (plan.loyaltyMonths ?? 0) > 0
+            ? `Fidelidade mínima: ${plan.loyaltyMonths} meses`
+            : null,
+          plan.loyaltyNoticeText?.trim() || null,
+          `Recorrência: ${plan.billingPeriod === 'monthly' ? 'mensal' : plan.billingPeriod === 'quarterly' ? 'trimestral' : 'anual'}`,
+        ]
+          .filter(Boolean)
+          .join('. ')
+      : null;
+
     const order = await prisma.sponsorOrder.create({
       data: {
         sponsorPlanId: plan.id,
         teamId: d.teamId || null,
         userId: session?.userId ?? null,
         companyName: d.companyName.trim(),
-        email: d.email.trim().toLowerCase(),
+        email: emailNorm,
         websiteUrl: d.websiteUrl?.trim() || null,
         whatsapp: d.whatsapp?.replace(/\D/g, '') || null,
         instagram: d.instagram?.trim() || null,
@@ -88,6 +141,9 @@ export async function POST(request: NextRequest) {
         amountToTeamCents,
         paymentStatus: 'pending',
         partnerId,
+        contractAcceptedAt: requiresAcceptance ? new Date() : null,
+        contractVersion: requiresAcceptance ? contractVersion : null,
+        contractSnapshot: contractSnapshot ?? null,
         utmSource: d.utmSource || null,
         utmMedium: d.utmMedium || null,
         utmCampaign: d.utmCampaign || null,
@@ -96,10 +152,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const stripe = await createStripePaymentIntent({
-      amount: amountCents,
+    const stripe = await createStripeSponsorSubscription({
       customerEmail: d.email.trim(),
-      metadata: { sponsorOrderId: order.id },
+      sponsorOrderId: order.id,
+      planName: plan.name,
+      amountCents,
+      billingPeriod: plan.billingPeriod,
     });
 
     if (!stripe) {
@@ -115,13 +173,14 @@ export async function POST(request: NextRequest) {
 
     await prisma.sponsorOrder.update({
       where: { id: order.id },
-      data: { paymentGateway: 'stripe', externalId: stripe.paymentIntentId },
+      data: { paymentGateway: 'stripe', externalId: stripe.subscriptionId },
     });
 
     return NextResponse.json({
       sponsorOrderId: order.id,
       clientSecret: stripe.clientSecret,
       amountCents,
+      isSubscription: true,
     });
   } catch (e) {
     console.error('sponsor-checkout', e);

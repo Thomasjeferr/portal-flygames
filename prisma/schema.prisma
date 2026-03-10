@@ -540,20 +540,26 @@ model ClubStreamSession {
 
 // Planos de Patrocínio (pacotes vendíveis)
 model SponsorPlan {
-  id                String   @id @default(cuid())
-  name              String   @map("name")
-  price             Float    @map("price")
-  billingPeriod     String   @default("monthly") @map("billing_period") // monthly | quarterly | yearly
-  benefits          String   @default("[]") @map("benefits") // JSON array de strings
-  featuresFlags     String   @default("{}") @map("features_flags") // JSON ex: { show_in_footer, show_in_player, ... }
-  teamPayoutPercent        Int      @default(0) @map("team_payout_percent") // 0-100: % do valor que vai para o time
-  partnerCommissionPercent Int      @default(0) @map("partner_commission_percent") // 0-100: % comissão para parceiro que indicar (0 = usa % do cadastro do parceiro)
-  grantFullAccess   Boolean  @default(false) @map("grant_full_access") // se true, usuário com pedido pago ganha acesso total ao conteúdo (jogos, lives, resultados)
-  maxScreens        Int?     @map("max_screens") // máximo de telas simultâneas para esse plano (null = ilimitado)
-  sortOrder         Int      @default(0) @map("sort_order")
-  isActive          Boolean  @default(true) @map("is_active")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id                        String   @id @default(cuid())
+  name                      String   @map("name")
+  price                     Float    @map("price")
+  billingPeriod             String   @default("monthly") @map("billing_period") // monthly | quarterly | yearly
+  benefits                  String   @default("[]") @map("benefits") // JSON array de strings
+  featuresFlags             String   @default("{}") @map("features_flags") // JSON ex: { show_in_footer, show_in_player, ... }
+  teamPayoutPercent         Int      @default(0) @map("team_payout_percent") // 0-100
+  partnerCommissionPercent  Int      @default(0) @map("partner_commission_percent") // 0-100
+  grantFullAccess           Boolean  @default(false) @map("grant_full_access")
+  maxScreens                Int?     @map("max_screens")
+  sortOrder                 Int      @default(0) @map("sort_order")
+  isActive                  Boolean  @default(true) @map("is_active")
+  // Tipo e fidelidade (patrocínio empresarial vs torcedor)
+  type                      String   @default("sponsor_company") @map("type") // sponsor_company | sponsor_fan
+  hasLoyalty                Boolean  @default(false) @map("has_loyalty")
+  loyaltyMonths             Int      @default(0) @map("loyalty_months")
+  loyaltyNoticeText         String?  @map("loyalty_notice_text")
+  requireContractAcceptance Boolean  @default(false) @map("require_contract_acceptance")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
 
   sponsors      Sponsor[]
   sponsorOrders SponsorOrder[]
@@ -577,6 +583,10 @@ model SponsorOrder {
   paymentStatus    String    @default("pending") @map("payment_status") // pending | paid | failed
   paymentGateway   String?   @map("payment_gateway")
   externalId       String?   @map("external_id")
+  // Aceite contratual no checkout
+  contractAcceptedAt DateTime? @map("contract_accepted_at")
+  contractVersion    String?    @map("contract_version")
+  contractSnapshot   String?    @map("contract_snapshot") // texto resumido do que foi aceito no momento da compra
   utmSource        String?   @map("utm_source")
   utmMedium        String?   @map("utm_medium")
   utmCampaign      String?   @map("utm_campaign")
@@ -590,6 +600,7 @@ model SponsorOrder {
   partner     Partner?    @relation(fields: [partnerId], references: [id], onDelete: SetNull)
   user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   earnings    TeamSponsorshipEarning[]
+  sponsor     Sponsor?    // patrocínio ativo criado por este pedido (recorrente: vincula à assinatura Stripe)
 }
 
 // Ganho do time com patrocínio (comissão)
@@ -612,24 +623,36 @@ model TeamSponsorshipEarning {
 
 // Patrocinadores
 model Sponsor {
-  id         String       @id @default(cuid())
-  name       String       @map("name")
-  websiteUrl String?      @map("website_url")
-  whatsapp   String?      @map("whatsapp")
-  instagram  String?      @map("instagram")
-  logoUrl    String       @map("logo_url")
-  tier       String       @default("APOIO") @map("tier") // MASTER | OFICIAL | APOIO
-  priority   Int          @default(0) @map("priority")
-  isActive   Boolean      @default(true) @map("is_active")
-  startAt    DateTime?    @map("start_at")
-  endAt      DateTime?    @map("end_at")
-  planId     String?      @map("plan_id")
-  teamId     String?      @map("team_id")
-  createdAt  DateTime     @default(now()) @map("created_at")
-  updatedAt  DateTime     @updatedAt @map("updated_at")
+  id                      String    @id @default(cuid())
+  name                    String    @map("name")
+  websiteUrl              String?   @map("website_url")
+  whatsapp                String?   @map("whatsapp")
+  instagram               String?   @map("instagram")
+  logoUrl                 String    @map("logo_url")
+  tier                    String    @default("APOIO") @map("tier") // MASTER | OFICIAL | APOIO
+  priority                Int       @default(0) @map("priority")
+  isActive                Boolean   @default(true) @map("is_active")
+  startAt                 DateTime? @map("start_at")
+  endAt                   DateTime? @map("end_at")
+  planId                  String?   @map("plan_id")
+  teamId                  String?   @map("team_id")
+  sponsorOrderId          String?   @unique @map("sponsor_order_id")
+  externalSubscriptionId  String?   @unique @map("external_subscription_id")
+  // Contrato / fidelidade (snapshot da contratação)
+  planType                String?   @map("plan_type") // sponsor_company | sponsor_fan
+  hasLoyalty              Boolean   @default(false) @map("has_loyalty")
+  loyaltyMonths           Int       @default(0) @map("loyalty_months")
+  loyaltyStartDate        DateTime? @map("loyalty_start_date")
+  loyaltyEndDate          DateTime? @map("loyalty_end_date")
+  contractStatus          String?   @map("contract_status") // active | loyalty_active | cancellation_requested | cancelled | expired
+  cancellationRequestedAt DateTime? @map("cancellation_requested_at")
+  cancellationReason      String?   @map("cancellation_reason")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
 
-  plan SponsorPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
-  team Team?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  plan         SponsorPlan?   @relation(fields: [planId], references: [id], onDelete: SetNull)
+  team         Team?          @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  sponsorOrder SponsorOrder?  @relation(fields: [sponsorOrderId], references: [id], onDelete: SetNull)
 }
 
 // Sessões de reprodução por dispositivo (para limite de telas do patrocinador empresa)
@@ -767,6 +790,7 @@ model Purchase {
   gameId             String?   @map("game_id") // preenchido para plano unitário (jogo específico)
   teamId             String?   @map("team_id") // time de coração (opcional)
   partnerId          String?   @map("partner_id") // parceiro/revendedor (opcional)
+  amountCents         Int?     @map("amount_cents") // valor realmente pago (na criação); null = legado, exibir plan.price
   amountToTeamCents  Int       @default(0) @map("amount_to_team_cents")
   purchasedAt        DateTime  @default(now()) @map("purchased_at")
   expiresAt          DateTime? @map("expires_at") // null = não expira

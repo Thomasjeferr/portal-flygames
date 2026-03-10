@@ -12,6 +12,9 @@ type SponsorPlan = {
   featuresFlags: Record<string, boolean>;
   sortOrder: number;
   isActive: boolean;
+  type?: string;
+  hasLoyalty?: boolean;
+  loyaltyMonths?: number;
 };
 
 const BILLING_LABEL: Record<string, string> = {
@@ -30,6 +33,7 @@ function formatPrice(n: number) {
 export default function AdminSponsorPlansPage() {
   const [plans, setPlans] = useState<SponsorPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [toggling, setToggling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -40,15 +44,38 @@ export default function AdminSponsorPlansPage() {
 
   const load = () => {
     setLoading(true);
+    setError('');
     const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
     fetch(`/api/admin/sponsor-plans?${params}`)
-      .then((r) => r.json())
-      .then((d) => {
-        setPlans(d.plans ?? []);
-        setTotal(d.total ?? 0);
-        setTotalPages(d.totalPages ?? 1);
+      .then(async (r) => {
+        const text = await r.text();
+        let data: { plans?: SponsorPlan[]; total?: number; totalPages?: number; error?: string } = {};
+        try {
+          data = JSON.parse(text);
+        } catch {
+          if (!r.ok) {
+            const preview = text.slice(0, 80).replace(/\s+/g, ' ');
+            setError(`Erro ${r.status}: resposta inválida do servidor. ${preview ? `(Resposta: ${preview}…)` : 'Verifique o terminal do servidor.'}`);
+          }
+          return;
+        }
+        if (!r.ok) {
+          setPlans([]);
+          setTotal(0);
+          setTotalPages(1);
+          setError(data?.error || `Erro ${r.status} ao carregar planos.`);
+          return;
+        }
+        setPlans(data.plans ?? []);
+        setTotal(data.total ?? 0);
+        setTotalPages(data.totalPages ?? 1);
       })
-      .catch(() => { setPlans([]); setTotal(0); setTotalPages(1); })
+      .catch((e) => {
+        setPlans([]);
+        setTotal(0);
+        setTotalPages(1);
+        setError(e instanceof Error ? e.message : 'Erro ao carregar planos.');
+      })
       .finally(() => setLoading(false));
   };
 
@@ -87,6 +114,11 @@ export default function AdminSponsorPlansPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
+      {error && (
+        <div className="mb-6 p-4 rounded-lg bg-red-900/20 border border-red-500/30 text-red-300 text-sm">
+          {error}
+        </div>
+      )}
       <div className="flex items-center justify-between mb-8">
         <div>
           <Link href="/admin/sponsors" className="text-netflix-light hover:text-white text-sm mb-2 inline-block">
@@ -115,6 +147,7 @@ export default function AdminSponsorPlansPage() {
             <thead className="bg-white/5 text-netflix-light text-sm">
               <tr>
                 <th className="px-4 py-3 font-medium">Nome</th>
+                <th className="px-4 py-3 font-medium">Tipo</th>
                 <th className="px-4 py-3 font-medium">Preço</th>
                 <th className="px-4 py-3 font-medium">Período</th>
                 <th className="px-4 py-3 font-medium">Ordem</th>
@@ -126,6 +159,16 @@ export default function AdminSponsorPlansPage() {
               {plans.map((p) => (
                 <tr key={p.id} className="hover:bg-white/5">
                   <td className="px-4 py-3 text-white font-medium">{p.name}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${p.type === 'sponsor_fan' ? 'bg-blue-900/40 text-blue-300' : 'bg-amber-900/40 text-amber-300'}`}>
+                      {p.type === 'sponsor_fan' ? 'Torcedor' : 'Empresa'}
+                    </span>
+                    {p.hasLoyalty && (p.loyaltyMonths ?? 0) > 0 && (
+                      <span className="ml-1 inline-flex px-2 py-0.5 rounded text-xs font-medium bg-green-900/40 text-green-300">
+                        {p.loyaltyMonths}m fidelidade
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-netflix-light">{formatPrice(p.price)}</td>
                   <td className="px-4 py-3 text-netflix-light">{BILLING_LABEL[p.billingPeriod] ?? p.billingPeriod}</td>
                   <td className="px-4 py-3 text-netflix-light">{p.sortOrder}</td>

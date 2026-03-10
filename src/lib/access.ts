@@ -86,8 +86,10 @@ export async function hasFullAccess(userId: string): Promise<boolean> {
     if (sub.plan.acessoTotal) return true;
   }
 
-  // Patrocínio empresa: pelo menos um pedido pago com plano que concede acesso total
-  const paidWithFullAccess = await prisma.sponsorOrder.findFirst({
+  // Patrocínio empresa: pedido pago com plano que concede acesso total E Sponsor ativo (recorrente: cancelar no Stripe revoga acesso)
+  // Duas consultas: o client Prisma pode não expor a relação reversa SponsorOrder -> Sponsor / Sponsor -> SponsorOrder
+  const now = new Date();
+  const orderIds = await prisma.sponsorOrder.findMany({
     where: {
       userId,
       paymentStatus: 'paid',
@@ -95,24 +97,49 @@ export async function hasFullAccess(userId: string): Promise<boolean> {
     },
     select: { id: true },
   });
-  return !!paidWithFullAccess;
+  if (orderIds.length === 0) return false;
+  const activeSponsor = await prisma.sponsor.findFirst({
+    where: {
+      sponsorOrderId: { in: orderIds.map((o) => o.id) },
+      isActive: true,
+      endAt: { gte: now },
+    },
+    select: { id: true },
+  });
+  return !!activeSponsor;
 }
 
 /**
  * Retorna o limite de telas simultâneas para o usuário quando tem acesso via patrocínio empresa.
  * Retorna null se não tiver patrocínio com acesso total ou se for ilimitado.
+ * Exige Sponsor ativo (isActive e endAt >= hoje) para contar.
  */
 export async function getSponsorMaxScreens(userId: string): Promise<number | null> {
-  const order = await prisma.sponsorOrder.findFirst({
+  const now = new Date();
+  const orderIds = await prisma.sponsorOrder.findMany({
     where: {
       userId,
       paymentStatus: 'paid',
       sponsorPlan: { grantFullAccess: true, isActive: true },
     },
-    orderBy: { createdAt: 'desc' },
-    select: { sponsorPlan: { select: { maxScreens: true } } },
+    select: { id: true },
   });
-  const max = order?.sponsorPlan?.maxScreens;
+  if (orderIds.length === 0) return null;
+  const sponsor = await prisma.sponsor.findFirst({
+    where: {
+      sponsorOrderId: { in: orderIds.map((o) => o.id) },
+      isActive: true,
+      endAt: { gte: now },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: { planId: true },
+  });
+  if (!sponsor?.planId) return null;
+  const plan = await prisma.sponsorPlan.findUnique({
+    where: { id: sponsor.planId },
+    select: { maxScreens: true },
+  });
+  const max = plan?.maxScreens;
   return max == null ? null : max;
 }
 
@@ -138,16 +165,26 @@ export async function getSubscriptionMaxScreens(userId: string): Promise<number 
 
 /**
  * Pode ver a página de Resultados aprovados (súmulas oficiais)?
- * Sim se: assinatura ativa com acesso total OU tem pelo menos um SponsorOrder pago vinculado à conta (patrocinador empresa).
+ * Sim se: assinatura ativa com acesso total OU tem pedido pago de patrocínio com Sponsor ativo.
  */
 export async function canAccessApprovedResults(userId: string): Promise<boolean> {
   if (await hasFullAccess(userId)) return true;
 
-  const paidOrder = await prisma.sponsorOrder.findFirst({
+  const now = new Date();
+  const orderIds = await prisma.sponsorOrder.findMany({
     where: { userId, paymentStatus: 'paid' },
     select: { id: true },
   });
-  return !!paidOrder;
+  if (orderIds.length === 0) return false;
+  const activeSponsor = await prisma.sponsor.findFirst({
+    where: {
+      sponsorOrderId: { in: orderIds.map((o) => o.id) },
+      isActive: true,
+      endAt: { gte: now },
+    },
+    select: { id: true },
+  });
+  return !!activeSponsor;
 }
 
 /**

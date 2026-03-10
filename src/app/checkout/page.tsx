@@ -216,6 +216,7 @@ function CheckoutContent() {
   const [pixCopied, setPixCopied] = useState(false);
   const [stripeSecret, setStripeSecret] = useState<string | null>(null);
   const [paymentAvailability, setPaymentAvailability] = useState<{ pix: boolean; card: boolean } | null>(null);
+  const [subscription, setSubscription] = useState<{ active: boolean; planId: string | null } | null>(null);
 
   useEffect(() => {
     if (!planId) {
@@ -243,6 +244,11 @@ function CheckoutContent() {
         }
         if (user.role === 'club_viewer') setIsClubViewer(true);
         if (authData?.isTeamManager) setIsTeamManager(true);
+        setSubscription(
+          authData?.subscription && typeof authData.subscription.active === 'boolean'
+            ? { active: authData.subscription.active, planId: authData.subscription.planId ?? null }
+            : null
+        );
         const p = Array.isArray(plansData) ? plansData.find((x: { id: string }) => x.id === planId) : null;
         setPlan(p ?? null);
         const pixOk = availability?.pix === true;
@@ -380,10 +386,33 @@ function CheckoutContent() {
 
   if (!plan) {
     return (
-      <div className="pt-24 pb-16 px-4 min-h-screen bg-futvar-darker">
+      <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
         <div className="max-w-lg mx-auto text-center">
           <p className="text-futvar-light mb-4">Plano não encontrado.</p>
           <Link href="/planos" className="text-futvar-green hover:underline">Ver planos</Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Usuário já assina este plano recorrente: não mostrar formulário de pagamento.
+  if (plan.type === 'recorrente' && subscription?.active && subscription.planId === plan.id) {
+    return (
+      <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
+        <div className="max-w-lg mx-auto text-center">
+          <h1 className="text-xl font-bold text-white mb-2">Você já assina este plano</h1>
+          <p className="text-futvar-light mb-4">
+            Sua assinatura <strong>{plan.name}</strong> já está ativa. Acesse sua conta para ver detalhes ou cancelar a renovação.
+          </p>
+          <Link
+            href="/conta"
+            className="inline-flex px-5 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
+          >
+            Ir para minha conta
+          </Link>
+          <p className="mt-4">
+            <Link href="/planos" className="text-futvar-green hover:underline text-sm">Ver planos</Link>
+          </p>
         </div>
       </div>
     );

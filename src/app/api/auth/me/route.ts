@@ -14,7 +14,10 @@ export async function GET() {
       where: { id: session.userId },
       select: { id: true, email: true, name: true, role: true, emailVerified: true, createdAt: true, favoriteTeamId: true, avatarUrl: true },
     }),
-    prisma.subscription.findUnique({ where: { userId: session.userId } }),
+    prisma.subscription.findUnique({
+      where: { userId: session.userId },
+      include: { plan: { select: { id: true, name: true } } },
+    }),
     isTeamResponsible(session.userId),
     prisma.partner.findFirst({
       where: { userId: session.userId, status: 'approved' },
@@ -39,10 +42,14 @@ export async function GET() {
       favoriteTeamId: user.favoriteTeamId,
       avatarUrl: user.avatarUrl,
     },
-    subscription: {
-      active: subscriptionActive,
-      endDate: subscription?.endDate?.toISOString() ?? null,
-    },
+    subscription: subscription
+      ? {
+          active: subscriptionActive,
+          endDate: subscription?.endDate?.toISOString() ?? null,
+          planId: subscription.planId ?? null,
+          plan: subscription.plan ? { id: subscription.plan.id, name: subscription.plan.name } : null,
+        }
+      : null,
     isTeamManager,
     isPartner: !!approvedPartner,
     partner: approvedPartner ? { id: approvedPartner.id, refCode: approvedPartner.refCode } : null,
