@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export type GameHighlightItem = {
   id: string;
@@ -34,6 +34,10 @@ export function GameHighlightsAdmin({ gameId }: { gameId: string }) {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [uploadingThumb, setUploadingThumb] = useState(false);
+  const thumbInputRef = useRef<HTMLInputElement | null>(null);
+  const THUMB_ACCEPT = '.jpg,.jpeg,.png,.webp';
+  const THUMB_MAX_MB = 5;
 
   const fetchHighlights = () => {
     fetch(`/api/admin/games/${gameId}/highlights`, { credentials: 'include' })
@@ -126,6 +130,37 @@ export function GameHighlightsAdmin({ gameId }: { gameId: string }) {
       if (res.ok) setHighlights((prev) => prev.filter((h) => h.id !== highlightId));
     } catch {
       // ignore
+    }
+  };
+
+  const handleThumbUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const maxBytes = THUMB_MAX_MB * 1024 * 1024;
+    if (file.size > maxBytes) {
+      setError(`Imagem muito grande. Máximo ${THUMB_MAX_MB}MB.`);
+      return;
+    }
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      setError('Use JPEG, PNG ou WebP para melhor compatibilidade.');
+      return;
+    }
+    setError('');
+    setUploadingThumb(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd, credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Erro no upload');
+      const url = typeof data?.url === 'string' ? data.url : '';
+      if (url) setForm((f) => ({ ...f, thumbnailUrl: url }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar imagem');
+    } finally {
+      setUploadingThumb(false);
     }
   };
 
@@ -231,13 +266,52 @@ export function GameHighlightsAdmin({ gameId }: { gameId: string }) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-netflix-light mb-1">Thumbnail (opcional)</label>
-                <input
-                  type="url"
-                  value={form.thumbnailUrl}
-                  onChange={(e) => setForm((f) => ({ ...f, thumbnailUrl: e.target.value }))}
-                  className="w-full px-4 py-2 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
-                  placeholder="https://..."
-                />
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2 flex-wrap items-end">
+                    <input
+                      type="url"
+                      value={form.thumbnailUrl}
+                      onChange={(e) => setForm((f) => ({ ...f, thumbnailUrl: e.target.value }))}
+                      className="flex-1 min-w-[200px] px-4 py-2 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                      placeholder="https://... ou use o botão abaixo"
+                    />
+                    <input
+                      ref={thumbInputRef}
+                      type="file"
+                      accept={THUMB_ACCEPT}
+                      className="sr-only"
+                      aria-hidden
+                      onChange={handleThumbUpload}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => thumbInputRef.current?.click()}
+                      disabled={uploadingThumb}
+                      className="px-4 py-2 rounded bg-white/10 text-white text-sm font-medium hover:bg-white/20 disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {uploadingThumb ? 'Enviando...' : 'Carregar thumbnail'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-netflix-light">
+                    JPEG, PNG ou WebP, até {THUMB_MAX_MB}MB. Formatos compatíveis com todos os navegadores.
+                  </p>
+                  {form.thumbnailUrl ? (
+                    <div className="mt-1 flex items-center gap-2">
+                      <img
+                        src={form.thumbnailUrl}
+                        alt=""
+                        className="h-14 w-24 object-cover rounded border border-white/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, thumbnailUrl: '' }))}
+                        className="text-xs text-netflix-light hover:text-white underline"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
