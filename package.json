@@ -16,7 +16,7 @@
     "db:seed-emails": "tsx prisma/seed-emails.ts",
     "cap:sync": "cap sync android",
     "icons:prepare": "node scripts/prepare-icon.js",
-    "icons:generate": "npm run icons:prepare && npx capacitor-assets generate --android && npx capacitor-assets generate --pwa && node -e \"const fs=require('fs'); const p='public/icons'; if(!fs.existsSync(p)) fs.mkdirSync(p,{recursive:true}); fs.readdirSync('icons').forEach(f=>fs.copyFileSync('icons/'+f, p+'/'+f));\"",
+    "icons:generate": "npm run icons:prepare && npx capacitor-assets generate --android --splashBackgroundColor '#0C1222' && npx capacitor-assets generate --pwa && node -e \"const fs=require('fs'); const p='public/icons'; if(!fs.existsSync(p)) fs.mkdirSync(p,{recursive:true}); fs.readdirSync('icons').forEach(f=>fs.copyFileSync('icons/'+f, p+'/'+f));\"",
     "android:build": "node scripts/build-android-apk.js",
     "android:copy-apk": "node scripts/copy-apk.js",
     "android:apk": "npm run android:build && npm run android:copy-apk"

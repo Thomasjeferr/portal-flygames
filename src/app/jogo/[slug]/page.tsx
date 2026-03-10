@@ -9,6 +9,7 @@ import { MatchPlayerPage } from '@/components/match/MatchPlayerPage';
 import { PlayerEngagement } from '@/components/player/PlayerEngagement';
 import { StoreAppNoAccessMessage } from '@/components/StoreAppNoAccessMessage';
 import { StoreAppOptionalText } from '@/components/StoreAppOptionalText';
+import { GameHighlightsSection } from '@/components/game/GameHighlightsSection';
 import { getSession } from '@/lib/auth';
 import { canAccessGameBySlug, getSubscriptionMaxScreens, getSponsorMaxScreens } from '@/lib/access';
 import { prisma } from '@/lib/db';
@@ -41,6 +42,18 @@ export default async function GamePage({ params }: Props) {
     include: {
       homeTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
       awayTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
+      highlights: {
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          videoUrl: true,
+          thumbnailUrl: true,
+          durationSec: true,
+          order: true,
+        },
+      },
     },
   });
   const displayMode = game?.displayMode ?? 'internal';
@@ -266,6 +279,10 @@ export default async function GamePage({ params }: Props) {
               entityId={game.id}
               title={game.title}
               shareText={`Assista: ${game.title}. ${game.homeTeam && game.awayTeam ? `${game.homeTeam.shortName || game.homeTeam.name} x ${game.awayTeam.shortName || game.awayTeam.name}` : ''}`.trim()}
+            />
+            <GameHighlightsSection
+              highlights={game.highlights}
+              gameSlug={game.slug}
             />
           </>
         )}

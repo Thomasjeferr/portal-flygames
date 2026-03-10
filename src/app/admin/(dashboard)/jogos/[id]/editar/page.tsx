@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { formatLiveDatetimeForInput } from '@/lib/liveTimezone';
 import { extractYouTubeVideoId, getYouTubeThumbnailUrl } from '@/lib/youtube';
 import { StreamVideoField } from '@/components/admin/StreamVideoField';
+import { GameHighlightsAdmin } from '@/components/admin/GameHighlightsAdmin';
 
 export default function EditGamePage() {
   const router = useRouter();
@@ -408,6 +409,7 @@ export default function EditGamePage() {
           </Link>
         </div>
       </form>
+      <GameHighlightsAdmin gameId={id} />
     </div>
   );
 }

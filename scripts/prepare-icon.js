@@ -36,7 +36,13 @@ async function createGreenBackground() {
   console.log('icon-background.png (verde) criado.');
 }
 
-/** Gera assets/splash.png (2732x2732) para a tela de abertura do app: fundo escuro + ícone centralizado. */
+/**
+ * Cor de fundo do splash: igual ao android/app/.../res/values/colors.xml (splash_background).
+ * Mantém coerência com o tema do app e com a tela de splash no Android 12+.
+ */
+const SPLASH_BACKGROUND = { r: 12, g: 18, b: 34 }; // #0C1222
+
+/** Gera assets/splash.png (2732×2732) para a tela de abertura: fundo #0C1222 + ícone centralizado. Requerido pelo @capacitor/assets (Custom Mode). */
 async function ensureSplash() {
   if (!fs.existsSync(iconOnly)) return;
   const sharp = require('sharp');
@@ -45,12 +51,12 @@ async function ensureSplash() {
   const icon = await sharp(iconOnly).resize(iconSize, iconSize).toBuffer();
   const left = Math.round((size - iconSize) / 2);
   await sharp({
-    create: { width: size, height: size, channels: 3, background: { r: 10, g: 15, b: 13 } },
+    create: { width: size, height: size, channels: 3, background: SPLASH_BACKGROUND },
   })
     .composite([{ input: icon, left, top: left }])
     .png()
     .toFile(splashPng);
-  console.log('splash.png (tela de abertura) criado.');
+  console.log('splash.png (2732×2732, fundo #0C1222) criado.');
 }
 
 (async () => {

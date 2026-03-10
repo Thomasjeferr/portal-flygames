@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
+import { StoreAppGate } from '@/components/StoreAppRedirectToHome';
 
 export const metadata = {
   title: 'Apoie o Futebol da Sua Cidade',
@@ -52,6 +53,7 @@ export default async function PatrocinarPage() {
     : null;
 
   return (
+    <StoreAppGate>
     <div className="pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
       <div className="max-w-4xl mx-auto">
         <div className="mb-10">
@@ -163,5 +165,6 @@ export default async function PatrocinarPage() {
         )}
       </div>
     </div>
+    </StoreAppGate>
   );
 }

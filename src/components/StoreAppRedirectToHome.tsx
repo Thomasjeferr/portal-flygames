@@ -16,3 +16,10 @@ export function StoreAppRedirectToHome() {
   if (isStoreApp) return <div className="min-h-screen bg-futvar-darker" />;
   return null;
 }
+
+/** Envolve conteúdo de página server: no app lojas redireciona para home, senão renderiza children. */
+export function StoreAppGate({ children }: { children: React.ReactNode }) {
+  const isStoreApp = useStoreApp();
+  if (isStoreApp) return <StoreAppRedirectToHome />;
+  return <>{children}</>;
+}

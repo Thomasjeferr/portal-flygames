@@ -226,6 +226,25 @@ model Game {
   shareCount      Int       @default(0) @map("share_count")
   gameLikes       GameLike[]
   gameComments    GameComment[]
+  highlights      GameHighlight[]
+}
+
+// Cortes / melhores momentos do jogo (exibidos na página do jogo)
+model GameHighlight {
+  id           String   @id @default(cuid())
+  gameId       String   @map("game_id")
+  title        String   @map("title")
+  description  String?  @map("description")
+  videoUrl     String   @map("video_url")
+  thumbnailUrl String?  @map("thumbnail_url")
+  durationSec  Int?     @map("duration_sec")
+  order        Int      @default(0) @map("order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@map("game_highlights")
 }
 
 // Aprovação da súmula por time (mandante e visitante aprovam ou rejeitam)

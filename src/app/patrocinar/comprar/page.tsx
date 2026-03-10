@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState, useRef } from 'react';
 import { NaoEncontrouTimeCTA } from '@/components/account/NaoEncontrouTimeCTA';
 import { TeamSelectorWithConfirm, type TeamOption } from '@/components/checkout/TeamSelectorWithConfirm';
+import { useStoreApp } from '@/lib/StoreAppContext';
+import { StoreAppRedirectToHome } from '@/components/StoreAppRedirectToHome';
 
 const BILLING_LABEL: Record<string, string> = {
   monthly: 'mensal',
@@ -356,6 +358,8 @@ function PatrocinarComprarContent() {
 }
 
 export default function PatrocinarComprarPage() {
+  const isStoreApp = useStoreApp();
+  if (isStoreApp) return <StoreAppRedirectToHome />;
   return (
     <Suspense
       fallback={
