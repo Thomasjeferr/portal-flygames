@@ -231,8 +231,8 @@ export default function AdminSponsorOrdersPage() {
                     {o.team?.name ?? '—'}
                   </td>
                   <td className="px-4 py-2">
-                    {o.teamId ? (
-                      <span className="text-netflix-light">{o.team?.name ?? '—'}</span>
+                    {o.team ? (
+                      <span className="text-netflix-light">{o.team.name ?? '—'}</span>
                     ) : (
                       <select
                         defaultValue=""
