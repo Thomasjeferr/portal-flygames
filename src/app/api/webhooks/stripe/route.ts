@@ -44,9 +44,14 @@ export async function POST(request: NextRequest) {
         subscription?: string | { id: string };
         amount_paid?: number;
         lines?: { data?: Array<{ metadata?: Record<string, string> }> };
-        parent?: { subscription_details?: { metadata?: Record<string, string> } };
+        parent?: {
+          subscription_details?: { metadata?: Record<string, string>; subscription?: string | { id: string } };
+        };
       };
-      const sub = invoice.subscription;
+      let sub = invoice.subscription;
+      if (!sub && invoice.parent?.subscription_details?.subscription) {
+        sub = invoice.parent.subscription_details.subscription;
+      }
       const subscriptionId = typeof sub === 'string' ? sub : sub != null && typeof sub === 'object' ? sub.id : null;
       if (!subscriptionId) return NextResponse.json({ received: true });
 
