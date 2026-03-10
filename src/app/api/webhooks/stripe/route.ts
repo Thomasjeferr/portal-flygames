@@ -53,8 +53,6 @@ export async function POST(request: NextRequest) {
       const teamIdMeta = metadata.teamId;
       const planIdMeta = metadata.planId;
       if (tournamentId && teamIdMeta) {
-        // Inscrição paga de torneio: voltou a ser pagamento único (PaymentIntent); não usar invoice.paid.
-        // (bloco tournament-registration removido daqui)
         if (planIdMeta === 'tournament-goal') {
           const userId = metadata.userId;
           const amountCents =
@@ -76,13 +74,19 @@ export async function POST(request: NextRequest) {
 
       const userId = metadata.userId;
       const planId = metadata.planId;
-      if (!userId || !planId) return NextResponse.json({ received: true });
+      if (!userId || !planId) {
+        console.warn('[Stripe] invoice.paid: subscription sem userId ou planId no metadata', { subscriptionId, metadataKeys: Object.keys(metadata) });
+        return NextResponse.json({ received: true });
+      }
 
       const [user, plan] = await Promise.all([
         prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, name: true, favoriteTeamId: true } }),
         prisma.plan.findUnique({ where: { id: planId } }),
       ]);
-      if (!user || !plan || !plan.active) return NextResponse.json({ received: true });
+      if (!user || !plan || !plan.active) {
+        console.warn('[Stripe] invoice.paid: user ou plan não encontrado/inativo', { userId, planId, userFound: !!user, planFound: !!plan, planActive: plan?.active ?? false });
+        return NextResponse.json({ received: true });
+      }
 
       const amountCents = typeof invoice.amount_paid === 'number' ? invoice.amount_paid : Math.round(plan.price * 100);
       let amountToTeamCents = 0;
@@ -133,6 +137,8 @@ export async function POST(request: NextRequest) {
         },
         update: { active: true, startDate, endDate, planId: plan.id },
       });
+
+      console.info('[Stripe] invoice.paid: assinatura ativada', { userId: user.id, planId: plan.id, subscriptionId });
 
       const planPrice = (amountCents / 100).toFixed(2).replace('.', ',');
       sendTransactionalEmail({
