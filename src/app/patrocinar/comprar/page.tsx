@@ -368,7 +368,7 @@ function PatrocinarComprarContent() {
 
             <button
               type="submit"
-              disabled={submitting || (((plan.hasLoyalty && (plan.loyaltyMonths ?? 0) > 0) || plan.requireContractAcceptance) && !form.contractAccepted)}
+              disabled={submitting || (plan != null && ((plan.hasLoyalty && (plan.loyaltyMonths ?? 0) > 0) || plan.requireContractAcceptance) && !form.contractAccepted)}
               className="w-full py-3 rounded bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light disabled:opacity-50"
             >
               {submitting ? 'Gerando pagamento...' : 'Ir para pagamento'}
