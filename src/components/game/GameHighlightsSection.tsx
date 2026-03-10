@@ -25,16 +25,18 @@ function formatDuration(sec: number | null): string {
 export function GameHighlightsSection({
   highlights,
   gameSlug,
+  className = '',
 }: {
   highlights: GameHighlightPublic[];
   gameSlug: string;
+  className?: string;
 }) {
   const [modalHighlight, setModalHighlight] = useState<GameHighlightPublic | null>(null);
 
   if (!highlights || highlights.length === 0) return null;
 
   return (
-    <section className="mt-12 pt-10 border-t border-white/10">
+    <section className={`mt-12 pt-10 border-t border-white/10 lg:mt-0 lg:pt-0 lg:border-t-0 ${className}`.trim()}>
       <h2 className="text-xl font-bold text-white mb-2">Melhores momentos</h2>
       <p className="text-futvar-light text-sm mb-6">Cortes e melhores lances</p>
       <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">

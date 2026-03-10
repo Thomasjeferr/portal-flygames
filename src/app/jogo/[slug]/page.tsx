@@ -10,6 +10,7 @@ import { PlayerEngagement } from '@/components/player/PlayerEngagement';
 import { StoreAppNoAccessMessage } from '@/components/StoreAppNoAccessMessage';
 import { StoreAppOptionalText } from '@/components/StoreAppOptionalText';
 import { GameHighlightsSection } from '@/components/game/GameHighlightsSection';
+import { PlayerCommentSection } from '@/components/player/PlayerCommentSection';
 import { getSession } from '@/lib/auth';
 import { canAccessGameBySlug, getSubscriptionMaxScreens, getSponsorMaxScreens } from '@/lib/access';
 import { prisma } from '@/lib/db';
@@ -263,27 +264,43 @@ export default async function GamePage({ params }: Props) {
           <>
             <GamePlayTracker gameId={game.id} />
 
-            <MatchPlayerPage {...matchPlayerCommonProps}>
-              <VideoPlayer
-                videoUrl={game.videoUrl!}
-                title={game.title}
-                posterUrl={game.thumbnailUrl ?? undefined}
-                streamPlaybackUrl={streamPlaybackUrl}
-                streamHlsUrl={streamHlsUrl}
-                streamContext={isStreamVideo(game.videoUrl!) ? { gameSlug: game.slug } : undefined}
-                gameId={game.id}
-              />
-            </MatchPlayerPage>
-            <PlayerEngagement
-              type="game"
-              entityId={game.id}
-              title={game.title}
-              shareText={`Assista: ${game.title}. ${game.homeTeam && game.awayTeam ? `${game.homeTeam.shortName || game.homeTeam.name} x ${game.awayTeam.shortName || game.awayTeam.name}` : ''}`.trim()}
-            />
-            <GameHighlightsSection
-              highlights={game.highlights}
-              gameSlug={game.slug}
-            />
+            {/* Mobile: título → cortes → compartilhar/curtir → comentários. Desktop: player+engagement à esquerda, cortes+comentários à direita. */}
+            <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-8 lg:items-start">
+              <div className="min-w-0 lg:row-start-1 lg:col-start-1">
+                <MatchPlayerPage {...matchPlayerCommonProps}>
+                  <VideoPlayer
+                    videoUrl={game.videoUrl!}
+                    title={game.title}
+                    posterUrl={game.thumbnailUrl ?? undefined}
+                    streamPlaybackUrl={streamPlaybackUrl}
+                    streamHlsUrl={streamHlsUrl}
+                    streamContext={isStreamVideo(game.videoUrl!) ? { gameSlug: game.slug } : undefined}
+                    gameId={game.id}
+                  />
+                </MatchPlayerPage>
+              </div>
+
+              <div className="mt-6 lg:mt-0 lg:row-start-1 lg:col-start-2">
+                <GameHighlightsSection
+                  highlights={game.highlights}
+                  gameSlug={game.slug}
+                />
+              </div>
+
+              <div className="mt-6 lg:row-start-2 lg:col-start-1">
+                <PlayerEngagement
+                  type="game"
+                  entityId={game.id}
+                  title={game.title}
+                  shareText={`Assista: ${game.title}. ${game.homeTeam && game.awayTeam ? `${game.homeTeam.shortName || game.homeTeam.name} x ${game.awayTeam.shortName || game.awayTeam.name}` : ''}`.trim()}
+                  showComments={false}
+                />
+              </div>
+
+              <div className="mt-6 lg:mt-0 lg:row-start-2 lg:col-start-2">
+                <PlayerCommentSection apiBasePath={`/api/games/${game.id}/comments`} />
+              </div>
+            </div>
           </>
         )}
 

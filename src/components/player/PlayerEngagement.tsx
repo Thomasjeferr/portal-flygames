@@ -11,6 +11,8 @@ export interface PlayerEngagementProps {
   title: string;
   shareText: string;
   className?: string;
+  /** Quando false, não renderiza a seção de comentários (ex.: comentários na lateral em desktop). */
+  showComments?: boolean;
 }
 
 export function PlayerEngagement({
@@ -19,6 +21,7 @@ export function PlayerEngagement({
   title,
   shareText,
   className = '',
+  showComments = true,
 }: PlayerEngagementProps) {
   const base = type === 'game' ? `/api/games/${entityId}` : `/api/lives/${entityId}`;
 
@@ -47,9 +50,11 @@ export function PlayerEngagement({
           activeClassName="text-red-400"
         />
       </div>
-      <div className="pt-4 border-t border-white/10">
-        <PlayerCommentSection apiBasePath={base + '/comments'} />
-      </div>
+      {showComments && (
+        <div className="pt-4 border-t border-white/10">
+          <PlayerCommentSection apiBasePath={base + '/comments'} />
+        </div>
+      )}
     </div>
   );
 }
