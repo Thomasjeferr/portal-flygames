@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       // Fallback 2: buscar invoice na API (payload do webhook às vezes vem sem lines/parent)
       if (!metadata.userId || !metadata.planId) {
         try {
-          const fullInvoice = await stripe.invoices.retrieve(invoice.id, { expand: ['lines.data'] }) as { lines?: { data?: Array<{ metadata?: Record<string, string> }> } };
+          const fullInvoice = await stripe.invoices.retrieve(invoice.id, { expand: ['lines.data'] });
           const lineMeta = fullInvoice.lines?.data?.[0]?.metadata;
           if (lineMeta?.userId && lineMeta?.planId) metadata = { ...metadata, ...lineMeta };
         } catch (_) { /* ignore */ }
@@ -121,14 +121,16 @@ export async function POST(request: NextRequest) {
       }
 
       // Idempotência: se já existe Purchase para esta invoice (ex.: reenvio do webhook), não duplicar
-      let purchase = await prisma.purchase.findFirst({
+      const existingPurchase = await prisma.purchase.findFirst({
         where: { externalId: invoice.id, userId: user.id },
         include: { planEarnings: true },
       });
+      type PurchaseWithEarnings = NonNullable<typeof existingPurchase>;
+      let purchase: PurchaseWithEarnings | null = existingPurchase;
       let isNewPurchase = false;
       if (!purchase) {
         isNewPurchase = true;
-        purchase = await prisma.purchase.create({
+        const created = await prisma.purchase.create({
           data: {
             userId: user.id,
             planId: plan.id,
@@ -140,6 +142,7 @@ export async function POST(request: NextRequest) {
             externalId: invoice.id,
           },
         });
+        purchase = created as PurchaseWithEarnings;
         if (teamId && amountToTeamCents > 0) {
           await prisma.teamPlanEarning.create({
             data: { teamId, purchaseId: purchase.id, amountCents: amountToTeamCents, status: 'pending' },

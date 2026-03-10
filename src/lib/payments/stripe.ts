@@ -39,7 +39,9 @@ export interface StripeClient {
     }>;
     retrieve: (id: string, opts?: { expand?: string[] }) => Promise<{ metadata: Record<string, string> }>;
   };
-  invoices: { retrieve: (id: string) => Promise<{ id: string; subscription: string; amount_paid: number; billing_reason?: string }> };
+  invoices: {
+    retrieve: (id: string, opts?: { expand?: string[] }) => Promise<{ id: string; subscription: string | { id: string }; amount_paid?: number; lines?: { data?: Array<{ metadata?: Record<string, string> }> } }>;
+  };
   webhooks: { constructEvent: (payload: string, sig: string, secret: string) => unknown };
 }
 
