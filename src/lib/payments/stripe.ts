@@ -180,17 +180,28 @@ export async function createStripePaymentIntent(input: StripePaymentIntentInput)
 }
 
 export async function verifyStripeWebhook(payload: string, signature: string): Promise<unknown> {
-  const stripe = await getStripe();
-  let secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!secret) {
-    const { getPaymentConfig } = await import('@/lib/payment-config');
-    const config = await getPaymentConfig();
-    secret = config.stripeWebhookSecret ?? undefined;
+  const { getPaymentConfig, clearPaymentConfigCache } = await import('@/lib/payment-config');
+  let config = await getPaymentConfig();
+  const hasStripeKey = !!(process.env.STRIPE_SECRET_KEY?.trim() || config.stripeSecretKey?.trim());
+  const hasWebhookSecret = !!(process.env.STRIPE_WEBHOOK_SECRET?.trim() || config.stripeWebhookSecret?.trim());
+  if (!hasStripeKey || !hasWebhookSecret) {
+    clearPaymentConfigCache();
+    config = await getPaymentConfig();
   }
-  if (!stripe || !secret) return null;
+  let secret = process.env.STRIPE_WEBHOOK_SECRET?.trim() || config.stripeWebhookSecret?.trim() || undefined;
+  const stripe = await getStripe();
+  if (!stripe) {
+    console.warn('[Stripe] verifyStripeWebhook: Stripe não configurado (chave secreta ausente em env ou Admin > Pagamentos)');
+    return null;
+  }
+  if (!secret) {
+    console.warn('[Stripe] verifyStripeWebhook: segredo do webhook ausente. Configure em Admin > Pagamentos (Stripe) ou em STRIPE_WEBHOOK_SECRET. Use o "Segredo da assinatura" do destino em https://dashboard.stripe.com/webhooks.');
+    return null;
+  }
   try {
     return stripe.webhooks.constructEvent(payload, signature, secret);
-  } catch {
+  } catch (e) {
+    console.warn('[Stripe] verifyStripeWebhook: assinatura inválida ou segredo incorreto', e instanceof Error ? e.message : e);
     return null;
   }
 }

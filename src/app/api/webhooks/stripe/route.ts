@@ -55,12 +55,20 @@ export async function POST(request: NextRequest) {
 
       const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
       let metadata = stripeSubscription.metadata || {};
-      // Fallback: Stripe pode enviar userId/planId no evento (line item ou parent) e não na subscription
+      // Fallback 1: evento pode trazer userId/planId em line item ou parent
       if (!metadata.userId || !metadata.planId) {
         const fromLine = invoice.lines?.data?.[0]?.metadata;
         const fromParent = invoice.parent?.subscription_details?.metadata;
         if (fromLine?.userId && fromLine?.planId) metadata = { ...metadata, ...fromLine };
         else if (fromParent?.userId && fromParent?.planId) metadata = { ...metadata, ...fromParent };
+      }
+      // Fallback 2: buscar invoice na API (payload do webhook às vezes vem sem lines/parent)
+      if (!metadata.userId || !metadata.planId) {
+        try {
+          const fullInvoice = await stripe.invoices.retrieve(invoice.id, { expand: ['lines.data'] }) as { lines?: { data?: Array<{ metadata?: Record<string, string> }> } };
+          const lineMeta = fullInvoice.lines?.data?.[0]?.metadata;
+          if (lineMeta?.userId && lineMeta?.planId) metadata = { ...metadata, ...lineMeta };
+        } catch (_) { /* ignore */ }
       }
       const tournamentId = metadata.tournamentId;
       const teamIdMeta = metadata.teamId;
@@ -112,20 +120,32 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const purchase = await prisma.purchase.create({
-        data: {
-          userId: user.id,
-          planId: plan.id,
-          gameId: null,
-          teamId,
-          amountToTeamCents,
-          paymentStatus: 'paid',
-          paymentGateway: 'stripe',
-          externalId: invoice.id,
-        },
+      // Idempotência: se já existe Purchase para esta invoice (ex.: reenvio do webhook), não duplicar
+      let purchase = await prisma.purchase.findFirst({
+        where: { externalId: invoice.id, userId: user.id },
+        include: { planEarnings: true },
       });
-
-      if (teamId && amountToTeamCents > 0) {
+      let isNewPurchase = false;
+      if (!purchase) {
+        isNewPurchase = true;
+        purchase = await prisma.purchase.create({
+          data: {
+            userId: user.id,
+            planId: plan.id,
+            gameId: null,
+            teamId,
+            amountToTeamCents,
+            paymentStatus: 'paid',
+            paymentGateway: 'stripe',
+            externalId: invoice.id,
+          },
+        });
+        if (teamId && amountToTeamCents > 0) {
+          await prisma.teamPlanEarning.create({
+            data: { teamId, purchaseId: purchase.id, amountCents: amountToTeamCents, status: 'pending' },
+          });
+        }
+      } else if (teamId && amountToTeamCents > 0 && (!purchase.planEarnings || purchase.planEarnings.length === 0)) {
         await prisma.teamPlanEarning.create({
           data: { teamId, purchaseId: purchase.id, amountCents: amountToTeamCents, status: 'pending' },
         });
@@ -153,17 +173,19 @@ export async function POST(request: NextRequest) {
 
       console.info('[Stripe] invoice.paid: assinatura ativada', { userId: user.id, planId: plan.id, subscriptionId });
 
-      const planPrice = (amountCents / 100).toFixed(2).replace('.', ',');
-      sendTransactionalEmail({
-        to: user.email,
-        templateKey: 'PURCHASE_CONFIRMATION',
-        vars: {
-          name: user.name || user.email.split('@')[0],
-          plan_name: plan.name,
-          amount: planPrice,
-        },
-        userId: user.id,
-      }).catch((e) => console.error('[Stripe] invoice.paid email:', e));
+      if (isNewPurchase) {
+        const planPrice = (amountCents / 100).toFixed(2).replace('.', ',');
+        sendTransactionalEmail({
+          to: user.email,
+          templateKey: 'PURCHASE_CONFIRMATION',
+          vars: {
+            name: user.name || user.email.split('@')[0],
+            plan_name: plan.name,
+            amount: planPrice,
+          },
+          userId: user.id,
+        }).catch((e) => console.error('[Stripe] invoice.paid email:', e));
+      }
 
       return NextResponse.json({ received: true });
     }
