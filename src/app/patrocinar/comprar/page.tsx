@@ -275,11 +275,11 @@ function PatrocinarComprarContent() {
                 selectedTeam={teams.find((t) => t.id === form.teamId) ?? null}
                 onSelect={(t) => setForm((f) => ({ ...f, teamId: t?.id ?? '' }))}
               />
-              {(plan.teamPayoutPercent ?? 0) > 0 && (
+              {(plan?.teamPayoutPercent ?? 0) > 0 && (
                 <p className="mt-2 text-sm text-futvar-green/90">
-                  <strong>{(plan.teamPayoutPercent ?? 0)}%</strong> do valor do patrocínio{' '}
+                  <strong>{(plan?.teamPayoutPercent ?? 0)}%</strong> do valor do patrocínio{' '}
                   <strong>
-                    (R$ {((plan.price * (plan.teamPayoutPercent ?? 0)) / 100).toFixed(2).replace('.', ',')})
+                    (R$ {plan ? ((plan.price * (plan.teamPayoutPercent ?? 0)) / 100).toFixed(2).replace('.', ',') : '0,00'})
                   </strong>{' '}
                   será repassado ao time escolhido.
                 </p>
