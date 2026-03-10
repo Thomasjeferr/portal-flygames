@@ -17,6 +17,7 @@ interface Plan {
   periodicity: string;
   price: number;
   description: string | null;
+  teamPayoutPercent?: number | null;
 }
 interface Game {
   id: string;
@@ -480,6 +481,15 @@ function CheckoutContent() {
               selectedTeam={teams.find((t) => t.id === selectedTeamId) ?? null}
               onSelect={(t) => setSelectedTeamId(t?.id ?? null)}
             />
+            {(plan.teamPayoutPercent ?? 0) > 0 && (
+              <p className="mt-2 text-sm text-futvar-green/90">
+                <strong>{(plan.teamPayoutPercent ?? 0)}%</strong> do valor{' '}
+                <strong>
+                  (R$ {((plan.price * (plan.teamPayoutPercent ?? 0)) / 100).toFixed(2).replace('.', ',')})
+                </strong>{' '}
+                será repassado ao time escolhido.
+              </p>
+            )}
             <p className="mt-2">
               <NaoEncontrouTimeCTA isLoggedIn={true} />
             </p>

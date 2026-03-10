@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
       amountCents,
       tournamentName: tournament.name,
       teamName: tournamentTeam.team.name,
+      goalPayoutPercent: tournamentTeam.goalPayoutPercent ?? 0,
     });
   } catch (e) {
     console.error('[tournament-goal checkout]', e);

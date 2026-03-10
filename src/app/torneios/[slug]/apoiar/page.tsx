@@ -73,6 +73,8 @@ export default function ApoiarTimePublicPage() {
   const [planPrice, setPlanPrice] = useState('');
   const [tournamentName, setTournamentName] = useState('');
   const [teamName, setTeamName] = useState('');
+  const [goalPayoutPercent, setGoalPayoutPercent] = useState(0);
+  const [amountCents, setAmountCents] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [needsLogin, setNeedsLogin] = useState(false);
@@ -129,6 +131,8 @@ export default function ApoiarTimePublicPage() {
         setClientSecret(data.clientSecret);
         const amount = ((data.amountCents ?? 0) / 100).toFixed(2).replace('.', ',');
         setPlanPrice(`R$ ${amount}`);
+        setGoalPayoutPercent(typeof data.goalPayoutPercent === 'number' ? data.goalPayoutPercent : 0);
+        setAmountCents(data.amountCents ?? 0);
       } catch {
         setError('Erro de conexão');
       } finally {
@@ -261,9 +265,19 @@ export default function ApoiarTimePublicPage() {
           <p className="text-futvar-light text-sm mb-2">
             {tournamentName} — {planPrice}/mês (cobrança recorrente)
           </p>
-          <p className="text-sm font-semibold text-futvar-green mb-6" role="status">
+          <p className="text-sm font-semibold text-futvar-green mb-2" role="status">
             Você está apoiando: <span className="text-white">{teamName}</span>
           </p>
+          {goalPayoutPercent > 0 && (
+            <p className="text-sm text-futvar-green/90 mb-6">
+              <strong>{goalPayoutPercent}%</strong> do valor da assinatura{' '}
+              <strong>
+                (R$ {((amountCents / 100) * goalPayoutPercent / 100).toFixed(2).replace('.', ',')}/mês)
+              </strong>{' '}
+              será repassado ao time.
+            </p>
+          )}
+          {goalPayoutPercent <= 0 && <div className="mb-6" />}
           <Elements stripe={stripePromise} options={options}>
             <GoalPaymentForm
               planPrice={planPrice}
