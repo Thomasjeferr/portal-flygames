@@ -175,8 +175,90 @@ export async function POST(request: NextRequest) {
       const sponsorOrderId = obj.metadata?.sponsorOrderId;
       const purchaseId = obj.metadata?.purchaseId;
 
-      // Pagamento de assinatura Stripe (primeira fatura): tratado em invoice.paid, não aqui.
-      if (obj.invoice) return NextResponse.json({ received: true });
+      // Primeira cobrança de assinatura recorrente: Stripe envia payment_intent.succeeded com invoice.
+      // Fallback: se invoice.paid falhar ou atrasar, processamos aqui para ativar a assinatura no painel.
+      if (obj.invoice) {
+        const stripe = await getStripe();
+        if (stripe) {
+          try {
+            const invoiceId = typeof obj.invoice === 'string' ? obj.invoice : (obj.invoice as { id?: string })?.id;
+            if (invoiceId) {
+              const invoice = await stripe.invoices.retrieve(invoiceId) as { subscription?: string | { id: string }; amount_paid?: number };
+              const sub = invoice.subscription;
+              const subscriptionId = typeof sub === 'string' ? sub : sub != null && typeof sub === 'object' ? sub.id : null;
+              if (subscriptionId) {
+                const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+                const metadata = stripeSubscription.metadata || {};
+                const planIdMeta = metadata.planId;
+                const userId = metadata.userId;
+                // Só processar se for plano do portal (não tournament-goal, que já tem fluxo próprio)
+                if (userId && planIdMeta && !metadata.tournamentId) {
+                  const existingSub = await prisma.subscription.findFirst({
+                    where: { externalSubscriptionId: subscriptionId },
+                  });
+                  if (!existingSub) {
+                    const [user, plan] = await Promise.all([
+                      prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, name: true, favoriteTeamId: true } }),
+                      prisma.plan.findUnique({ where: { id: planIdMeta } }),
+                    ]);
+                    if (user && plan && plan.active) {
+                      const amountCents = typeof invoice.amount_paid === 'number' ? invoice.amount_paid : Math.round(plan.price * 100);
+                      let amountToTeamCents = 0;
+                      let teamId: string | null = null;
+                      if (plan.teamPayoutPercent > 0 && user.favoriteTeamId) {
+                        const team = await prisma.team.findUnique({ where: { id: user.favoriteTeamId }, select: { id: true, isActive: true } });
+                        if (team?.isActive) {
+                          teamId = team.id;
+                          amountToTeamCents = Math.round((amountCents * plan.teamPayoutPercent) / 100);
+                        }
+                      }
+                      const purchase = await prisma.purchase.create({
+                        data: {
+                          userId: user.id,
+                          planId: plan.id,
+                          gameId: null,
+                          teamId,
+                          amountToTeamCents,
+                          paymentStatus: 'paid',
+                          paymentGateway: 'stripe',
+                          externalId: invoiceId,
+                        },
+                      });
+                      if (teamId && amountToTeamCents > 0) {
+                        await prisma.teamPlanEarning.create({
+                          data: { teamId, purchaseId: purchase.id, amountCents: amountToTeamCents, status: 'pending' },
+                        });
+                      }
+                      const startDate = new Date();
+                      let endDate = new Date();
+                      if (plan.periodicity === 'mensal') endDate.setMonth(endDate.getMonth() + 1);
+                      else if (plan.periodicity === 'anual') endDate.setFullYear(endDate.getFullYear() + 1);
+                      else endDate.setDate(endDate.getDate() + (plan.duracaoDias ?? 30));
+                      await prisma.subscription.upsert({
+                        where: { userId: user.id },
+                        create: {
+                          userId: user.id,
+                          planId: plan.id,
+                          active: true,
+                          startDate,
+                          endDate,
+                          paymentGateway: 'stripe',
+                          externalSubscriptionId: subscriptionId,
+                        },
+                        update: { active: true, startDate, endDate, planId: plan.id },
+                      });
+                      console.info('[Stripe] Assinatura ativada via payment_intent.succeeded (fallback):', userId, planIdMeta);
+                    }
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error('[Stripe] Fallback subscription from payment_intent.succeeded:', e);
+          }
+        }
+        return NextResponse.json({ received: true });
+      }
 
       // Inscrição paga de torneio (pagamento único com cartão): PaymentIntent com metadata tournamentId + teamId
       const tournamentId = obj.metadata?.tournamentId;
