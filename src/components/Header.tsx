@@ -70,6 +70,7 @@ export function Header() {
   const isAuthPage = ['/entrar', '/cadastro', '/recuperar-senha', '/admin/entrar'].some((p) => pathname.startsWith(p));
 
   const [isPartner, setIsPartner] = useState(false);
+  const [accountTypeLabels, setAccountTypeLabels] = useState<string[]>([]);
 
   const fetchUser = useCallback(() => {
     if (isAdmin) return;
@@ -80,6 +81,7 @@ export function Header() {
           setUser(data.user ?? null);
           setSubscription(data.subscription ?? null);
           setIsPartner(!!data.isPartner);
+          setAccountTypeLabels(Array.isArray(data.accountTypeLabels) ? data.accountTypeLabels : []);
         }
       })
       .catch(() => {});
@@ -290,6 +292,7 @@ export function Header() {
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-2 text-sm text-futvar-light hover:text-white max-w-[180px] sm:max-w-none"
+                  aria-label={`Menu de ${user.name || user.email}. Tipo de conta: ${accountTypeLabels.join(', ') || 'Conta pessoal'}`}
                 >
                   <span className="w-8 h-8 rounded-full bg-netflix-gray flex items-center justify-center text-white font-semibold shrink-0 overflow-hidden ring-2 ring-white/20">
                     {user.avatarUrl ? (
@@ -303,6 +306,18 @@ export function Header() {
                     )}
                   </span>
                   <span className="hidden sm:inline truncate">{user.name || user.email}</span>
+                  {accountTypeLabels.length > 0 && (
+                    <span className="hidden lg:inline-flex flex-wrap gap-1">
+                      {accountTypeLabels.map((label) => (
+                        <span
+                          key={label}
+                          className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium bg-futvar-green/20 text-futvar-green border border-futvar-green/40"
+                        >
+                          {label}
+                        </span>
+                      ))}
+                    </span>
+                  )}
                 </button>
                 {userMenuOpen &&
                   typeof document !== 'undefined' &&
@@ -320,6 +335,18 @@ export function Header() {
                     <div className="px-4 py-2 border-b border-white/10">
                       <p className="text-sm font-medium truncate">{user.name || user.email}</p>
                       <p className="text-xs text-futvar-light truncate">{user.email}</p>
+                      {accountTypeLabels.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {accountTypeLabels.map((label) => (
+                            <span
+                              key={label}
+                              className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium bg-futvar-green/20 text-futvar-green border border-futvar-green/40"
+                            >
+                              {label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       {subscription && (
                         <p className={`text-xs mt-1 ${subscription.active ? 'text-green-400' : 'text-amber-400'}`}>
                           {isStoreApp ? (subscription.active ? 'Acesso ativo' : 'Acesso inativo') : (subscription.active ? 'Assinatura ativa' : 'Assinatura inativa')}
@@ -510,6 +537,18 @@ export function Header() {
                     </span>
                     <div className="min-w-0">
                       <p className="font-medium text-white truncate">{user.name || user.email}</p>
+                      {accountTypeLabels.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                          {accountTypeLabels.map((label) => (
+                            <span
+                              key={label}
+                              className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium bg-futvar-green/20 text-futvar-green border border-futvar-green/40"
+                            >
+                              {label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     {subscription && (
                       <p className={`text-xs mt-0.5 ${subscription.active ? 'text-green-400' : 'text-amber-400'}`}>
                         {isStoreApp ? (subscription.active ? 'Acesso ativo' : 'Acesso inativo') : (subscription.active ? 'Assinatura ativa' : 'Assinatura inativa')}

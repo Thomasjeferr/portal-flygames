@@ -16,11 +16,14 @@ export async function markWooviPurchaseAsPaid(purchaseId: string, amountCents?: 
     return;
   }
 
+  // Valor realmente pago (capturado na aprovação); usar em toda a cadeia (purchase, subscription, parceiro).
+  const paidAmountCents = amountCents != null && amountCents >= 0 ? amountCents : (purchase.amountCents ?? Math.round((purchase.plan.price ?? 0) * 100));
+
   await prisma.purchase.update({
     where: { id: purchase.id },
     data: {
       paymentStatus: 'paid',
-      ...(amountCents != null && amountCents >= 0 ? { amountCents } : {}),
+      amountCents: paidAmountCents,
     },
   });
 
@@ -45,7 +48,7 @@ export async function markWooviPurchaseAsPaid(purchaseId: string, amountCents?: 
   }
 
   // Comissão para parceiro (quando houver parceiro aprovado e comissão > 0)
-  const grossAmountCents = amountCents ?? purchase.amountCents ?? Math.round((purchase.plan.price ?? 0) * 100);
+  const grossAmountCents = paidAmountCents;
   if (purchase.partnerId && purchase.partner && purchase.partner.status === 'approved') {
     const planPartnerPercent = purchase.plan.partnerCommissionPercent ?? 0;
     let commissionPercent =
@@ -95,6 +98,7 @@ export async function markWooviPurchaseAsPaid(purchaseId: string, amountCents?: 
         active: true,
         startDate,
         endDate,
+        amountCents: paidAmountCents,
         paymentGateway: 'woovi',
         externalSubscriptionId: purchase.id,
       },
@@ -103,6 +107,7 @@ export async function markWooviPurchaseAsPaid(purchaseId: string, amountCents?: 
         startDate,
         endDate,
         planId: purchase.planId,
+        amountCents: paidAmountCents,
       },
     });
   }

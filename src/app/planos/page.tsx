@@ -40,6 +40,7 @@ export default function PlanosPage() {
   const [isTeamManager, setIsTeamManager] = useState(false);
   const [subscription, setSubscription] = useState<{ active: boolean; planId: string | null } | null>(null);
   const [hasActiveRecurringAccess, setHasActiveRecurringAccess] = useState(false);
+  const [hasActiveCompanySponsor, setHasActiveCompanySponsor] = useState(false);
 
   // Persiste ref do parceiro na sessão para não perder a indicação se a URL do checkout não tiver ref
   useEffect(() => {
@@ -66,6 +67,8 @@ export default function PlanosPage() {
             : null
         );
         setHasActiveRecurringAccess(!!authData?.hasActiveRecurringAccess);
+        const labels = authData?.accountTypeLabels ?? [];
+        setHasActiveCompanySponsor(Array.isArray(labels) && labels.includes('Patrocínio empresarial'));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -108,6 +111,36 @@ export default function PlanosPage() {
             </p>
           </div>
         )}
+
+        {!loading && hasActiveCompanySponsor ? (
+          <>
+            <div className="mb-10 text-center">
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                Sua conta é de patrocínio empresarial
+              </h1>
+              <p className="text-futvar-light text-lg max-w-2xl mx-auto">
+                Seu acesso ao conteúdo e a alteração de plano estão em Minha conta. Não é necessário assinar planos Patrocinador/torcedor ou comprar jogos avulsos.
+              </p>
+            </div>
+            <div className="max-w-xl mx-auto rounded-2xl border border-futvar-green/20 bg-futvar-dark p-10 text-center">
+              <p className="text-futvar-light mb-6">
+                Para ver seu patrocínio, alterar de plano empresarial ou solicitar cancelamento, acesse:
+              </p>
+              <Link
+                href="/conta"
+                className="inline-block px-8 py-4 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light transition-colors"
+              >
+                Minha conta
+              </Link>
+            </div>
+            <p className="text-center text-futvar-light text-sm mt-10">
+              <Link href="/conta" className="text-futvar-green hover:underline">Minha conta</Link>
+              {' · '}
+              <Link href="/" className="text-futvar-light hover:underline">Início</Link>
+            </p>
+          </>
+        ) : (
+          <>
         <div className="mb-10 text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
             Escolha como assistir aos seus jogos
@@ -185,7 +218,18 @@ export default function PlanosPage() {
                   )}
                 </ul>
                 <div className="mt-auto">
-                  {plan.type === 'recorrente' && subscription?.active && subscription.planId === plan.id ? (
+                  {plan.type === 'recorrente' && hasActiveCompanySponsor ? (
+                    <div className="w-full py-3 rounded-lg text-center border-2 border-futvar-green/40 bg-futvar-dark/80 text-futvar-light text-sm">
+                      <p className="font-medium text-white mb-1">Você tem patrocínio empresarial</p>
+                      <p className="mb-2">Para alterar de plano, acesse Minha conta.</p>
+                      <Link
+                        href="/conta"
+                        className="inline-block px-4 py-2 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light text-sm"
+                      >
+                        Minha conta
+                      </Link>
+                    </div>
+                  ) : plan.type === 'recorrente' && subscription?.active && subscription.planId === plan.id ? (
                     <Link
                       href="/conta"
                       className="block w-full py-3 rounded-lg font-bold text-center border-2 border-green-500/60 text-green-400 bg-green-900/20 hover:bg-green-900/30 transition-colors"
@@ -224,6 +268,8 @@ export default function PlanosPage() {
         <p className="text-center text-futvar-light text-sm mt-10">
           Já tem conta? <Link href="/entrar" className="text-futvar-green hover:underline">Entrar</Link>
         </p>
+        </>
+        )}
       </div>
     </div>
   );

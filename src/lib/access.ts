@@ -1,6 +1,42 @@
 import { prisma } from '@/lib/db';
 
 /**
+ * Verifica se o usuário/e-mail já tem algum patrocínio empresarial ativo (qualquer plano).
+ * Usado para bloquear nova compra de plano empresarial na página de compra e na API de checkout.
+ */
+export async function hasActiveCompanySponsor(
+  userId?: string | null,
+  email?: string | null
+): Promise<boolean> {
+  if (!userId && !email?.trim()) return false;
+  const now = new Date();
+  const emailNorm = email?.trim().toLowerCase() || '';
+  const orderWhere = {
+    paymentStatus: 'paid' as const,
+    sponsorPlan: { type: 'sponsor_company' as const, isActive: true },
+    OR: [
+      ...(userId ? [{ userId }] : []),
+      ...(emailNorm ? [{ email: { equals: emailNorm, mode: 'insensitive' as const } }] : []),
+    ],
+  };
+  const orders = await prisma.sponsorOrder.findMany({
+    where: orderWhere,
+    select: { id: true },
+  });
+  if (orders.length === 0) return false;
+  const sponsor = await prisma.sponsor.findFirst({
+    where: {
+      sponsorOrderId: { in: orders.map((o) => o.id) },
+      isActive: true,
+      endAt: { gte: now },
+      planType: 'sponsor_company',
+    },
+    select: { id: true },
+  });
+  return !!sponsor;
+}
+
+/**
  * Indica se o usuário é gestor do time (TeamManager ou responsibleEmail).
  * Usado para permitir pagar inscrição de torneio em nome do time.
  */
@@ -48,6 +84,63 @@ export async function isTeamResponsible(userId: string): Promise<boolean> {
     LIMIT 1
   `;
   return rows.length > 0;
+}
+
+export type AccountType = 'team_responsible' | 'personal' | 'fan_sponsor' | 'company_sponsor';
+
+export interface AccountTypeInfo {
+  accountType: AccountType;
+  accountTypeLabels: string[];
+}
+
+/**
+ * Retorna o tipo de conta e os rótulos para exibição (header, página Minha conta).
+ * Regras: responsável pelo time tem prioridade; senão, conta cliente pode ser pessoal, patrocinador torcedor e/ou patrocínio empresarial.
+ */
+export async function getAccountTypes(userId: string, email?: string | null): Promise<AccountTypeInfo> {
+  const isResponsible = await isTeamResponsible(userId);
+  if (isResponsible) {
+    return { accountType: 'team_responsible', accountTypeLabels: ['Responsável pelo time'] };
+  }
+
+  const emailNorm = email?.trim().toLowerCase() ?? '';
+  const now = new Date();
+
+  const [subscription, companySponsorActive] = await Promise.all([
+    prisma.subscription.findUnique({
+      where: { userId },
+      select: { id: true, active: true, endDate: true },
+    }),
+    prisma.sponsorOrder.findFirst({
+      where: {
+        paymentStatus: 'paid',
+        OR: [{ userId }, ...(emailNorm ? [{ email: emailNorm }] : [])],
+      },
+      include: {
+        sponsor: {
+          select: { id: true, isActive: true, endAt: true, planType: true },
+        },
+      },
+    }),
+  ]);
+
+  const subscriptionActive = !!subscription?.active && subscription.endDate >= now;
+  const hasCompanySponsor =
+    !!companySponsorActive?.sponsor &&
+    companySponsorActive.sponsor.isActive &&
+    companySponsorActive.sponsor.endAt >= now &&
+    companySponsorActive.sponsor.planType === 'sponsor_company';
+
+  const labels: string[] = [];
+  if (subscriptionActive) labels.push('Patrocinador torcedor');
+  if (hasCompanySponsor) labels.push('Patrocínio empresarial');
+  if (labels.length === 0) labels.push('Conta pessoal');
+
+  let accountType: AccountType = 'personal';
+  if (hasCompanySponsor) accountType = 'company_sponsor';
+  else if (subscriptionActive) accountType = 'fan_sponsor';
+
+  return { accountType, accountTypeLabels: labels };
 }
 
 /**

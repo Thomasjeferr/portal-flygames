@@ -9,7 +9,7 @@ import {
   ensurePortalSubscriptionForGoalSupporter,
   deactivatePortalSubscriptionByStripeId,
 } from '@/lib/tournamentGoalPayment';
-import { cancelStripeSubscription } from '@/lib/payments/stripe';
+import { cancelStripeSubscription, cancelStripeSubscriptionAtPeriodEnd } from '@/lib/payments/stripe';
 import { recalculatePreSaleGameStatus } from '@/services/pre-sale-status.service';
 
 function addMonths(date: Date, months: number): Date {
@@ -202,6 +202,30 @@ export async function POST(request: NextRequest) {
               amount: amountFormatted,
             },
           }).catch((e) => console.error('[Stripe] Email patrocínio:', e));
+
+          // Upgrade: cancelar assinatura antiga no fim do período (evitar cobrança duplicada)
+          const emailNorm = order.email?.trim().toLowerCase() ?? '';
+          const otherCompanyOrders = await prisma.sponsorOrder.findMany({
+            where: {
+              id: { not: order.id },
+              paymentStatus: 'paid',
+              externalId: { not: null },
+              sponsorPlan: { type: 'sponsor_company' },
+              OR: [
+                ...(order.userId ? [{ userId: order.userId }] : []),
+                ...(emailNorm ? [{ email: { equals: emailNorm, mode: 'insensitive' as const } }] : []),
+              ],
+            },
+            include: { sponsor: { select: { id: true, isActive: true, endAt: true } } },
+          });
+          const now = new Date();
+          for (const other of otherCompanyOrders) {
+            const active = other.sponsor?.isActive && other.sponsor?.endAt && new Date(other.sponsor.endAt) >= now;
+            if (active && other.externalId) {
+              await cancelStripeSubscriptionAtPeriodEnd(other.externalId);
+              console.info('[Stripe] invoice.paid sponsor: upgrade — assinatura antiga marcada para cancelar no fim do período', { oldOrderId: other.id });
+            }
+          }
         }
         return NextResponse.json({ received: true });
       }
@@ -245,7 +269,20 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true });
       }
 
-      const amountCents = typeof invoice.amount_paid === 'number' ? invoice.amount_paid : Math.round(plan.price * 100);
+      // Valor realmente pago: usar amount_paid do evento; se não vier (payload resumido), buscar a invoice na API.
+      let amountCents: number;
+      if (typeof invoice.amount_paid === 'number') {
+        amountCents = invoice.amount_paid;
+      } else {
+        try {
+          const fullInvoice = await stripe.invoices.retrieve(invoice.id);
+          amountCents = typeof (fullInvoice as { amount_paid?: number }).amount_paid === 'number'
+            ? (fullInvoice as { amount_paid: number }).amount_paid
+            : Math.round(plan.price * 100);
+        } catch {
+          amountCents = Math.round(plan.price * 100);
+        }
+      }
       let amountToTeamCents = 0;
       let teamId: string | null = null;
       if (plan.teamPayoutPercent > 0 && user.favoriteTeamId) {
@@ -315,10 +352,11 @@ export async function POST(request: NextRequest) {
           active: true,
           startDate,
           endDate,
+          amountCents,
           paymentGateway: 'stripe',
           externalSubscriptionId: subscriptionId,
         },
-        update: { active: true, startDate, endDate, planId: plan.id, externalSubscriptionId: subscriptionId },
+        update: { active: true, startDate, endDate, planId: plan.id, externalSubscriptionId: subscriptionId, amountCents },
       });
 
       console.info('[Stripe] invoice.paid: assinatura ativada', { userId: user.id, planId: plan.id, subscriptionId });
@@ -407,7 +445,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (event.type === 'payment_intent.succeeded') {
-      const obj = event.data.object as { id: string; metadata?: Record<string, string>; invoice?: string | null };
+      const obj = event.data.object as { id: string; amount?: number; metadata?: Record<string, string>; invoice?: string | null };
       const sponsorOrderId = obj.metadata?.sponsorOrderId;
       const purchaseId = obj.metadata?.purchaseId;
 
@@ -479,10 +517,11 @@ export async function POST(request: NextRequest) {
                           active: true,
                           startDate,
                           endDate,
+                          amountCents,
                           paymentGateway: 'stripe',
                           externalSubscriptionId: subscriptionId,
                         },
-                        update: { active: true, startDate, endDate, planId: plan.id },
+                        update: { active: true, startDate, endDate, planId: plan.id, amountCents },
                       });
                       console.info('[Stripe] Assinatura ativada via payment_intent.succeeded (fallback):', userId, planIdMeta);
                     }
@@ -622,9 +661,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true });
       }
 
+      // Valor realmente cobrado pelo Stripe (em centavos); gravar para não depender do preço atual do plano.
+      const chargedAmountCents = typeof obj.amount === 'number' ? obj.amount : (purchase.amountCents ?? Math.round((purchase.plan.price ?? 0) * 100));
+
       await prisma.purchase.update({
         where: { id: purchase.id },
-        data: { paymentStatus: 'paid', externalId: obj.id },
+        data: { paymentStatus: 'paid', externalId: obj.id, amountCents: chargedAmountCents },
       });
 
       // Atualiza time do coração do usuário quando a compra tem time (primeira vez ou atualiza)
@@ -647,7 +689,6 @@ export async function POST(request: NextRequest) {
       }
 
       if (purchase.partnerId && purchase.partner && purchase.partner.status === 'approved') {
-        const planPriceCents = Math.round((purchase.plan.price ?? 0) * 100);
         const planPartnerPercent = purchase.plan.partnerCommissionPercent ?? 0;
         let commissionPercent = planPartnerPercent > 0
           ? planPartnerPercent
@@ -656,14 +697,14 @@ export async function POST(request: NextRequest) {
             : purchase.partner.planCommissionPercent);
         if (commissionPercent < 0) commissionPercent = 0;
         if (commissionPercent > 100) commissionPercent = 100;
-        const partnerAmountCents = Math.round((planPriceCents * commissionPercent) / 100);
+        const partnerAmountCents = Math.round((chargedAmountCents * commissionPercent) / 100);
         if (partnerAmountCents > 0) {
           await prisma.partnerEarning.create({
             data: {
               partnerId: purchase.partnerId,
               sourceType: 'purchase',
               sourceId: purchase.id,
-              grossAmountCents: planPriceCents,
+              grossAmountCents: chargedAmountCents,
               commissionPercent,
               amountCents: partnerAmountCents,
               status: 'pending',
@@ -687,16 +728,17 @@ export async function POST(request: NextRequest) {
             active: true,
             startDate,
             endDate,
+            amountCents: chargedAmountCents,
             paymentGateway: 'stripe',
             externalSubscriptionId: obj.id,
           },
-          update: { active: true, startDate, endDate, planId: purchase.planId },
+          update: { active: true, startDate, endDate, planId: purchase.planId, amountCents: chargedAmountCents },
         });
       }
 
       const user = await prisma.user.findUnique({ where: { id: purchase.userId } });
       if (user?.email) {
-        const planPrice = (purchase.plan.price ?? 0).toFixed(2).replace('.', ',');
+        const planPrice = (chargedAmountCents / 100).toFixed(2).replace('.', ',');
         sendTransactionalEmail({
           to: user.email,
           templateKey: 'PURCHASE_CONFIRMATION',

@@ -8,6 +8,8 @@ import { TeamSelectorWithConfirm, type TeamOption } from '@/components/checkout/
 import CardPaymentScreen from '@/components/checkout/CardPaymentScreen';
 import { useStoreApp } from '@/lib/StoreAppContext';
 import { StoreAppRedirectToHome } from '@/components/StoreAppRedirectToHome';
+import { isValidCnpj, formatCnpj } from '@/lib/validators/cnpj';
+import { validateCnpjForCompany } from '@/lib/validators/sponsorOrderSchema';
 
 const BILLING_LABEL: Record<string, string> = {
   monthly: 'mensal',
@@ -46,11 +48,13 @@ function PatrocinarComprarContent() {
   const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [hasActiveCompanySponsor, setHasActiveCompanySponsor] = useState(false);
   const [step, setStep] = useState<'form' | 'payment'>('form');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     companyName: '',
+    cnpj: '',
     email: '',
     websiteUrl: '',
     whatsapp: '',
@@ -97,8 +101,9 @@ function PatrocinarComprarContent() {
       fetch('/api/public/sponsor-plans').then((r) => r.json()),
       fetch('/api/public/teams', { cache: 'no-store' }).then((r) => r.json()),
       fetch('/api/public/site-settings').then((r) => r.json()),
+      fetch('/api/account').then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ])
-      .then(([plansData, teamsData, settingsData]) => {
+      .then(([plansData, teamsData, settingsData, accountData]) => {
         const plans = Array.isArray(plansData) ? plansData : [];
         const p = plans.find((x: { id: string }) => x.id === planId) ?? null;
         setPlan(p);
@@ -110,6 +115,8 @@ function PatrocinarComprarContent() {
         } else {
           setWhatsappUrl(null);
         }
+        const labels = accountData?.accountTypeLabels ?? [];
+        setHasActiveCompanySponsor(Array.isArray(labels) && labels.includes('Patrocínio empresarial'));
         if (!p) setError('Plano não encontrado');
       })
       .catch(() => setError('Erro ao carregar'))
@@ -135,6 +142,14 @@ function PatrocinarComprarContent() {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!plan) return;
+    const isCompanyPlan = plan.type === 'sponsor_company';
+    if (isCompanyPlan) {
+      const cnpjError = validateCnpjForCompany(form.cnpj);
+      if (cnpjError) {
+        setError(cnpjError);
+        return;
+      }
+    }
     const needsAcceptance = (plan.hasLoyalty && (plan.loyaltyMonths ?? 0) > 0) || plan.requireContractAcceptance;
     if (needsAcceptance && !form.contractAccepted) {
       setError('É necessário aceitar os termos do plano para continuar.');
@@ -149,6 +164,7 @@ function PatrocinarComprarContent() {
         body: JSON.stringify({
           sponsorPlanId: plan.id,
           companyName: form.companyName.trim(),
+          cnpj: isCompanyPlan ? form.cnpj.trim() : undefined,
           email: form.email.trim(),
           websiteUrl: form.websiteUrl.trim() || undefined,
           whatsapp: form.whatsapp.trim() || undefined,
@@ -186,6 +202,26 @@ function PatrocinarComprarContent() {
     return (
       <div className="pt-20 pb-16 px-4 min-h-screen bg-futvar-darker flex items-center justify-center">
         <p className="text-futvar-light">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (hasActiveCompanySponsor) {
+    return (
+      <div className="pt-20 pb-16 px-4 min-h-screen bg-futvar-darker">
+        <div className="max-w-lg mx-auto text-center space-y-4">
+          <p className="text-futvar-light">
+            Você já possui um patrocínio empresarial ativo. Para alterar de plano ou gerenciar seu patrocínio, acesse Minha conta.
+          </p>
+          <Link href="/conta" className="inline-block text-futvar-green hover:text-futvar-green-light font-semibold">
+            Ir para Minha conta
+          </Link>
+          <div className="pt-4">
+            <Link href="/patrocinar" className="text-futvar-light hover:text-white text-sm">
+              ← Voltar aos planos
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -239,6 +275,30 @@ function PatrocinarComprarContent() {
                 placeholder="Sua empresa ou marca"
               />
             </div>
+            {plan?.type === 'sponsor_company' && (
+              <div>
+                <label className="block text-sm font-medium text-futvar-light mb-1">CNPJ da empresa *</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  required={plan?.type === 'sponsor_company'}
+                  value={form.cnpj}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, '').slice(0, 14);
+                    setForm((f) => ({ ...f, cnpj: formatCnpj(raw) }));
+                  }}
+                  onBlur={() => {
+                    if (plan?.type === 'sponsor_company' && form.cnpj && !isValidCnpj(form.cnpj)) {
+                      setError('CNPJ inválido. Verifique os dígitos.');
+                    }
+                  }}
+                  className="w-full px-4 py-3 rounded bg-futvar-dark border border-white/20 text-white placeholder-futvar-light focus:outline-none focus:ring-2 focus:ring-futvar-green font-mono"
+                  placeholder="00.000.000/0001-00"
+                  maxLength={18}
+                />
+                <p className="mt-1 text-xs text-futvar-light/80">Apenas empresas com CNPJ válido podem realizar patrocínio empresarial.</p>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-futvar-light mb-1">E-mail *</label>
               <input

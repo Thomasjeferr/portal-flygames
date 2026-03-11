@@ -32,6 +32,7 @@ interface SubscriptionData {
   active: boolean;
   startDate: string;
   endDate: string;
+  amountCents?: number | null;
   plan: PlanInfo | null;
   paymentGateway?: string | null;
 }
@@ -53,6 +54,8 @@ interface AccountData {
   subscription: SubscriptionData | null;
   purchases: PurchaseItem[];
   sponsorOrders?: SponsorOrderItem[];
+  accountType?: string;
+  accountTypeLabels?: string[];
 }
 
 interface SponsorOrderItem {
@@ -371,8 +374,17 @@ export default function ContaPage() {
   const subscription = data.subscription;
   const purchases = data.purchases ?? [];
   const sponsorOrders = data.sponsorOrders ?? [];
+  const accountTypeLabels = data.accountTypeLabels ?? [];
   const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'Usuário';
   const subscriptionActive = !!subscription?.active && new Date(subscription.endDate) >= new Date();
+  const hasActiveCompanySponsor = accountTypeLabels.includes('Patrocínio empresarial');
+
+  const capabilities: string[] = [];
+  const isTeamResponsibleAccount = accountTypeLabels.includes('Responsável pelo time');
+  if (isTeamResponsibleAccount) capabilities.push('Gerenciar time(s) no painel (elenco, comissões)');
+  if (subscriptionActive) capabilities.push('Assistir jogos com sua assinatura');
+  if (sponsorOrders.some((o) => o.sponsor?.isActive && o.sponsor?.planType === 'sponsor_company')) capabilities.push('Acesso ao conteúdo via patrocínio empresarial');
+  if (!isTeamResponsibleAccount && capabilities.length === 0) capabilities.push('Comprar planos e jogos', 'Patrocinar time ou empresa');
 
   return (
     <div className="pt-24 pb-16 px-4 lg:px-12 min-h-screen bg-futvar-darker">
@@ -408,9 +420,30 @@ export default function ContaPage() {
           </div>
         )}
 
+        {/* Card tipo de conta */}
+        {accountTypeLabels.length > 0 && (
+          <div className="mb-6 rounded-2xl border border-futvar-green/20 bg-futvar-dark p-5 shadow-lg">
+            <h2 className="text-base font-semibold text-white mb-2">Sua conta</h2>
+            <p className="text-sm text-futvar-light mb-2">
+              Você acessa como:{' '}
+              {accountTypeLabels.map((label, i) => (
+                <span key={label}>
+                  {i > 0 && ' · '}
+                  <span className="font-medium text-futvar-green">{label}</span>
+                </span>
+              ))}
+            </p>
+            {capabilities.length > 0 && (
+              <p className="text-xs text-futvar-light/90">
+                Você pode: {capabilities.join('; ')}.
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Perfil */}
-          <section className="rounded-2xl border border-white/10 bg-futvar-dark p-6 shadow-lg">
+          {/* Perfil — ocupa toda a largura quando responsável pelo time (blocos de plano/histórico ocultos) */}
+          <section className={`rounded-2xl border border-white/10 bg-futvar-dark p-6 shadow-lg ${isTeamResponsibleAccount ? 'md:col-span-2' : ''}`}>
             <h2 className="text-lg font-semibold text-white mb-4">Perfil</h2>
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div className="flex items-center gap-4">
@@ -503,9 +536,33 @@ export default function ContaPage() {
             </form>
           </section>
 
-          {/* Assinatura / Plano */}
+          {/* Plano Patrocinador/Torcedor — substituído por "Patrocínio empresarial" quando conta é empresarial */}
+          {!isTeamResponsibleAccount && (
           <section className="rounded-2xl border border-white/10 bg-futvar-dark p-6 shadow-lg">
-            <h2 className="text-lg font-semibold text-white mb-4">Assinatura / Plano</h2>
+            {hasActiveCompanySponsor ? (
+              <>
+                <h2 className="text-lg font-semibold text-white mb-4">Patrocínio empresarial</h2>
+                <p className="text-futvar-light text-sm mb-4">
+                  Sua conta tem patrocínio empresarial ativo. Os detalhes do contrato, valor e próxima cobrança estão no bloco &quot;Patrocínio / Contrato&quot; abaixo.
+                </p>
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href="/conta/patrocinio/trocar-plano"
+                    className="inline-flex px-4 py-2 rounded-lg border border-futvar-green/60 text-futvar-green font-semibold hover:bg-futvar-green/10 text-center"
+                  >
+                    Alterar plano (upgrade)
+                  </Link>
+                  <Link
+                    href="/conta/patrocinio/cancelar"
+                    className="inline-flex px-4 py-2 rounded-lg border border-white/20 text-futvar-light font-medium hover:bg-white/5 text-center text-sm"
+                  >
+                    Solicitar cancelamento
+                  </Link>
+                </div>
+              </>
+            ) : (
+            <>
+            <h2 className="text-lg font-semibold text-white mb-4">Plano Patrocinador/Torcedor</h2>
             {subscription && subscription.plan ? (
               <div className="space-y-3">
                 <p className="text-white font-medium">
@@ -524,8 +581,11 @@ export default function ContaPage() {
                   </span>
                 </div>
                 <p className="text-futvar-light text-sm">{subscription.plan.name}</p>
-                {!isStoreApp && subscription.plan.price != null && (
-                  <p className="text-futvar-light">Valor: {formatPrice(subscription.plan.price)}</p>
+                {/* Regra: só valor pago (amountCents). Nunca preço atual do plano — ver docs/RASTREIO-VALOR-PAGO-COMPRAS.md */}
+                {!isStoreApp && (
+                  <p className="text-futvar-light">
+                    Valor: {subscription.amountCents != null ? formatPrice(subscription.amountCents / 100) : '—'}
+                  </p>
                 )}
                 <p className="text-futvar-light text-sm">
                   Renovação em: {formatDate(subscription.endDate)}
@@ -615,7 +675,10 @@ export default function ContaPage() {
                 })()}
               </div>
             )}
+            </>
+            )}
           </section>
+          )}
 
           {/* Patrocínio / Contrato */}
           {sponsorOrders.length > 0 && (
@@ -683,7 +746,15 @@ export default function ContaPage() {
                         </details>
                       )}
                       {isActive && !sp?.cancellationRequestedAt && (
-                        <div className="pt-2">
+                        <div className="pt-2 flex flex-wrap items-center gap-3">
+                          {sp?.planType === 'sponsor_company' && (
+                            <Link
+                              href="/conta/patrocinio/trocar-plano"
+                              className="text-sm font-medium text-futvar-green hover:text-futvar-green-light hover:underline"
+                            >
+                              Alterar plano (upgrade)
+                            </Link>
+                          )}
                           <Link
                             href="/conta/patrocinio/cancelar"
                             className="text-sm text-futvar-green hover:underline"
@@ -735,95 +806,151 @@ export default function ContaPage() {
             )}
           </section>
 
-          {/* Histórico de compras */}
+          {/* Histórico de compras e patrocínios — oculto para responsável pelo time */}
+          {!isTeamResponsibleAccount && (
           <section className="rounded-2xl border border-white/10 bg-futvar-dark p-6 shadow-lg md:col-span-2">
             <h2 className="text-lg font-semibold text-white mb-4">Histórico de compras / Pagamentos</h2>
-            {purchases.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
-                <p className="text-futvar-light mb-4">Nenhuma compra ainda.</p>
-                {!isStoreApp && (
-                  <Link
-                    href="/planos"
-                    className="inline-flex px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
-                  >
-                    Ver planos
-                  </Link>
-                )}
-              </div>
-            ) : (
-              <ul className="space-y-4">
-                {purchases.map((p) => (
-                  <li key={p.id} className="flex flex-col gap-2 py-3 border-b border-white/10 last:border-0">
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                      <div>
-                        <p className="text-white font-medium">{p.plan?.name ?? 'Compra'}</p>
-                        {p.game && (
-                          <Link href={`/jogo/${p.game.slug}`} className="text-sm text-futvar-green hover:underline">
-                            {p.game.title}
+            {(() => {
+              const hasPurchases = purchases.length > 0;
+              const hasSponsorOrders = sponsorOrders.length > 0;
+              const hasAny = hasPurchases || hasSponsorOrders;
+
+              if (!hasAny) {
+                return (
+                  <div className="rounded-xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
+                    {hasActiveCompanySponsor ? (
+                      <>
+                        <p className="text-futvar-light mb-2">Você não tem compras de planos ou jogos (Patrocinador/torcedor).</p>
+                        <p className="text-futvar-light text-sm">Seu patrocínio empresarial e pagamentos recorrentes estão no bloco &quot;Patrocínio / Contrato&quot; acima.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-futvar-light mb-4">Nenhuma compra ainda.</p>
+                        {!isStoreApp && (
+                          <Link
+                            href="/planos"
+                            className="inline-flex px-4 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
+                          >
+                            Ver planos
                           </Link>
                         )}
-                        <p className="text-futvar-light text-sm">{formatDate(p.purchasedAt)}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {!isStoreApp && (p.amountCents != null || p.plan?.price != null) && (
-                          <span className="text-futvar-light text-sm">
-                            {p.amountCents != null ? formatPrice(p.amountCents / 100) : formatPrice(p.plan!.price!)}
-                          </span>
-                        )}
-                        <span
-                          className={`text-sm font-medium ${
-                            p.paymentStatus === 'paid'
-                              ? 'text-green-400'
-                              : p.paymentStatus === 'pending'
-                              ? 'text-amber-400'
-                              : 'text-futvar-light'
-                          }`}
-                        >
-                          {p.paymentStatus === 'paid' ? 'Pago' : p.paymentStatus === 'pending' ? 'Pendente' : p.paymentStatus}
-                        </span>
-                      </div>
-                    </div>
-                    {p.team && (
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/10 w-fit">
-                        {p.team.crestUrl && (
-                          <img
-                            src={p.team.crestUrl.startsWith('http') ? p.team.crestUrl : `${typeof window !== 'undefined' ? window.location.origin : ''}${p.team.crestUrl.startsWith('/') ? '' : '/'}${p.team.crestUrl}`}
-                            alt=""
-                            className="h-6 w-6 object-contain rounded bg-white/10"
-                          />
-                        )}
-                        <span className="text-futvar-green text-sm font-medium">{p.team.name}</span>
-                      </div>
+                      </>
                     )}
-                    {canChooseTeam(p) && teamsForPurchase.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-2 mt-2">
-                        <label className="text-xs text-futvar-light">Escolher time de coração para esta compra:</label>
-                        <select
-                          defaultValue=""
-                          onChange={(e) => handleChooseTeamForPurchase(p.id, e.target.value)}
-                          disabled={savingTeamId === p.id}
-                          className="px-3 py-2 rounded-lg bg-futvar-darker border border-futvar-green/40 text-sm text-white focus:outline-none focus:ring-2 focus:ring-futvar-green"
-                        >
-                          <option value="">Selecione um time</option>
-                          {teamsForPurchase.map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.name}
-                            </option>
-                          ))}
-                        </select>
-                        {savingTeamId === p.id && <span className="text-xs text-futvar-light">Salvando...</span>}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
+                  </div>
+                );
+              }
+
+              const recLabel = (billingPeriod: string) =>
+                billingPeriod === 'monthly' ? 'Mensal' : billingPeriod === 'quarterly' ? 'Trimestral' : 'Anual';
+
+              type HistoryItem = { type: 'purchase'; date: string; data: PurchaseItem } | { type: 'sponsor'; date: string; data: SponsorOrderItem };
+              const items: HistoryItem[] = [
+                ...purchases.map((p) => ({ type: 'purchase' as const, date: p.purchasedAt, data: p })),
+                ...sponsorOrders.map((s) => ({ type: 'sponsor' as const, date: s.createdAt, data: s })),
+              ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+              return (
+                <ul className="space-y-4">
+                  {items.map((item) =>
+                    item.type === 'purchase' ? (
+                      <li key={`p-${item.data.id}`} className="flex flex-col gap-2 py-3 border-b border-white/10 last:border-0">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-white/10 text-futvar-light">Plano/Jogo</span>
+                            <div>
+                              <p className="text-white font-medium">{(item.data as PurchaseItem).plan?.name ?? 'Compra'}</p>
+                              {(item.data as PurchaseItem).game && (
+                                <Link href={`/jogo/${(item.data as PurchaseItem).game!.slug}`} className="text-sm text-futvar-green hover:underline">
+                                  {(item.data as PurchaseItem).game!.title}
+                                </Link>
+                              )}
+                              <p className="text-futvar-light text-sm">{formatDate(item.date)}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!isStoreApp && (
+                              <span className="text-futvar-light text-sm">
+                                {(item.data as PurchaseItem).amountCents != null ? formatPrice((item.data as PurchaseItem).amountCents! / 100) : '—'}
+                              </span>
+                            )}
+                            <span
+                              className={`text-sm font-medium ${
+                                (item.data as PurchaseItem).paymentStatus === 'paid'
+                                  ? 'text-green-400'
+                                  : (item.data as PurchaseItem).paymentStatus === 'pending'
+                                  ? 'text-amber-400'
+                                  : 'text-futvar-light'
+                              }`}
+                            >
+                              {(item.data as PurchaseItem).paymentStatus === 'paid' ? 'Pago' : (item.data as PurchaseItem).paymentStatus === 'pending' ? 'Pendente' : (item.data as PurchaseItem).paymentStatus}
+                            </span>
+                          </div>
+                        </div>
+                        {(item.data as PurchaseItem).team && (
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/10 w-fit">
+                            {(item.data as PurchaseItem).team!.crestUrl && (
+                              <img
+                                src={(item.data as PurchaseItem).team!.crestUrl!.startsWith('http') ? (item.data as PurchaseItem).team!.crestUrl! : `${typeof window !== 'undefined' ? window.location.origin : ''}${(item.data as PurchaseItem).team!.crestUrl!.startsWith('/') ? '' : '/'}${(item.data as PurchaseItem).team!.crestUrl!}`}
+                                alt=""
+                                className="h-6 w-6 object-contain rounded bg-white/10"
+                              />
+                            )}
+                            <span className="text-futvar-green text-sm font-medium">{(item.data as PurchaseItem).team!.name}</span>
+                          </div>
+                        )}
+                        {canChooseTeam(item.data as PurchaseItem) && teamsForPurchase.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
+                            <label className="text-xs text-futvar-light">Escolher time de coração para esta compra:</label>
+                            <select
+                              defaultValue=""
+                              onChange={(e) => handleChooseTeamForPurchase((item.data as PurchaseItem).id, e.target.value)}
+                              disabled={savingTeamId === (item.data as PurchaseItem).id}
+                              className="px-3 py-2 rounded-lg bg-futvar-darker border border-futvar-green/40 text-sm text-white focus:outline-none focus:ring-2 focus:ring-futvar-green"
+                            >
+                              <option value="">Selecione um time</option>
+                              {teamsForPurchase.map((t) => (
+                                <option key={t.id} value={t.id}>{t.name}</option>
+                              ))}
+                            </select>
+                            {savingTeamId === (item.data as PurchaseItem).id && <span className="text-xs text-futvar-light">Salvando...</span>}
+                          </div>
+                        )}
+                      </li>
+                    ) : (
+                      <li key={`s-${item.data.id}`} className="flex flex-col gap-2 py-3 border-b border-white/10 last:border-0">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-futvar-green/20 text-futvar-green">Patrocínio</span>
+                            <div>
+                              <p className="text-white font-medium">{(item.data as SponsorOrderItem).companyName}</p>
+                              <p className="text-futvar-light text-sm">{(item.data as SponsorOrderItem).sponsorPlan.name} · {recLabel((item.data as SponsorOrderItem).sponsorPlan.billingPeriod)}</p>
+                              <p className="text-futvar-light text-xs">{formatDate(item.date)}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-futvar-light text-sm">{formatPrice((item.data as SponsorOrderItem).amountCents / 100)}</span>
+                            <span
+                              className={`text-sm font-medium ${
+                                (item.data as SponsorOrderItem).paymentStatus === 'paid' ? 'text-green-400' : (item.data as SponsorOrderItem).paymentStatus === 'pending' ? 'text-amber-400' : 'text-futvar-light'
+                              }`}
+                            >
+                              {(item.data as SponsorOrderItem).paymentStatus === 'paid' ? 'Pago' : (item.data as SponsorOrderItem).paymentStatus === 'pending' ? 'Pendente' : (item.data as SponsorOrderItem).paymentStatus}
+                            </span>
+                          </div>
+                        </div>
+                      </li>
+                    )
+                  )}
+                </ul>
+              );
+            })()}
             {purchases.length > 0 && !isStoreApp && (
               <Link href="/planos" className="inline-block mt-4 text-futvar-green hover:underline text-sm">
                 Ver planos
               </Link>
             )}
           </section>
+          )}
         </div>
 
         {data?.isTeamManager && (

@@ -23,6 +23,8 @@ export async function SponsorsSection() {
     {} as Record<string, Array<{ id: string; name: string; logoUrl: string; websiteUrl: string | null; whatsapp: string | null; instagram: string | null }>>
   );
 
+  const allSponsors = TIER_ORDER.flatMap((tier) => byTier[tier] ?? []);
+
   return (
     <section className="py-14 lg:py-18 px-4 lg:px-12 border-t border-white/5">
       <div className="max-w-[1920px] mx-auto">
@@ -46,7 +48,7 @@ export async function SponsorsSection() {
             </Link>
           </div>
         </div>
-        <SponsorsCarouselWrapper byTier={byTier} />
+        <SponsorsCarouselWrapper sponsors={allSponsors} />
       </div>
     </section>
   );

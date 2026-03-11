@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { isTeamResponsible, hasActiveRecurringAccess } from '@/lib/access';
+import { isTeamResponsible, hasActiveRecurringAccess, hasFullAccess, hasActiveCompanySponsor } from '@/lib/access';
 import { clearPaymentConfigCache } from '@/lib/payment-config';
 import { createWooviCharge } from '@/lib/payments/woovi';
 import { createStripePaymentIntent, createStripeSubscription } from '@/lib/payments/stripe';
@@ -39,6 +39,15 @@ export async function POST(request: NextRequest) {
   if (isResponsible) {
     return NextResponse.json(
       { error: 'Esta conta é de responsável pelo time e não pode realizar compras. Para assinar ou comprar jogos, saia e crie uma conta de cliente (cadastro).' },
+      { status: 403 }
+    );
+  }
+
+  // Quem já tem acesso total (assinatura ou patrocínio empresarial) não pode comprar outros planos ou jogos.
+  const fullAccess = await hasFullAccess(session.userId);
+  if (fullAccess) {
+    return NextResponse.json(
+      { error: 'Você já tem acesso total ao conteúdo (assinatura ou patrocínio empresarial). Não é necessário comprar outros planos ou jogos.' },
       { status: 403 }
     );
   }
@@ -90,7 +99,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Bloquear nova assinatura recorrente se o usuário já tem assinatura ativa (evitar cobrança duplicada).
+    // Também bloquear se tiver patrocínio empresarial ativo (não pode assinar plano Patrocinador/torcedor).
     if (plan.type === 'recorrente') {
+      const hasCompanySponsor = await hasActiveCompanySponsor(session.userId, session.email);
+      if (hasCompanySponsor) {
+        return NextResponse.json(
+          {
+            error:
+              'Você já possui patrocínio empresarial ativo. Quem tem patrocínio empresarial não pode assinar o plano Patrocinador/torcedor. Para alterar de plano empresarial, acesse Minha conta.',
+          },
+          { status: 403 }
+        );
+      }
       const existingSub = await prisma.subscription.findUnique({
         where: { userId: session.userId },
         include: { plan: { select: { id: true, name: true } } },

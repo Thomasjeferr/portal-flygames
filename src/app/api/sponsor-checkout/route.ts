@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { createStripeSponsorSubscription } from '@/lib/payments/stripe';
-import { isTeamResponsible } from '@/lib/access';
-import { sponsorOrderCheckoutSchema } from '@/lib/validators/sponsorOrderSchema';
+import { isTeamResponsible, hasActiveCompanySponsor } from '@/lib/access';
+import { sponsorOrderCheckoutSchema, validateCnpjForCompany } from '@/lib/validators/sponsorOrderSchema';
+import { normalizeCnpj } from '@/lib/validators/cnpj';
 import { checkSponsorCheckoutRateLimit, incrementSponsorCheckoutRateLimit } from '@/lib/email/rateLimit';
 
 function getClientIp(req: NextRequest): string {
@@ -50,6 +51,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Plano não encontrado ou inativo' }, { status: 404 });
     }
 
+    if (plan.type === 'sponsor_company') {
+      const cnpjError = validateCnpjForCompany(d.cnpj);
+      if (cnpjError) {
+        return NextResponse.json({ error: cnpjError }, { status: 400 });
+      }
+    }
+
     const requiresAcceptance = plan.requireContractAcceptance || (plan.hasLoyalty && (plan.loyaltyMonths ?? 0) > 0);
     if (requiresAcceptance && !d.contractAccepted) {
       return NextResponse.json(
@@ -59,6 +67,20 @@ export async function POST(request: NextRequest) {
     }
 
     const emailNorm = d.email.trim().toLowerCase();
+
+    // Bloquear se já tem qualquer patrocínio empresarial ativo (evitar comprar outro plano empresarial)
+    if (plan.type === 'sponsor_company') {
+      const alreadyHasCompany = await hasActiveCompanySponsor(session?.userId ?? null, emailNorm);
+      if (alreadyHasCompany) {
+        return NextResponse.json(
+          {
+            error:
+              'Você já possui um patrocínio empresarial ativo. Para alterar de plano, acesse Minha conta.',
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     // Regra duplicata: mesmo e-mail + mesmo plano com patrocínio ainda ativo
     const now = new Date();
@@ -82,7 +104,7 @@ export async function POST(request: NextRequest) {
       if (activeSponsor) {
         return NextResponse.json(
           {
-            error: `Este e-mail já possui patrocínio ativo do plano ${paidOrders[0]?.sponsorPlan?.name ?? 'este plano'}. Aguarde o fim do período ou use a opção de upgrade na sua conta.`,
+            error: `Este e-mail já possui patrocínio ativo do plano ${paidOrders[0]?.sponsorPlan?.name ?? 'este plano'}. Aguarde o fim do período ou acesse Minha conta para alterar.`,
           },
           { status: 403 }
         );
@@ -126,12 +148,16 @@ export async function POST(request: NextRequest) {
           .join('. ')
       : null;
 
+    const cnpjNormalized =
+      plan.type === 'sponsor_company' && d.cnpj ? normalizeCnpj(d.cnpj) : null;
+
     const order = await prisma.sponsorOrder.create({
       data: {
         sponsorPlanId: plan.id,
         teamId: d.teamId || null,
         userId: session?.userId ?? null,
         companyName: d.companyName.trim(),
+        cnpj: cnpjNormalized,
         email: emailNorm,
         websiteUrl: d.websiteUrl?.trim() || null,
         whatsapp: d.whatsapp?.replace(/\D/g, '') || null,

@@ -78,11 +78,23 @@ export async function POST(request: NextRequest) {
 
     console.info('[Woovi webhook] CHARGE_COMPLETED correlationID=', correlationId);
 
-    // Valor realmente pago (centavos), para gravar na purchase e exibir na área do usuário
-    const wooviChargeValueCents =
-      typeof (charge as { value?: number })?.value === 'number'
-        ? Math.round((charge as { value: number }).value)
-        : undefined;
+    // Valor realmente pago: Woovi/OpenPix pode enviar em centavos (ex.: 503) ou em reais (ex.: 5.03). Normalizar para centavos.
+    const rawValue =
+      (charge as { value?: number })?.value ??
+      (charge as { valueWithDiscount?: number })?.valueWithDiscount ??
+      (charge as { amount?: number })?.amount ??
+      (body as { value?: number })?.value ??
+      (body as { amount?: number })?.amount;
+    let wooviChargeValueCents: number | undefined;
+    if (typeof rawValue === 'number' && rawValue > 0) {
+      if (rawValue < 100 && rawValue % 1 !== 0) {
+        wooviChargeValueCents = Math.round(rawValue * 100);
+      } else {
+        wooviChargeValueCents = Math.round(rawValue);
+      }
+    } else if (charge && typeof charge === 'object') {
+      console.warn('[Woovi webhook] Valor do charge não encontrado; gravando com valor da Purchase. charge keys=', Object.keys(charge));
+    }
 
     // Pré-estreia: externalId = presale-{slotId}
     if (typeof correlationId === 'string' && correlationId.startsWith('presale-')) {

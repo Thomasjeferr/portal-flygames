@@ -14,6 +14,7 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed-emails": "tsx prisma/seed-emails.ts",
+    "fix:amount-cents": "tsx scripts/fix-amount-cents.ts",
     "cap:sync": "cap sync android",
     "icons:prepare": "node scripts/prepare-icon.js",
     "icons:generate": "npm run icons:prepare && npx capacitor-assets generate --android --splashBackgroundColor '#0C1222' && npx capacitor-assets generate --pwa && node -e \"const fs=require('fs'); const p='public/icons'; if(!fs.existsSync(p)) fs.mkdirSync(p,{recursive:true}); fs.readdirSync('icons').forEach(f=>fs.copyFileSync('icons/'+f, p+'/'+f));\"",

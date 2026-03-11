@@ -96,15 +96,16 @@ export function SponsorsCarousel({
       >
         {valid.map((s) => {
           const logoUrl = s.logoUrl.trim();
+          const LOGO_SIZE = 80;
           const cardContent = (
             <>
-              <div className="flex items-center justify-center h-20 w-[180px]">
+              <div className="flex items-center justify-center h-[80px] w-[80px] shrink-0">
                 <Image
                   src={logoUrl}
                   alt={s.name}
-                  width={180}
-                  height={80}
-                  className="object-contain h-20 w-auto max-w-[180px]"
+                  width={LOGO_SIZE}
+                  height={LOGO_SIZE}
+                  className="object-contain h-[80px] w-[80px]"
                   unoptimized={logoUrl.startsWith('http')}
                 />
               </div>
@@ -116,7 +117,7 @@ export function SponsorsCarousel({
           return (
             <div
               key={s.id}
-              className="flex-shrink-0 flex flex-col items-center justify-center gap-2 min-w-[140px] snap-start transition-opacity duration-300 hover:opacity-100 opacity-90"
+              className="flex-shrink-0 flex flex-col items-center justify-center gap-2 min-w-[120px] snap-start transition-opacity duration-300 hover:opacity-100 opacity-90"
             >
               {s.websiteUrl ? (
                 <a

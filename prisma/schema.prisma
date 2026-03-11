@@ -60,6 +60,7 @@ model Subscription {
   active                Boolean   @default(false)
   startDate             DateTime  @map("start_date")
   endDate               DateTime  @map("end_date")
+  amountCents           Int?      @map("amount_cents") // valor pago na assinatura (travado); null = legado, exibir plan.price
   maxConcurrentStreams  Int?      @map("max_concurrent_streams") // null = ilimitado; sobrescreve plano se definido
   paymentGateway        String?   @map("payment_gateway") // stripe | woovi | manual
   externalSubscriptionId String?  @map("external_subscription_id")
@@ -573,6 +574,7 @@ model SponsorOrder {
   partnerId        String?   @map("partner_id")
   userId           String?   @map("user_id") // preenchido quando o usuário está logado ao patrocinar (para liberar acesso a resultados)
   companyName      String    @map("company_name")
+  cnpj             String?   @map("cnpj") // obrigatório para patrocínio empresarial (sponsor_company); apenas dígitos
   email            String    @map("email")
   websiteUrl       String?   @map("website_url")
   whatsapp         String?   @map("whatsapp")

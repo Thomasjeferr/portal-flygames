@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { hasActiveRecurringAccess } from '@/lib/access';
+import { hasActiveRecurringAccess, getAccountTypes } from '@/lib/access';
 
 /** GET /api/account – Dados completos para o dashboard da conta (user + favoriteTeam + subscription + purchases). */
 export async function GET() {
@@ -68,7 +68,34 @@ export async function GET() {
   const subscriptionActive =
     !!subscription?.active && subscription.endDate >= new Date();
 
+  // Backfill em leitura: se a assinatura tem amountCents null, usar o valor da última compra paga desse plano (valor realmente pago), não o preço atual do plano.
+  let subscriptionPayload: typeof subscription = subscription;
+  try {
+    if (subscription?.planId && subscription.amountCents == null) {
+      const lastPaidPurchase = await prisma.purchase.findFirst({
+        where: { userId: session.userId, planId: subscription.planId, paymentStatus: 'paid' },
+        orderBy: { purchasedAt: 'desc' },
+        select: { amountCents: true },
+      });
+      const amountCents = lastPaidPurchase?.amountCents ?? null;
+      if (amountCents != null) {
+        await prisma.subscription.update({
+          where: { id: subscription.id },
+          data: { amountCents },
+        });
+        subscriptionPayload = { ...subscription, amountCents };
+      }
+    }
+  } catch (_) {
+    // Coluna pode não existir ou outro erro; seguir sem backfill
+  }
+
   const hasRecurringAccess = await hasActiveRecurringAccess(session.userId, user.email);
+
+  const { accountType, accountTypeLabels } = await getAccountTypes(session.userId, user.email);
+
+  // Não fazemos backfill de amountCents nas compras com plan.price: o valor exibido deve ser o pago, não o preço atual do plano.
+  const purchasesPayload = purchases;
 
   return NextResponse.json({
     user: {
@@ -83,19 +110,22 @@ export async function GET() {
       favoriteTeam: user.favoriteTeam,
     },
     isTeamManager: teamManagerCount > 0,
-    subscription: subscription
+    subscription: subscriptionPayload
       ? {
-          id: subscription.id,
+          id: subscriptionPayload.id,
           active: subscriptionActive,
-          planId: subscription.planId,
-          startDate: subscription.startDate,
-          endDate: subscription.endDate,
-          plan: subscription.plan,
-          paymentGateway: subscription.paymentGateway,
+          planId: subscriptionPayload.planId,
+          startDate: subscriptionPayload.startDate,
+          endDate: subscriptionPayload.endDate,
+          amountCents: subscriptionPayload.amountCents,
+          plan: subscriptionPayload.plan,
+          paymentGateway: subscriptionPayload.paymentGateway,
         }
       : null,
     hasActiveRecurringAccess: hasRecurringAccess,
-    purchases,
+    accountType,
+    accountTypeLabels,
+    purchases: purchasesPayload,
     sponsorOrders: sponsorOrders.map((o) => ({
       id: o.id,
       companyName: o.companyName,
