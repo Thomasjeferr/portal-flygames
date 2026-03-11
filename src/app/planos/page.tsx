@@ -39,6 +39,7 @@ export default function PlanosPage() {
   const [loading, setLoading] = useState(true);
   const [isTeamManager, setIsTeamManager] = useState(false);
   const [subscription, setSubscription] = useState<{ active: boolean; planId: string | null } | null>(null);
+  const [hasActiveRecurringAccess, setHasActiveRecurringAccess] = useState(false);
 
   // Persiste ref do parceiro na sessão para não perder a indicação se a URL do checkout não tiver ref
   useEffect(() => {
@@ -64,6 +65,7 @@ export default function PlanosPage() {
             ? { active: authData.subscription.active, planId: authData.subscription.planId ?? null }
             : null
         );
+        setHasActiveRecurringAccess(!!authData?.hasActiveRecurringAccess);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -197,6 +199,10 @@ export default function PlanosPage() {
                     >
                       Trocar para este plano
                     </Link>
+                  ) : plan.type === 'unitario' && hasActiveRecurringAccess ? (
+                    <div className="w-full py-3 rounded-lg text-center border-2 border-green-500/40 text-green-400 bg-green-900/10 text-sm font-medium">
+                      Você já tem acesso ao conteúdo
+                    </div>
                   ) : (
                     <Link
                       href={`/checkout?planId=${plan.id}${plan.type === 'unitario' ? '&gameId=' : ''}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}`}

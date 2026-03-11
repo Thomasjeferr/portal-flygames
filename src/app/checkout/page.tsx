@@ -217,6 +217,7 @@ function CheckoutContent() {
   const [stripeSecret, setStripeSecret] = useState<string | null>(null);
   const [paymentAvailability, setPaymentAvailability] = useState<{ pix: boolean; card: boolean } | null>(null);
   const [subscription, setSubscription] = useState<{ active: boolean; planId: string | null } | null>(null);
+  const [hasActiveRecurringAccess, setHasActiveRecurringAccess] = useState(false);
 
   useEffect(() => {
     if (!planId) {
@@ -249,6 +250,7 @@ function CheckoutContent() {
             ? { active: authData.subscription.active, planId: authData.subscription.planId ?? null }
             : null
         );
+        setHasActiveRecurringAccess(!!authData?.hasActiveRecurringAccess);
         const p = Array.isArray(plansData) ? plansData.find((x: { id: string }) => x.id === planId) : null;
         setPlan(p ?? null);
         const pixOk = availability?.pix === true;
@@ -403,6 +405,29 @@ function CheckoutContent() {
           <h1 className="text-xl font-bold text-white mb-2">Você já assina este plano</h1>
           <p className="text-futvar-light mb-4">
             Sua assinatura <strong>{plan.name}</strong> já está ativa. Acesse sua conta para ver detalhes ou cancelar a renovação.
+          </p>
+          <Link
+            href="/conta"
+            className="inline-flex px-5 py-2.5 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
+          >
+            Ir para minha conta
+          </Link>
+          <p className="mt-4">
+            <Link href="/planos" className="text-futvar-green hover:underline text-sm">Ver planos</Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Jogo avulso: quem já tem assinatura ou patrocínio recorrente ativo não pode comprar.
+  if (plan.type === 'unitario' && hasActiveRecurringAccess) {
+    return (
+      <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-12 min-h-screen bg-futvar-darker">
+        <div className="max-w-lg mx-auto text-center">
+          <h1 className="text-xl font-bold text-white mb-2">Você já tem acesso ao conteúdo</h1>
+          <p className="text-futvar-light mb-4">
+            Sua assinatura ou patrocínio ativo já dá acesso ao catálogo. Não é necessário comprar jogo avulso.
           </p>
           <Link
             href="/conta"

@@ -6,10 +6,15 @@ import { useEffect, useState } from 'react';
 interface BuyGameButtonProps {
   gameId: string;
   className?: string;
+  /** Quando true, esconde o botão se a conta tiver assinatura ou patrocínio recorrente ativo (acesso livre ao conteúdo). */
+  hideIfRecurringAccess?: boolean;
 }
 
-export function BuyGameButton({ gameId, className }: BuyGameButtonProps) {
+export function BuyGameButton({ gameId, className, hideIfRecurringAccess }: BuyGameButtonProps) {
   const [unitarioPlanId, setUnitarioPlanId] = useState<string | null>(null);
+  const [hasRecurringAccess, setHasRecurringAccess] = useState<boolean | null>(
+    hideIfRecurringAccess ? null : false
+  );
 
   useEffect(() => {
     fetch('/api/plans')
@@ -21,6 +26,17 @@ export function BuyGameButton({ gameId, className }: BuyGameButtonProps) {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!hideIfRecurringAccess) return;
+    fetch('/api/account', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((data: { hasActiveRecurringAccess?: boolean }) => {
+        setHasRecurringAccess(!!data?.hasActiveRecurringAccess);
+      })
+      .catch(() => setHasRecurringAccess(false));
+  }, [hideIfRecurringAccess]);
+
+  if (hideIfRecurringAccess && hasRecurringAccess === true) return null;
   if (!unitarioPlanId) return null;
 
   return (

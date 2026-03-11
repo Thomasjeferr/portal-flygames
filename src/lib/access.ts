@@ -188,10 +188,62 @@ export async function canAccessApprovedResults(userId: string): Promise<boolean>
 }
 
 /**
+ * Verifica se o usuário tem algum patrocínio ativo (torcedor ou empresa).
+ * Considera pedidos vinculados à conta (userId) ou ao mesmo e-mail (compra sem login).
+ */
+export async function hasActiveSponsor(userId: string, email?: string | null): Promise<boolean> {
+  const now = new Date();
+  const emailNorm = email?.trim().toLowerCase() || '';
+  const orderWhere = {
+    paymentStatus: 'paid' as const,
+    ...(emailNorm
+      ? { OR: [{ userId }, { email: { equals: emailNorm, mode: 'insensitive' as const } }] as const }
+      : { userId }),
+  };
+  const orders = await prisma.sponsorOrder.findMany({
+    where: orderWhere,
+    select: { id: true },
+  });
+  if (orders.length === 0) return false;
+  const sponsor = await prisma.sponsor.findFirst({
+    where: {
+      sponsorOrderId: { in: orders.map((o) => o.id) },
+      isActive: true,
+      endAt: { gte: now },
+    },
+    select: { id: true },
+  });
+  return !!sponsor;
+}
+
+/**
+ * Indica se a conta tem "assinatura/patrocínio recorrente ativo" e, por regra, acesso livre a todo o conteúdo.
+ * Usado para: bloquear compra de jogo avulso e para exibir que a conta está ativa.
+ * Retorna true quando: (1) tem assinatura ativa (Subscription com endDate >= hoje) OU (2) tem patrocínio ativo (qualquer tipo).
+ */
+export async function hasActiveRecurringAccess(
+  userId: string,
+  email?: string | null
+): Promise<boolean> {
+  const now = new Date();
+  const [sub, sponsorActive] = await Promise.all([
+    prisma.subscription.findUnique({
+      where: { userId },
+      select: { active: true, endDate: true },
+    }),
+    hasActiveSponsor(userId, email),
+  ]);
+  const subscriptionActive = !!sub?.active && sub.endDate >= now;
+  return subscriptionActive || sponsorActive;
+}
+
+/**
  * Verifica se o usuário pode assistir a um jogo específico.
- * Retorna true se: tem assinatura ativa com acesso total OU comprou o jogo (plano unitário pago e não expirado).
+ * Retorna true se: tem assinatura/patrocínio recorrente ativo (acesso livre) OU comprou o jogo (plano unitário pago e não expirado).
  */
 export async function canAccessGame(userId: string, gameId: string): Promise<boolean> {
+  if (await hasActiveRecurringAccess(userId)) return true;
+
   if (await hasFullAccess(userId)) return true;
 
   const purchase = await prisma.purchase.findFirst({
@@ -233,6 +285,7 @@ export async function canAccessLive(
   if (!userId) return false;
   if (!live.requireSubscription && !live.allowOneTimePurchase) return true;
 
+  if (live.requireSubscription && (await hasActiveRecurringAccess(userId))) return true;
   if (live.requireSubscription && (await hasFullAccess(userId))) return true;
 
   if (live.allowOneTimePurchase) {
@@ -282,6 +335,13 @@ export async function getGamesAccessMap(
   if (!userId) {
     uniqueIds.forEach((id) => {
       result[id] = false;
+    });
+    return result;
+  }
+
+  if (await hasActiveRecurringAccess(userId)) {
+    uniqueIds.forEach((id) => {
+      result[id] = true;
     });
     return result;
   }

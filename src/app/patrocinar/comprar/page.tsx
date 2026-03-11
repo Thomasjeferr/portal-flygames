@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState, useRef } from 'react';
 import { NaoEncontrouTimeCTA } from '@/components/account/NaoEncontrouTimeCTA';
 import { TeamSelectorWithConfirm, type TeamOption } from '@/components/checkout/TeamSelectorWithConfirm';
+import CardPaymentScreen from '@/components/checkout/CardPaymentScreen';
 import { useStoreApp } from '@/lib/StoreAppContext';
 import { StoreAppRedirectToHome } from '@/components/StoreAppRedirectToHome';
 
@@ -376,7 +377,19 @@ function PatrocinarComprarContent() {
           </form>
         )}
 
-        {step === 'payment' && clientSecret && (
+        {step === 'payment' && clientSecret && plan && (
+          <CardPaymentScreen
+            clientSecret={clientSecret}
+            planName={plan.name}
+            planPrice={formatPrice(plan.price)}
+            onBack={() => {
+              setStep('form');
+              setClientSecret(null);
+            }}
+          />
+        )}
+
+        {step === 'payment' && !clientSecret && (
           <div className="p-6 rounded-lg bg-futvar-dark border border-futvar-green/20 space-y-4">
             <h3 className="text-white font-semibold">Próximo passo: concluir o pagamento</h3>
             <p className="text-futvar-light text-sm">

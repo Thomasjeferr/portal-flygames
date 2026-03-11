@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { hasActiveRecurringAccess } from '@/lib/access';
 
 /** GET /api/account – Dados completos para o dashboard da conta (user + favoriteTeam + subscription + purchases). */
 export async function GET() {
@@ -9,7 +10,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
   }
 
-  const [user, subscription, purchases, teamManagerCount, sponsorOrders] = await Promise.all([
+  const [user, subscription, purchases, teamManagerCount] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.userId },
       select: {
@@ -40,23 +41,34 @@ export async function GET() {
       },
     }),
     prisma.teamManager.count({ where: { userId: session.userId } }),
-    prisma.sponsorOrder.findMany({
-      where: { userId: session.userId, paymentStatus: 'paid' },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        sponsorPlan: { select: { id: true, name: true, price: true, billingPeriod: true, type: true } },
-        sponsor: true,
-        team: { select: { id: true, name: true, crestUrl: true } },
-      },
-    }),
   ]);
 
   if (!user) {
     return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
   }
 
+  // Mesmo critério de hasActiveSponsor: pedidos por userId OU pelo e-mail da conta (patrocínio torcedor pode ter sido comprado com e-mail)
+  const emailNorm = user.email?.trim().toLowerCase() || '';
+  const sponsorOrders = await prisma.sponsorOrder.findMany({
+    where: {
+      paymentStatus: 'paid',
+      OR: [
+        { userId: session.userId },
+        ...(emailNorm ? [{ email: { equals: emailNorm, mode: 'insensitive' as const } }] : []),
+      ],
+    },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      sponsorPlan: { select: { id: true, name: true, price: true, billingPeriod: true, type: true } },
+      sponsor: true,
+      team: { select: { id: true, name: true, crestUrl: true } },
+    },
+  });
+
   const subscriptionActive =
     !!subscription?.active && subscription.endDate >= new Date();
+
+  const hasRecurringAccess = await hasActiveRecurringAccess(session.userId, user.email);
 
   return NextResponse.json({
     user: {
@@ -75,12 +87,14 @@ export async function GET() {
       ? {
           id: subscription.id,
           active: subscriptionActive,
+          planId: subscription.planId,
           startDate: subscription.startDate,
           endDate: subscription.endDate,
           plan: subscription.plan,
           paymentGateway: subscription.paymentGateway,
         }
       : null,
+    hasActiveRecurringAccess: hasRecurringAccess,
     purchases,
     sponsorOrders: sponsorOrders.map((o) => ({
       id: o.id,

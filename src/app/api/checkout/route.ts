@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { isTeamResponsible, hasFullAccess } from '@/lib/access';
+import { isTeamResponsible, hasActiveRecurringAccess } from '@/lib/access';
 import { clearPaymentConfigCache } from '@/lib/payment-config';
 import { createWooviCharge } from '@/lib/payments/woovi';
 import { createStripePaymentIntent, createStripeSubscription } from '@/lib/payments/stripe';
@@ -62,12 +62,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Plano unitário exige gameId' }, { status: 400 });
     }
 
-    // Bloquear compra do mesmo jogo quando o usuário já tem acesso (assinatura com acesso total ou compra avulsa paga).
+    // Quem tem assinatura ou patrocínio recorrente ativo tem acesso livre ao conteúdo → não pode comprar jogo avulso.
     if (plan.type === 'unitario' && gameId) {
-      const fullAccess = await hasFullAccess(session.userId);
-      if (fullAccess) {
+      const recurringActive = await hasActiveRecurringAccess(session.userId, session.email);
+      if (recurringActive) {
         return NextResponse.json(
-          { error: 'Você já tem acesso a todo o catálogo pela sua assinatura. Não é necessário comprar este jogo avulso.' },
+          { error: 'Você já tem acesso ao conteúdo pela sua assinatura ou patrocínio ativo. Não é necessário comprar jogo avulso.' },
           { status: 403 }
         );
       }

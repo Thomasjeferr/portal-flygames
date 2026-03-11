@@ -187,6 +187,7 @@ export default async function GamePage({ params }: Props) {
                           <BuyGameButton
                             gameId={game.id}
                             className="inline-flex items-center justify-center rounded-full border-2 border-amber-400/80 px-6 py-3 text-sm font-bold text-amber-300 hover:bg-amber-400/10 transition-colors"
+                            hideIfRecurringAccess={!!session}
                           />
                         </>
                       )}
@@ -251,6 +252,7 @@ export default async function GamePage({ params }: Props) {
                         <BuyGameButton
                           gameId={game.id}
                           className="inline-flex items-center justify-center rounded-full border-2 border-amber-400/80 px-6 py-3 text-sm font-bold text-amber-300 hover:bg-amber-400/10 transition-colors"
+                          hideIfRecurringAccess={!!session}
                         />
                       </>
                     )}

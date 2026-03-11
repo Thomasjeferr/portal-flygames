@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { hasFullAccess, isTeamResponsible } from '@/lib/access';
+import { hasFullAccess, isTeamResponsible, hasActiveRecurringAccess } from '@/lib/access';
 import { prisma } from '@/lib/db';
 
 export async function GET() {
@@ -31,6 +31,8 @@ export async function GET() {
   const subscriptionActive =
     !!subscription?.active && subscription.endDate >= new Date();
 
+  const hasRecurringAccess = await hasActiveRecurringAccess(session.userId, user.email);
+
   return NextResponse.json({
     user: {
       id: user.id,
@@ -54,5 +56,6 @@ export async function GET() {
     isPartner: !!approvedPartner,
     partner: approvedPartner ? { id: approvedPartner.id, refCode: approvedPartner.refCode } : null,
     hasFullAccess: fullAccess,
+    hasActiveRecurringAccess: hasRecurringAccess,
   });
 }
