@@ -197,7 +197,7 @@ export async function hasActiveSponsor(userId: string, email?: string | null): P
   const orderWhere = {
     paymentStatus: 'paid' as const,
     ...(emailNorm
-      ? { OR: [{ userId }, { email: { equals: emailNorm, mode: 'insensitive' as const } }] as const }
+      ? { OR: [{ userId }, { email: { equals: emailNorm, mode: 'insensitive' as const } }] }
       : { userId }),
   };
   const orders = await prisma.sponsorOrder.findMany({
