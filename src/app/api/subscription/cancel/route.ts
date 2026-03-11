@@ -15,7 +15,7 @@ export async function POST() {
 
   const subscription = await prisma.subscription.findUnique({
     where: { userId: session.userId },
-    select: { id: true, externalSubscriptionId: true, active: true, endDate: true },
+    select: { id: true, externalSubscriptionId: true, active: true, endDate: true, cancellationRequestedAt: true },
   });
 
   if (!subscription?.externalSubscriptionId || !subscription.active) {
@@ -25,6 +25,13 @@ export async function POST() {
     );
   }
 
+  if (subscription.cancellationRequestedAt) {
+    return NextResponse.json({
+      message: 'O cancelamento já estava agendado. Você mantém acesso até o fim do período atual.',
+      endDate: subscription.endDate?.toISOString?.() ?? null,
+    });
+  }
+
   const ok = await cancelStripeSubscriptionAtPeriodEnd(subscription.externalSubscriptionId);
   if (!ok) {
     return NextResponse.json(
@@ -32,6 +39,11 @@ export async function POST() {
       { status: 503 }
     );
   }
+
+  await prisma.subscription.update({
+    where: { id: subscription.id },
+    data: { cancellationRequestedAt: new Date() },
+  });
 
   return NextResponse.json({
     message: 'A renovação foi cancelada. Você mantém acesso até o fim do período atual.',

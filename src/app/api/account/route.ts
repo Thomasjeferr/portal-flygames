@@ -120,6 +120,7 @@ export async function GET() {
           amountCents: subscriptionPayload.amountCents,
           plan: subscriptionPayload.plan,
           paymentGateway: subscriptionPayload.paymentGateway,
+          cancellationRequestedAt: subscriptionPayload.cancellationRequestedAt?.toISOString?.() ?? null,
         }
       : null,
     hasActiveRecurringAccess: hasRecurringAccess,

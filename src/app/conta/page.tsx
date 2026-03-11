@@ -35,6 +35,7 @@ interface SubscriptionData {
   amountCents?: number | null;
   plan: PlanInfo | null;
   paymentGateway?: string | null;
+  cancellationRequestedAt?: string | null;
 }
 
 interface PurchaseItem {
@@ -590,6 +591,11 @@ export default function ContaPage() {
                 <p className="text-futvar-light text-sm">
                   Renovação em: {formatDate(subscription.endDate)}
                 </p>
+                {subscriptionActive && subscription?.cancellationRequestedAt && (
+                  <p className="mt-2 px-3 py-2 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-200 text-sm font-medium">
+                    Cancelamento agendado. Você mantém acesso até {formatDate(subscription.endDate)}.
+                  </p>
+                )}
                 {!subscriptionActive && !isStoreApp && (
                   <Link
                     href="/planos"
@@ -606,7 +612,7 @@ export default function ContaPage() {
                     Trocar plano
                   </Link>
                 )}
-                {subscriptionActive && !isStoreApp && subscription?.paymentGateway === 'stripe' && (
+                {subscriptionActive && !isStoreApp && subscription?.paymentGateway === 'stripe' && !subscription?.cancellationRequestedAt && (
                   <button
                     type="button"
                     onClick={handleCancelRenewal}

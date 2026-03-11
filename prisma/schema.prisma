@@ -64,6 +64,7 @@ model Subscription {
   maxConcurrentStreams  Int?      @map("max_concurrent_streams") // null = ilimitado; sobrescreve plano se definido
   paymentGateway        String?   @map("payment_gateway") // stripe | woovi | manual
   externalSubscriptionId String?  @map("external_subscription_id")
+  cancellationRequestedAt DateTime? @map("cancellation_requested_at") // quando o usuário cancelou renovação (acesso até endDate)
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
@@ -106,6 +107,7 @@ model Team {
   payoutPixKey     String?   @map("payout_pix_key")
   payoutName     String?   @map("payout_name")
   payoutDocument String?   @map("payout_document")
+  lineupFormation String?   @map("lineup_formation") // ex: "4-4-2", "2-2-6", "6-2-2" (linhas do campo, sem goleiro)
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
@@ -132,6 +134,7 @@ model Team {
   tournamentMatchesWon TournamentMatch[] @relation("MatchWinner")
   tournamentSubscriptionsAsSupported TournamentSubscription[]
   goalEarnings                       TeamTournamentGoalEarning[]
+  lineupSlots                        TeamLineupSlot[]
 }
 
 // Responsáveis pelo time (usuários que gerenciam o time no painel do clube)
@@ -188,8 +191,25 @@ model TeamMember {
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
   playerMatchStats PlayerMatchStats[]
   tournamentTeamElencoEntries TournamentTeamElenco[]
+  lineupSlots TeamLineupSlot[]
 
   @@map("team_members")
+}
+
+// Escalação visual: jogador em posição (linha + slot). tacticalPosition = "lineIndex_slotIndex" (ex: "0_0" GOL, "1_0".."1_3" defesa). formation no Team (ex: "4-4-2").
+model TeamLineupSlot {
+  id               String   @id @default(cuid())
+  teamId           String   @map("team_id")
+  teamMemberId     String   @map("team_member_id")
+  tacticalPosition String   @map("tactical_position") // "lineIndex_slotIndex" ex: 0_0 = GOL, 1_0 = 1º da linha 1
+  order            Int      @default(0) @map("order")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  team       Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamMember TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, teamMemberId])
+  @@map("team_lineup_slots")
 }
 
 model Game {

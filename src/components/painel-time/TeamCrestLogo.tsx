@@ -28,9 +28,10 @@ export function TeamCrestLogo({ name, shortName, crestUrl, className = '' }: Tea
   const src = fullUrl(crestUrl);
   const showImg = !!src && !imgFailed;
   const initials = (shortName || name).slice(0, 2).toUpperCase();
+  const sizeClass = className.trim() || DEFAULT_SIZE;
   if (showImg) {
     return (
-      <span className={`block shrink-0 ${DEFAULT_SIZE} rounded overflow-hidden bg-white/5`} role="img" aria-label={name}>
+      <span className={`block shrink-0 ${sizeClass} rounded overflow-hidden bg-white/5`} role="img" aria-label={name}>
         <img
           src={src!}
           alt=""
@@ -43,7 +44,7 @@ export function TeamCrestLogo({ name, shortName, crestUrl, className = '' }: Tea
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-lg bg-white/20 text-white font-bold text-xl shrink-0 border border-white/20 ${DEFAULT_SIZE} ${className}`.trim()}
+      className={`inline-flex items-center justify-center rounded-lg bg-white/20 text-white font-bold text-xl shrink-0 border border-white/20 ${sizeClass}`.trim()}
       role="img"
       aria-label={name}
     >

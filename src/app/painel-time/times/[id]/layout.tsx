@@ -70,6 +70,13 @@ export default async function PainelTimeTeamLayout({
             </Link>
             <span className="text-white/30">·</span>
             <Link
+              href={`${base}/escalacao`}
+              className="text-sm text-futvar-light hover:text-white"
+            >
+              Escalação
+            </Link>
+            <span className="text-white/30">·</span>
+            <Link
               href={`${base}/sumulas`}
               className="text-sm text-futvar-light hover:text-white"
             >
