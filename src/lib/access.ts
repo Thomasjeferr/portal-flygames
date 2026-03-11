@@ -128,6 +128,7 @@ export async function getAccountTypes(userId: string, email?: string | null): Pr
   const hasCompanySponsor =
     !!companySponsorActive?.sponsor &&
     companySponsorActive.sponsor.isActive &&
+    companySponsorActive.sponsor.endAt != null &&
     companySponsorActive.sponsor.endAt >= now &&
     companySponsorActive.sponsor.planType === 'sponsor_company';
 
