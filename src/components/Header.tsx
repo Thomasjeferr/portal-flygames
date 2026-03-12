@@ -348,9 +348,20 @@ export function Header() {
                         </div>
                       )}
                       {subscription && (
-                        <p className={`text-xs mt-1 ${subscription.active ? 'text-green-400' : 'text-amber-400'}`}>
-                          {isStoreApp ? (subscription.active ? 'Acesso ativo' : 'Acesso inativo') : (subscription.active ? 'Assinatura ativa' : 'Assinatura inativa')}
-                        </p>
+                        <div className="mt-1">
+                          <p className={`text-xs ${subscription.active ? 'text-green-400' : 'text-amber-400'}`}>
+                            {isStoreApp ? (subscription.active ? 'Acesso ativo' : 'Acesso inativo') : (subscription.active ? 'Assinatura ativa' : 'Sua assinatura ou período de degustação acabou.')}
+                          </p>
+                          {!subscription.active && !isStoreApp && (
+                            <Link
+                              href="/planos"
+                              className="text-xs mt-1 inline-block text-futvar-green hover:underline font-medium"
+                              onClick={() => setUserMenuOpen(false)}
+                            >
+                              Assine um plano para continuar
+                            </Link>
+                          )}
+                        </div>
                       )}
                     </div>
                     {!isStoreApp && (
@@ -550,9 +561,20 @@ export function Header() {
                         </div>
                       )}
                     {subscription && (
-                      <p className={`text-xs mt-0.5 ${subscription.active ? 'text-green-400' : 'text-amber-400'}`}>
-                        {isStoreApp ? (subscription.active ? 'Acesso ativo' : 'Acesso inativo') : (subscription.active ? 'Assinatura ativa' : 'Assinatura inativa')}
-                      </p>
+                      <div className="mt-0.5">
+                        <p className={`text-xs ${subscription.active ? 'text-green-400' : 'text-amber-400'}`}>
+                          {isStoreApp ? (subscription.active ? 'Acesso ativo' : 'Acesso inativo') : (subscription.active ? 'Assinatura ativa' : 'Sua assinatura ou período de degustação acabou.')}
+                        </p>
+                        {!subscription.active && !isStoreApp && (
+                          <Link
+                            href="/planos"
+                            className="text-xs mt-1 inline-block text-futvar-green hover:underline font-medium"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Assine um plano para continuar
+                          </Link>
+                        )}
+                      </div>
                     )}
                     </div>
                   </div>
@@ -710,6 +732,22 @@ export function Header() {
           document.body
         )}
       </div>
+
+      {!isStoreApp && user && subscription && !subscription.active && (
+        <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2">
+          <div className="max-w-[1920px] mx-auto flex flex-wrap items-center justify-center gap-2 sm:gap-4 sm:justify-between text-center sm:text-left">
+            <p className="text-amber-200 text-sm font-medium">
+              Sua assinatura ou período de degustação acabou. Assine um plano para continuar assistindo.
+            </p>
+            <Link
+              href="/planos"
+              className="shrink-0 inline-flex px-4 py-1.5 rounded-lg bg-futvar-green text-futvar-darker text-sm font-semibold hover:bg-futvar-green-light transition-colors"
+            >
+              Ver planos
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

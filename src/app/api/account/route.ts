@@ -68,6 +68,13 @@ export async function GET() {
   const subscriptionActive =
     !!subscription?.active && subscription.endDate >= new Date();
 
+  // Desativação preguiçosa: assinatura expirada (endDate passou) → atualiza active: false no banco
+  if (subscription?.active && subscription.endDate < new Date()) {
+    prisma.subscription
+      .updateMany({ where: { userId: session.userId }, data: { active: false } })
+      .catch(() => {});
+  }
+
   // Backfill em leitura: se a assinatura tem amountCents null, usar o valor da última compra paga desse plano (valor realmente pago), não o preço atual do plano.
   let subscriptionPayload: typeof subscription = subscription;
   try {

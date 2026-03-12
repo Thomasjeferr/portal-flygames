@@ -79,6 +79,14 @@ export async function PATCH(
       where: { id },
       data,
     });
+
+    // Se o atleta foi desativado, retirar da escalação (evita ficar no campo sem estar no elenco ativo)
+    if (body.isActive === false) {
+      await prisma.teamLineupSlot.deleteMany({
+        where: { teamId, teamMemberId: id },
+      });
+    }
+
     return NextResponse.json(member);
   } catch (e) {
     console.error('PATCH /api/team-portal/teams/[id]/members', e);

@@ -567,7 +567,7 @@ export default function ContaPage() {
             {subscription && subscription.plan ? (
               <div className="space-y-3">
                 <p className="text-white font-medium">
-                  {subscriptionActive ? 'Você tem assinatura recorrente.' : 'Sua assinatura está inativa.'}
+                  {subscriptionActive ? 'Você tem assinatura recorrente.' : 'Seu período de degustação (ou sua assinatura) acabou. Para continuar assistindo aos jogos, assine um plano.'}
                 </p>
                 {favoriteTeam && subscriptionActive && (
                   <p className="text-futvar-green font-medium">Você patrocina o {favoriteTeam.name}.</p>

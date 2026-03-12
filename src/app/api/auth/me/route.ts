@@ -28,8 +28,16 @@ export async function GET() {
 
   if (!user) return NextResponse.json({ user: null }, { status: 200 });
 
+  const now = new Date();
   const subscriptionActive =
-    !!subscription?.active && subscription.endDate >= new Date();
+    !!subscription?.active && subscription.endDate >= now;
+
+  // Desativação preguiçosa: se no banco ainda está active mas endDate já passou, atualiza para active: false
+  if (subscription?.active && subscription.endDate < now) {
+    prisma.subscription
+      .updateMany({ where: { userId: session.userId }, data: { active: false } })
+      .catch(() => {});
+  }
 
   const hasRecurringAccess = await hasActiveRecurringAccess(session.userId, user.email);
 

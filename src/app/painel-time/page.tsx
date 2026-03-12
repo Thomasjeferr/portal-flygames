@@ -18,7 +18,9 @@ async function getTeamDashboardData(
     isActive: boolean;
   }
 ): Promise<TeamDashboardData> {
+  // Início de hoje (UTC) para considerar jogos do dia como "próximo confronto"
   const now = new Date();
+  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
   const [members, nextGame] = await Promise.all([
     prisma.teamMember.findMany({
@@ -29,7 +31,7 @@ async function getTeamDashboardData(
     prisma.game.findFirst({
       where: {
         OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
-        gameDate: { gte: now },
+        gameDate: { gte: startOfToday },
       },
       orderBy: { gameDate: 'asc' },
       include: {

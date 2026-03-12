@@ -157,7 +157,7 @@ export function TeamDashboardCard({ data }: { data: TeamDashboardData }) {
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/15 transition-colors border border-white/20"
             >
               <FiUserCheck className="h-5 w-5" aria-hidden />
-              Ver comissões técnicas
+              Comissões de Patrocinadores
             </Link>
           </div>
 
