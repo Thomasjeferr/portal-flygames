@@ -5,6 +5,7 @@ import { hasAnyPurchaseAsCustomer, isTeamResponsible } from '@/lib/access';
 import { uniqueSlug } from '@/lib/slug';
 import { teamCreateSchema } from '@/lib/validators/teamSchema';
 import { sendEmailToMany } from '@/lib/email/emailService';
+import { sendAdminTeamPortalNotification } from '@/lib/email/adminNotify';
 
 function teamToItem(team: { id: string; name: string; shortName: string | null; city: string | null; state: string | null; crestUrl: string | null; isActive: boolean; approvalStatus: string }, role?: string) {
   return {
@@ -137,6 +138,12 @@ export async function POST(request: NextRequest) {
     await prisma.teamManager.create({
       data: { userId: session.userId, teamId: team.id, role: 'OWNER' },
     });
+
+    sendAdminTeamPortalNotification({
+      teamName: team.name,
+      userEmail: user.email ?? '',
+      userName: user.name,
+    }).catch(() => {});
 
     try {
       const subject = 'Cadastro do time recebido – Fly Games';

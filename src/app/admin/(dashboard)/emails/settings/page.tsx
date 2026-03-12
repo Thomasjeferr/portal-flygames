@@ -22,6 +22,7 @@ export default function AdminEmailSettingsPage() {
     whatsapp_url: '',
     footer_text: '',
     app_base_url: '',
+    admin_notify_emails: '',
   });
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function AdminEmailSettingsPage() {
           whatsapp_url: data.whatsapp_url ?? '',
           footer_text: data.footer_text ?? '',
           app_base_url: data.app_base_url ?? '',
+          admin_notify_emails: data.admin_notify_emails ?? '',
         });
       })
       .catch(() => setError('Erro ao carregar'))
@@ -189,6 +191,17 @@ export default function AdminEmailSettingsPage() {
         <div>
           <label className="block text-sm font-medium text-netflix-light mb-2">URL base do app</label>
           <input type="url" value={form.app_base_url} onChange={(e) => setForm((f) => ({ ...f, app_base_url: e.target.value }))} className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white" placeholder="https://flygames.app" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-netflix-light mb-2">E-mails para notificações administrativas</label>
+          <input
+            type="text"
+            value={form.admin_notify_emails}
+            onChange={(e) => setForm((f) => ({ ...f, admin_notify_emails: e.target.value }))}
+            className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white"
+            placeholder="admin@empresa.com, operacoes@empresa.com"
+          />
+          <p className="mt-1 text-netflix-light text-xs">Um ou mais e-mails separados por vírgula. Recebem avisos de novo usuário, compras, pedidos de time e parceiro.</p>
         </div>
         <div className="flex gap-3">
           <button type="submit" disabled={saving} className="px-6 py-3 rounded bg-netflix-red text-white font-semibold hover:bg-red-600 disabled:opacity-50">{saving ? 'Salvando...' : 'Salvar'}</button>

@@ -15,6 +15,7 @@ function toBody(data: Record<string, unknown>) {
     whatsapp_url: data.whatsapp_url ?? '',
     footer_text: data.footer_text ?? '',
     app_base_url: data.app_base_url ?? '',
+    admin_notify_emails: data.admin_notify_emails ?? '',
   };
 }
 
@@ -36,6 +37,7 @@ export async function GET() {
         whatsapp_url: '',
         footer_text: '',
         app_base_url: baseUrl,
+        admin_notify_emails: '',
       });
     return NextResponse.json({
       from_name: row.fromName,
@@ -47,6 +49,7 @@ export async function GET() {
       whatsapp_url: row.whatsappUrl ?? '',
       footer_text: row.footerText ?? '',
       app_base_url: row.appBaseUrl ? normalizeAppBaseUrl(row.appBaseUrl) : baseUrl,
+      admin_notify_emails: row.adminNotifyEmails ?? '',
     });
   } catch (e) {
     console.error(e);
@@ -76,6 +79,7 @@ export async function POST(request: NextRequest) {
       whatsappUrl: d.whatsapp_url?.trim() || null,
       footerText: d.footer_text?.trim() || null,
       appBaseUrl: normalizeAppBaseUrl(d.app_base_url?.trim()),
+      adminNotifyEmails: d.admin_notify_emails?.trim() || null,
     };
     if (existing) {
       await prisma.emailSettings.update({ where: { id: existing.id }, data });

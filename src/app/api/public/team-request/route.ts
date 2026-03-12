@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { sendAdminTeamRequestNotification } from '@/lib/email/adminNotify';
 
 /** POST: registra solicitação de cadastro de time. Requer login. */
 export async function POST(request: Request) {
@@ -34,6 +35,12 @@ export async function POST(request: Request) {
         status: 'PENDING',
       },
     });
+
+    sendAdminTeamRequestNotification({
+      teamName,
+      city,
+      phone,
+    }).catch(() => {});
 
     return NextResponse.json({
       ok: true,

@@ -15,14 +15,14 @@ export function AdminTable<T extends Record<string, unknown>>({
 }: AdminTableProps<T>) {
   if (data.length === 0) {
     return (
-      <div className="bg-netflix-dark border border-white/10 rounded-lg p-8 text-center text-netflix-light">
+      <div className="rounded-xl border border-white/10 bg-[#111827] p-8 text-center text-gray-400">
         {emptyMessage}
       </div>
     );
   }
 
   return (
-    <div className="bg-netflix-dark border border-white/10 rounded-lg overflow-hidden">
+    <div className="rounded-xl border border-white/10 bg-[#0B1120]/50 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -30,7 +30,7 @@ export function AdminTable<T extends Record<string, unknown>>({
               {columns.map((col) => (
                 <th
                   key={String(col.key)}
-                  className="px-4 py-3 text-left text-sm font-medium text-netflix-light"
+                  className="px-4 py-3 text-left text-sm font-medium text-gray-400"
                 >
                   {col.header}
                 </th>
@@ -41,7 +41,7 @@ export function AdminTable<T extends Record<string, unknown>>({
             {data.map((row) => (
               <tr
                 key={keyExtractor(row)}
-                className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                className="border-b border-white/5 transition-colors duration-200 hover:bg-white/5"
               >
                 {columns.map((col) => (
                   <td key={String(col.key)} className="px-4 py-3 text-sm text-white">

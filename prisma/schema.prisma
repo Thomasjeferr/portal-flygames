@@ -712,18 +712,19 @@ model SiteSettings {
 
 // ========== E-MAILS TRANSiCIONAIS (Resend) ==========
 model EmailSettings {
-  id           String   @id @default(cuid())
-  fromName     String   @default("Fly Games") @map("from_name")
-  fromEmail    String   @default("no-reply@flygames.app") @map("from_email")
-  replyTo      String?  @map("reply_to")
-  brandColor   String   @default("#22c55e") @map("brand_color")
-  logoUrl      String?  @map("logo_url")
-  supportEmail String?  @map("support_email")
-  whatsappUrl  String?  @map("whatsapp_url")
-  footerText   String?  @map("footer_text")
-  appBaseUrl   String?  @map("app_base_url")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id                 String   @id @default(cuid())
+  fromName           String   @default("Fly Games") @map("from_name")
+  fromEmail          String   @default("no-reply@flygames.app") @map("from_email")
+  replyTo            String?  @map("reply_to")
+  brandColor         String   @default("#22c55e") @map("brand_color")
+  logoUrl            String?  @map("logo_url")
+  supportEmail       String?  @map("support_email")
+  whatsappUrl        String?  @map("whatsapp_url")
+  footerText         String?  @map("footer_text")
+  appBaseUrl         String?  @map("app_base_url")
+  adminNotifyEmails  String?  @map("admin_notify_emails") // e-mails separados por vírgula para notificações admin
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 }
 
 model EmailTemplate {

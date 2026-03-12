@@ -49,7 +49,7 @@ export async function GET() {
       usersToday,
       users7d,
       subscriptions,
-      gamesCount,
+      gamesPublishedCount,
       preSaleCounts,
       visitsToday,
       visits7d,
@@ -60,7 +60,11 @@ export async function GET() {
         where: { active: true, endDate: { gte: now } },
         include: { plan: true },
       }),
-      prisma.game.count(),
+      prisma.game.count({
+        where: {
+          AND: [{ videoUrl: { not: null } }, { videoUrl: { not: '' } }],
+        },
+      }),
       prisma.preSaleGame.groupBy({
         by: ['status'],
         _count: { id: true },
@@ -84,7 +88,10 @@ export async function GET() {
       }),
     ]);
 
-    const revenueFromPurchases = purchasesPaid.reduce((s, p) => s + (p.plan?.price ?? 0), 0);
+    const revenueFromPurchases = purchasesPaid.reduce((s, p) => {
+      const value = p.amountCents != null ? p.amountCents / 100 : (p.plan?.price ?? 0);
+      return s + value;
+    }, 0);
     const revenueFromPreSale = preSaleSlotsPaid.reduce((s, slot) => {
       const price = slot.slotIndex === 1 ? slot.preSaleGame.clubAPrice : slot.preSaleGame.clubBPrice;
       return s + price;
@@ -130,7 +137,7 @@ export async function GET() {
       oneTimePurchasesMonth: oneTimePurchases,
       visitsToday,
       visits7d,
-      gamesPublished: gamesCount,
+      gamesPublished: gamesPublishedCount,
       preSalePreSale: preSaleByStatus.PRE_SALE ?? 0,
       preSaleFunded: preSaleByStatus.FUNDED ?? 0,
       preSalePublished: preSaleByStatus.PUBLISHED ?? 0,
@@ -150,7 +157,12 @@ export async function GET() {
         paymentStatus: 'paid',
         createdAt: { gte: thirtyDaysAgo },
       },
-      select: { createdAt: true, planId: true, plan: { select: { price: true } } },
+      select: {
+        createdAt: true,
+        planId: true,
+        amountCents: true,
+        plan: { select: { price: true } },
+      },
     });
     const preSaleByDay = await prisma.preSaleClubSlot.findMany({
       where: { paymentStatus: 'PAID', paidAt: { gte: thirtyDaysAgo } },
@@ -161,7 +173,8 @@ export async function GET() {
     dates30.forEach((d) => { revenueByDate[d] = 0; });
     purchasesByDay.forEach((p) => {
       const key = p.createdAt.toISOString().slice(0, 10);
-      if (revenueByDate[key] !== undefined) revenueByDate[key] += p.plan?.price ?? 0;
+      const value = p.amountCents != null ? p.amountCents / 100 : (p.plan?.price ?? 0);
+      if (revenueByDate[key] !== undefined) revenueByDate[key] += value;
     });
     preSaleByDay.forEach((s) => {
       const key = s.paidAt ? s.paidAt.toISOString().slice(0, 10) : '';
@@ -221,7 +234,10 @@ export async function GET() {
       const g = gamesMap.get(p.gameId);
       const estRev = purchasesPaid
         .filter((pu) => pu.gameId === p.gameId)
-        .reduce((s, pu) => s + (pu.plan?.price ?? 0), 0);
+        .reduce((s, pu) => {
+          const value = pu.amountCents != null ? pu.amountCents / 100 : (pu.plan?.price ?? 0);
+          return s + value;
+        }, 0);
       return {
         id: p.gameId,
         title: g?.title ?? '—',

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { sendTransactionalEmail } from '@/lib/email/emailService';
+import { sendAdminNewUserNotification } from '@/lib/email/adminNotify';
 import { checkRegisterRateLimit, incrementRegisterRateLimit } from '@/lib/email/rateLimit';
 import {
   generateVerificationCode,
@@ -62,6 +63,8 @@ export async function POST(request: NextRequest) {
         role: 'user',
       },
     });
+
+    sendAdminNewUserNotification({ email: user.email, name: user.name }).catch(() => {});
 
     // Enviamos apenas o código de verificação. O e-mail de boas-vindas (WELCOME) é enviado em verify-email após ativar a conta.
     const code = generateVerificationCode();

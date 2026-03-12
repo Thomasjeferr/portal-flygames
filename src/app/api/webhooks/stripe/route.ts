@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { verifyStripeWebhook, getStripe } from '@/lib/payments/stripe';
 import { sendTransactionalEmail } from '@/lib/email/emailService';
+import { sendAdminPurchaseNotification, sendAdminSponsorNotification } from '@/lib/email/adminNotify';
 import { markTournamentRegistrationAsPaid } from '@/lib/tournamentRegistrationPayment';
 import {
   processTournamentGoalSubscriptionPaid,
@@ -203,6 +204,13 @@ export async function POST(request: NextRequest) {
             },
           }).catch((e) => console.error('[Stripe] Email patrocínio:', e));
 
+          sendAdminSponsorNotification({
+            companyName: order.companyName,
+            planName: order.sponsorPlan.name,
+            amountFormatted,
+            email: order.email ?? '',
+          }).catch(() => {});
+
           // Upgrade: cancelar assinatura antiga no fim do período (evitar cobrança duplicada)
           const emailNorm = order.email?.trim().toLowerCase() ?? '';
           const otherCompanyOrders = await prisma.sponsorOrder.findMany({
@@ -393,6 +401,13 @@ export async function POST(request: NextRequest) {
           },
           userId: user.id,
         }).catch((e) => console.error('[Stripe] invoice.paid email:', e));
+        sendAdminPurchaseNotification({
+          userEmail: user.email,
+          userName: user.name,
+          planName: plan.name,
+          amountFormatted: planPrice,
+          typeLabel: 'Assinatura',
+        }).catch(() => {});
       }
 
       return NextResponse.json({ received: true });
@@ -645,6 +660,12 @@ export async function POST(request: NextRequest) {
               amount: amountFormatted,
             },
           }).catch((e) => console.error('[Stripe] Email patrocínio:', e));
+          sendAdminSponsorNotification({
+            companyName: order.companyName,
+            planName: order.sponsorPlan.name,
+            amountFormatted,
+            email: order.email ?? '',
+          }).catch(() => {});
         }
         return NextResponse.json({ received: true });
       }
@@ -749,6 +770,14 @@ export async function POST(request: NextRequest) {
           },
           userId: user.id,
         }).catch((e) => console.error('[Stripe] Email compra:', e));
+        const typeLabel = purchase.plan.type === 'unitario' ? 'Jogo avulso' : 'Assinatura';
+        sendAdminPurchaseNotification({
+          userEmail: user.email,
+          userName: user.name,
+          planName: purchase.plan.name,
+          amountFormatted: planPrice,
+          typeLabel,
+        }).catch(() => {});
       }
     }
 

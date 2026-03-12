@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { sendTransactionalEmail } from '@/lib/email/emailService';
+import { sendAdminPurchaseNotification } from '@/lib/email/adminNotify';
 
 /**
  * Marca uma purchase Woovi como paga e aplica todos os efeitos
@@ -126,6 +127,14 @@ export async function markWooviPurchaseAsPaid(purchaseId: string, amountCents?: 
       },
       userId: user.id,
     }).catch((e) => console.error('[Woovi] Email compra:', e));
+    const typeLabel = purchase.plan.type === 'unitario' ? 'Jogo avulso' : 'Assinatura';
+    sendAdminPurchaseNotification({
+      userEmail: user.email,
+      userName: user.name,
+      planName: purchase.plan.name,
+      amountFormatted: amountForEmail,
+      typeLabel,
+    }).catch(() => {});
   }
 }
 

@@ -103,6 +103,19 @@ export async function POST(request: NextRequest) {
       createClubViewerAccountForSlot(slotId).catch((e) =>
         console.error('[Woovi] Erro ao criar conta clube:', e)
       );
+      const { sendAdminPreSaleNotification } = await import('@/lib/email/adminNotify');
+      const slot = await prisma.preSaleClubSlot.findUnique({
+        where: { id: slotId },
+        include: { preSaleGame: true },
+      });
+      if (slot?.preSaleGame) {
+        const price = slot.slotIndex === 1 ? slot.preSaleGame.clubAPrice : slot.preSaleGame.clubBPrice;
+        sendAdminPreSaleNotification({
+          gameTitle: slot.preSaleGame.title,
+          slotLabel: slot.slotIndex === 1 ? 'Clube A' : 'Clube B',
+          amountFormatted: (price ?? 0).toFixed(2).replace('.', ','),
+        }).catch(() => {});
+      }
       return NextResponse.json({ received: true });
     }
 

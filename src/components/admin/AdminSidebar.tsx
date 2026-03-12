@@ -76,24 +76,25 @@ export function AdminSidebar() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-netflix-dark border border-white/20 text-white"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-xl bg-[#111827] border border-white/10 text-white hover:bg-[#1F2937] transition-colors duration-200"
         aria-label={open ? 'Fechar menu' : 'Abrir menu'}
       >
         {open ? '✕' : '☰'}
       </button>
       <aside
-        className={`fixed left-0 top-0 bottom-0 w-64 bg-netflix-dark border-r border-white/10 flex flex-col z-40 overflow-y-auto transition-transform duration-200 ease-out lg:translate-x-0 ${
+        className={`fixed left-0 top-0 bottom-0 w-64 flex flex-col z-40 overflow-y-auto transition-transform duration-200 ease-out lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={{ backgroundColor: '#111827' }}
       >
       <div className="p-6 border-b border-white/10">
         <Link href="/admin" className="flex items-center gap-2">
           <img src="/uploads/logo-home-fly.png" alt="FLY GAMES" className="h-8 w-auto object-contain" />
         </Link>
-        <p className="text-xs text-netflix-light mt-2">Painel administrativo</p>
+        <p className="text-xs text-gray-400 mt-2">Painel administrativo</p>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-0.5">
         {menuItems.map((item) => {
           let isActive: boolean;
           if (item.href === '/admin') {
@@ -107,11 +108,11 @@ export function AdminSidebar() {
           } else {
             isActive = pathname.startsWith(item.href);
           }
-          const className = `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-            isActive
-              ? 'bg-netflix-red/20 text-netflix-red border border-netflix-red/30'
-              : 'text-netflix-light hover:bg-white/5 hover:text-white'
-          }`;
+          const baseClass = 'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ease-out';
+          const className = isActive
+            ? `${baseClass} bg-emerald-500/15 text-emerald-400 border border-emerald-500/30`
+            : `${baseClass} text-gray-400 hover:bg-[#1F2937] hover:text-white border border-transparent`;
+          const iconClass = `flex-shrink-0 ${isActive ? 'text-current opacity-90' : 'opacity-60'}`;
           if (item.href === '/admin') {
             return (
               <a
@@ -120,7 +121,7 @@ export function AdminSidebar() {
                 onClick={() => setOpen(false)}
                 className={className}
               >
-                <span className={`flex-shrink-0 ${isActive ? 'text-current opacity-90' : 'text-netflix-light opacity-60'}`}><MenuIcon name={item.icon} /></span>
+                <span className={iconClass}><MenuIcon name={item.icon} /></span>
                 {item.label}
               </a>
             );
@@ -132,29 +133,29 @@ export function AdminSidebar() {
               onClick={() => setOpen(false)}
               className={className}
             >
-              <span className={`flex-shrink-0 ${isActive ? 'text-current opacity-90' : 'text-netflix-light opacity-60'}`}><MenuIcon name={item.icon} /></span>
+              <span className={iconClass}><MenuIcon name={item.icon} /></span>
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-white/10 space-y-1">
+      <div className="p-4 border-t border-white/10 space-y-0.5">
         <Link
           href="/"
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => setOpen(false)}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-netflix-light hover:bg-white/5 hover:text-white transition-colors"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:bg-[#1F2937] hover:text-white transition-colors duration-200"
         >
-          <span className="flex-shrink-0 text-netflix-light opacity-60"><MenuIcon name="globe" /></span>
+          <span className="flex-shrink-0 opacity-60"><MenuIcon name="globe" /></span>
           Ver site
         </Link>
         <button
           onClick={() => { setOpen(false); handleLogout(); }}
-          className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm text-netflix-light hover:bg-red-900/20 hover:text-red-300 transition-colors text-left"
+          className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm text-gray-400 hover:bg-red-900/20 hover:text-red-300 transition-colors duration-200 text-left"
         >
-          <span className="flex-shrink-0 text-netflix-light opacity-60"><MenuIcon name="logout" /></span>
+          <span className="flex-shrink-0 opacity-60"><MenuIcon name="logout" /></span>
           Sair
         </button>
       </div>

@@ -10,6 +10,7 @@ export const emailSettingsSchema = z.object({
   whatsapp_url: z.string().url().optional().or(z.literal('')),
   footer_text: z.string().optional(),
   app_base_url: z.string().url().optional().or(z.literal('')),
+  admin_notify_emails: z.string().optional(),
 });
 
 export const emailTemplateSchema = z.object({

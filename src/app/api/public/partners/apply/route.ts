@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth';
 import { z } from 'zod';
 import { checkPartnerApplyRateLimit, incrementPartnerApplyRateLimit } from '@/lib/email/rateLimit';
 import { sendEmailToMany } from '@/lib/email/emailService';
+import { sendAdminPartnerNotification } from '@/lib/email/adminNotify';
 
 const bodySchema = z.object({
   name: z.string().min(3, 'Informe seu nome completo'),
@@ -76,6 +77,14 @@ export async function POST(request: NextRequest) {
         document: null,
       },
     });
+
+    sendAdminPartnerNotification({
+      name: data.name.trim(),
+      companyName: data.companyName?.trim() || null,
+      type: data.type,
+      whatsapp: data.whatsapp.replace(/\D/g, ''),
+      userEmail: session.email ?? '',
+    }).catch(() => {});
 
     await incrementPartnerApplyRateLimit(ip);
 
