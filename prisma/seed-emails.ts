@@ -219,6 +219,76 @@ async function main() {
 <p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
 </div></body></html>`,
     },
+    {
+      key: 'LIVE_SCHEDULED',
+      subject: 'Nova live programada: {{live_title}} – Fly Games',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<h2 style="color:#0C1222">Nova live programada</h2>
+<p>Olá {{name}}!</p>
+<p>Programamos uma nova transmissão ao vivo para você assistir.</p>
+<p><strong>Live:</strong> {{live_title}}</p>
+<p><strong>Início:</strong> {{live_start_at}}</p>
+<p style="margin-top:24px"><a href="{{live_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Ver detalhes e assistir</a></p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
+    {
+      key: 'LIVE_STARTED',
+      subject: 'Ao vivo agora: {{live_title}} – Fly Games',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<h2 style="color:#0C1222">Está ao vivo!</h2>
+<p>Olá {{name}}!</p>
+<p>A live <strong>{{live_title}}</strong> começou. Acesse agora para assistir.</p>
+<p style="margin-top:24px"><a href="{{live_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Assistir agora</a></p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
+    {
+      key: 'LIVE_CANCELLED',
+      subject: 'Live cancelada: {{live_title}} – Fly Games',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<h2 style="color:#0C1222">Live cancelada</h2>
+<p>Olá {{name}}!</p>
+<p>Informamos que a live <strong>{{live_title}}</strong> foi cancelada.</p>
+<p>{{live_start_line}}</p>
+<p>Fique de olho nas próximas transmissões no site.</p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
+    {
+      key: 'GAME_PUBLISHED',
+      subject: 'Novo jogo disponível: {{game_title}} – Fly Games',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<h2 style="color:#0C1222">Novo jogo disponível</h2>
+<p>Olá {{name}}!</p>
+<p>Um novo jogo foi publicado e já está disponível para você assistir.</p>
+<p><strong>Jogo:</strong> {{game_title}}</p>
+<p><strong>Campeonato:</strong> {{game_championship}}</p>
+<p style="margin-top:24px"><a href="{{game_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Assistir agora</a></p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
+    {
+      key: 'SUBSCRIPTION_ACTIVATED',
+      subject: 'Sua assinatura foi ativada – Fly Games',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+<h2 style="color:#0C1222;margin:0 0 8px 0;font-size:22px">Olá, {{name}}! 👋</h2>
+<p style="color:#374151;margin:0 0 20px 0;font-size:15px;line-height:1.5">Que bom ter você conosco! Sua assinatura no Fly Games foi ativada e você já pode aproveitar todo o conteúdo disponível.</p>
+<div style="background:#f8fafc;border-radius:8px;padding:16px 20px;margin:20px 0;border-left:4px solid {{brand_color}}">
+<p style="margin:0 0 8px 0;font-size:14px;color:#374151"><strong>Período:</strong> {{period_label}}</p>
+<p style="margin:0;font-size:14px;color:#374151"><strong>Válida até:</strong> {{end_date}}</p>
+</div>
+<p style="margin:20px 0 0 0;font-size:15px;color:#374151;line-height:1.5">Acesse sua conta abaixo e comece a assistir. Qualquer dúvida, estamos à disposição.</p>
+<p style="margin-top:24px"><a href="{{login_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Acessar minha conta</a></p>
+<p style="margin-top:28px;font-size:15px;color:#374151">Obrigado por fazer parte do Fly Games. Bom jogo! ⚽</p>
+<p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
+</div></body></html>`,
+    },
   ];
 
   for (const t of templates) {

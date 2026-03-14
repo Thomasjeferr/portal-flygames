@@ -1048,6 +1048,7 @@ model Live {
   allowChat               Boolean   @default(false) @map("allow_chat")
   homeTeamId              String?   @map("home_team_id")
   awayTeamId              String?   @map("away_team_id")
+  notifiedStartedAt       DateTime? @map("notified_started_at") // quando enviamos e-mail "live iniciada" (uma vez)
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @updatedAt @map("updated_at")
 

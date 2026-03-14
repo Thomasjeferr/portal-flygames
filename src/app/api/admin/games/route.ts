@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { parseLiveDatetime } from '@/lib/liveTimezone';
+import { notifyGamePublished } from '@/lib/email/notifyLiveGame';
 import { z } from 'zod';
 import { uniqueSlug } from '@/lib/slug';
 
@@ -101,6 +102,7 @@ export async function POST(request: NextRequest) {
 
     const maxOrder = await prisma.game.aggregate({ _max: { order: true } }).then((r) => r._max.order ?? -1);
 
+    const videoUrl = data.videoUrl?.trim() || null;
     const game = await prisma.game.create({
       data: {
         title: data.title,
@@ -108,7 +110,7 @@ export async function POST(request: NextRequest) {
         championship: data.championship,
         gameDate: parseLiveDatetime(data.gameDate) ?? new Date(),
         description: data.description || null,
-        videoUrl: data.videoUrl?.trim() || null,
+        videoUrl,
         thumbnailUrl: data.thumbnailUrl || null,
         featured: data.featured ?? false,
         categoryId: data.categoryId || null,
@@ -122,6 +124,10 @@ export async function POST(request: NextRequest) {
         referee: data.referee?.trim() || null,
       },
     });
+
+    if (videoUrl) {
+      notifyGamePublished({ slug: game.slug, title: game.title, championship: game.championship });
+    }
 
     return NextResponse.json(game);
   } catch (e) {

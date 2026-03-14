@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { createLiveInput } from '@/lib/cloudflare-live';
 import { parseLiveDatetime } from '@/lib/liveTimezone';
+import { notifyLiveScheduled } from '@/lib/email/notifyLiveGame';
 import { z } from 'zod';
 
 const createSchema = z.object({
@@ -97,6 +98,12 @@ export async function POST(request: NextRequest) {
         homeTeamId: data.homeTeamId?.trim() || null,
         awayTeamId: data.awayTeamId?.trim() || null,
       },
+    });
+
+    notifyLiveScheduled({
+      id: live.id,
+      title: live.title,
+      startAt: live.startAt,
     });
 
     return NextResponse.json({

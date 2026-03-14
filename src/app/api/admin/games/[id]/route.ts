@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { parseLiveDatetime } from '@/lib/liveTimezone';
+import { notifyGamePublished } from '@/lib/email/notifyLiveGame';
 import { z } from 'zod';
 import { uniqueSlug } from '@/lib/slug';
 
@@ -119,6 +120,20 @@ export async function PATCH(
       where: { id },
       data: update as Parameters<typeof prisma.game.update>[0]['data'],
     });
+
+    const newlyPublished =
+      data.videoUrl !== undefined &&
+      (data.videoUrl?.trim() ?? '') !== '' &&
+      !(existing.videoUrl?.trim());
+
+    if (newlyPublished) {
+      notifyGamePublished({
+        slug: game.slug,
+        title: game.title,
+        championship: game.championship,
+      });
+    }
+
     return NextResponse.json(game);
   } catch (e) {
     console.error(e);

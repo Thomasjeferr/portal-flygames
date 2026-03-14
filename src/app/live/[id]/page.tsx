@@ -5,6 +5,7 @@ import { getSession } from '@/lib/auth';
 import { canAccessLive } from '@/lib/access';
 import { prisma } from '@/lib/db';
 import { getLiveHlsUrl, getReplayHlsUrl } from '@/lib/cloudflare-live';
+import { notifyLiveStartedOnce } from '@/lib/email/notifyLiveGame';
 import { StreamCustomPlayer } from '@/components/StreamCustomPlayer';
 import { LiveScheduledToLivePlayer } from '@/components/LiveScheduledToLivePlayer';
 import { MatchPlayerPage } from '@/components/match/MatchPlayerPage';
@@ -41,6 +42,7 @@ export default async function LivePage({ params }: Props) {
       where: { id: live.id },
       data: { status: 'LIVE' },
     });
+    notifyLiveStartedOnce(live.id).catch((e) => console.error('[live page] notifyLiveStarted', e));
     live = await prisma.live.findUnique({ where: { id }, include: liveInclude }) ?? live;
   } else if (
     live.status === 'LIVE' &&

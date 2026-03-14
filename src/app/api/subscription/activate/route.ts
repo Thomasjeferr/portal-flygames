@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { sendTransactionalEmail, normalizeAppBaseUrl } from '@/lib/email/emailService';
 
 // Apenas admin pode ativar assinatura. Em produção, integrar com gateway de pagamento.
 export async function POST(request: NextRequest) {
@@ -36,6 +37,40 @@ export async function POST(request: NextRequest) {
       create: { userId, active: true, startDate, endDate, maxConcurrentStreams: maxConcurrentStreams ?? undefined },
       update: { active: true, startDate, endDate, maxConcurrentStreams: maxConcurrentStreams ?? undefined },
     });
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true },
+    });
+    if (user?.email) {
+      const settings = await prisma.emailSettings.findFirst({ orderBy: { updatedAt: 'desc' } });
+      const appBaseUrl = normalizeAppBaseUrl(settings?.appBaseUrl);
+      const loginUrl = `${appBaseUrl}/entrar`;
+      const periodLabel =
+        days != null && days > 0
+          ? days === 7
+            ? '7 dias (degustação)'
+            : `${days} dias`
+          : `${months ?? 1} ${(months ?? 1) === 1 ? 'mês' : 'meses'}`;
+      const endDateFormatted = endDate.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+      sendTransactionalEmail({
+        to: user.email,
+        templateKey: 'SUBSCRIPTION_ACTIVATED',
+        vars: {
+          name: user.name?.trim() || user.email.split('@')[0],
+          period_label: periodLabel,
+          end_date: endDateFormatted,
+          login_url: loginUrl,
+          brand_color: settings?.brandColor ?? '#22c55e',
+          footer_text: settings?.footerText ?? '',
+        },
+        userId,
+      }).catch((e) => console.error('[Subscription activate] E-mail:', e));
+    }
 
     return NextResponse.json({ message: 'Assinatura ativada.', endDate: endDate.toISOString() });
   } catch (e) {

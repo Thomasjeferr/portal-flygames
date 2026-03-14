@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { parseLiveDatetime } from '@/lib/liveTimezone';
+import { notifyLiveCancelled, notifyLiveStartedOnce } from '@/lib/email/notifyLiveGame';
 import { z } from 'zod';
 
 const updateSchema = z.object({
@@ -84,6 +85,8 @@ export async function PATCH(
 
     if (data.status !== undefined) update.status = data.status;
 
+    const becameLive = data.status === 'LIVE' && existing.status !== 'LIVE' && existing.notifiedStartedAt == null;
+
     // Se tem ID de replay preenchido, live é considerada encerrada (não mostrar como "ao vivo").
     const finalPlaybackId = data.cloudflarePlaybackId !== undefined ? (data.cloudflarePlaybackId || null) : existing.cloudflarePlaybackId;
     if (finalPlaybackId) {
@@ -101,6 +104,9 @@ export async function PATCH(
       where: { id },
       data: update as Parameters<typeof prisma.live.update>[0]['data'],
     });
+    if (becameLive) {
+      notifyLiveStartedOnce(id).catch((e) => console.error('[PATCH live] notifyLiveStarted', e));
+    }
     return NextResponse.json(live);
   } catch (e) {
     console.error('PATCH /api/admin/lives/[id]', e);
@@ -117,6 +123,10 @@ export async function DELETE(
     return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
   }
   const id = (await params).id;
+  const live = await prisma.live.findUnique({ where: { id }, select: { title: true, startAt: true } });
+  if (live) {
+    notifyLiveCancelled({ title: live.title, startAt: live.startAt });
+  }
   await prisma.live.delete({ where: { id } }).catch(() => {});
   return NextResponse.json({ ok: true });
 }
