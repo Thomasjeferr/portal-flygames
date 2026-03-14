@@ -21,6 +21,7 @@ export default function AdminSettingsPage() {
     fbPixelId: '',
     tiktokPixelId: '',
     siteUnderDevelopment: false,
+    autoTrialEnabled: false,
   });
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function AdminSettingsPage() {
           fbPixelId: data.fbPixelId ?? '',
           tiktokPixelId: data.tiktokPixelId ?? '',
           siteUnderDevelopment: data.siteUnderDevelopment ?? false,
+          autoTrialEnabled: data.autoTrialEnabled ?? false,
         });
       })
       .catch(() => setError('Erro ao carregar'))
@@ -98,6 +100,23 @@ export default function AdminSettingsPage() {
               type="checkbox"
               checked={form.siteUnderDevelopment}
               onChange={(e) => setForm((f) => ({ ...f, siteUnderDevelopment: e.target.checked }))}
+              className="w-5 h-5 rounded border-white/30 bg-netflix-gray text-netflix-red focus:ring-netflix-red"
+            />
+            <span className="text-sm text-white">Ligado</span>
+          </label>
+        </div>
+        <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+          <div>
+            <p className="font-medium text-white">Degustação automática (7 dias, 2 telas)</p>
+            <p className="text-sm text-netflix-light mt-0.5">
+              Quando ligado, quem verificar o e-mail pela primeira vez ganha 7 dias de degustação automaticamente (máx. 2 telas). Limite: 1 trial por e-mail (uma vez na vida) e 2 trials por IP a cada 30 dias. Para parar de dar degustação, desligue aqui.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.autoTrialEnabled}
+              onChange={(e) => setForm((f) => ({ ...f, autoTrialEnabled: e.target.checked }))}
               className="w-5 h-5 rounded border-white/30 bg-netflix-gray text-netflix-red focus:ring-netflix-red"
             />
             <span className="text-sm text-white">Ligado</span>

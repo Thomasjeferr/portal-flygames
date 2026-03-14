@@ -5,6 +5,7 @@ import { createSession } from '@/lib/auth';
 import { hashToken } from '@/lib/email/tokenUtils';
 import { checkVerifyEmailRateLimit, incrementVerifyEmailRateLimit } from '@/lib/email/rateLimit';
 import { sendTransactionalEmail, normalizeAppBaseUrl } from '@/lib/email/emailService';
+import { grantTrialIfEligible } from '@/lib/trial';
 
 const SESSION_COOKIE = 'portal_session';
 const SESSION_DAYS = 30;
@@ -69,7 +70,10 @@ export async function POST(request: NextRequest) {
           data: { emailVerified: true },
         });
       }
-      if (wasUnverified) await sendWelcomeEmail(user);
+      if (wasUnverified) {
+        await sendWelcomeEmail(user);
+        await grantTrialIfEligible(user.id, ip);
+      }
       const token = await createSession(user.id);
       const response = NextResponse.json({
         message: 'E-mail verificado com sucesso.',
@@ -115,6 +119,7 @@ export async function POST(request: NextRequest) {
     ]);
 
     await sendWelcomeEmail(user);
+    await grantTrialIfEligible(user.id, ip);
     const token = await createSession(user.id);
     const response = NextResponse.json({
       message: 'E-mail verificado com sucesso.',

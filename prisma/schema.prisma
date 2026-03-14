@@ -706,6 +706,7 @@ model SiteSettings {
   fbPixelId              String?  @map("fb_pixel_id")
   tiktokPixelId          String?  @map("tiktok_pixel_id")
   siteUnderDevelopment   Boolean  @default(false) @map("site_under_development") // quando true, visitantes sem ?app=1 veem página "Site em desenvolvimento"
+  autoTrialEnabled       Boolean  @default(false) @map("auto_trial_enabled") // quando true, concede 7 dias (2 telas) ao verificar e-mail pela primeira vez
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
 }

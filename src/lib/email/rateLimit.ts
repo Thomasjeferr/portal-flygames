@@ -32,6 +32,10 @@ const SPONSOR_CHECKOUT_WINDOW_MS = 60 * 60 * 1000; // 1 hora
 const TRACK_PLAY_LIMIT = 120;
 const TRACK_PLAY_WINDOW_MS = 60 * 1000; // 1 minuto
 
+// Trial automático (degustação 7 dias): máx. 2 concessões por IP a cada 30 dias
+const TRIAL_GRANTED_IP_LIMIT = 2;
+const TRIAL_GRANTED_IP_WINDOW_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
+
 async function checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
   const now = new Date();
   const windowStart = new Date(now.getTime() - windowMs);
@@ -196,4 +200,22 @@ export async function checkTrackPlayRateLimit(ip: string): Promise<boolean> {
 
 export async function incrementTrackPlayRateLimit(ip: string): Promise<void> {
   return incrementRateLimit(`track_play:ip:${ip}`, TRACK_PLAY_LIMIT, TRACK_PLAY_WINDOW_MS);
+}
+
+/** True se este IP ainda pode receber concessão de trial automático (limite: 2 por 30 dias). */
+export async function checkTrialGrantedByIpLimit(ip: string): Promise<boolean> {
+  return checkRateLimit(
+    `trial_granted:ip:${ip}`,
+    TRIAL_GRANTED_IP_LIMIT,
+    TRIAL_GRANTED_IP_WINDOW_MS
+  );
+}
+
+/** Incrementa o contador de trials concedidos para este IP (chamar após conceder o trial). */
+export async function incrementTrialGrantedByIp(ip: string): Promise<void> {
+  return incrementRateLimit(
+    `trial_granted:ip:${ip}`,
+    TRIAL_GRANTED_IP_LIMIT,
+    TRIAL_GRANTED_IP_WINDOW_MS
+  );
 }

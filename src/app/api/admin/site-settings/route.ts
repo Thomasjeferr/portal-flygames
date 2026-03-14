@@ -22,6 +22,7 @@ export async function GET() {
         fbPixelId: '',
         tiktokPixelId: '',
         siteUnderDevelopment: false,
+        autoTrialEnabled: false,
       });
     return NextResponse.json({
       supportEmail: row.supportEmail ?? '',
@@ -36,6 +37,7 @@ export async function GET() {
       fbPixelId: row.fbPixelId ?? '',
       tiktokPixelId: row.tiktokPixelId ?? '',
       siteUnderDevelopment: row.siteUnderDevelopment ?? false,
+      autoTrialEnabled: row.autoTrialEnabled ?? false,
     });
   } catch (e) {
     console.error(e);
@@ -51,6 +53,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const siteUnderDevelopment =
       typeof body.siteUnderDevelopment === 'boolean' ? body.siteUnderDevelopment : undefined;
+    const autoTrialEnabled =
+      typeof body.autoTrialEnabled === 'boolean' ? body.autoTrialEnabled : undefined;
     const data = {
       supportEmail: typeof body.supportEmail === 'string' ? body.supportEmail.trim() || null : null,
       adminCredentialsEmail: typeof body.adminCredentialsEmail === 'string' ? body.adminCredentialsEmail.trim() || null : null,
@@ -64,6 +68,7 @@ export async function POST(request: NextRequest) {
       fbPixelId: typeof body.fbPixelId === 'string' ? body.fbPixelId.trim() || null : null,
       tiktokPixelId: typeof body.tiktokPixelId === 'string' ? body.tiktokPixelId.trim() || null : null,
       ...(siteUnderDevelopment !== undefined && { siteUnderDevelopment }),
+      ...(autoTrialEnabled !== undefined && { autoTrialEnabled }),
     };
     const existing = await prisma.siteSettings.findFirst();
     let row;
@@ -74,12 +79,12 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // create() em alguns clientes Prisma antigos não aceita siteUnderDevelopment; usar só no update
-      const { siteUnderDevelopment: _dev, ...createData } = data as typeof data & { siteUnderDevelopment?: boolean };
+      const { siteUnderDevelopment: _dev, autoTrialEnabled: _trial, ...createData } = data as typeof data & { siteUnderDevelopment?: boolean; autoTrialEnabled?: boolean };
       row = await prisma.siteSettings.create({ data: createData });
-      if (_dev === true) {
+      if (_dev === true || _trial === true) {
         row = await prisma.siteSettings.update({
           where: { id: row.id },
-          data: { siteUnderDevelopment: true },
+          data: { ...(_dev === true && { siteUnderDevelopment: true }), ...(_trial === true && { autoTrialEnabled: true }) },
         });
       }
     }
