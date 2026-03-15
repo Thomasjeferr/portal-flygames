@@ -134,13 +134,19 @@ export default function AdminUsersPage() {
                           Responsável de time
                         </span>
                       )}
-                      <span
-                        className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
-                          subActive ? 'bg-green-900/50 text-green-300' : 'bg-red-900/30 text-red-300'
-                        }`}
-                      >
-                        {subActive ? 'Assinatura ativa' : 'Sem assinatura'}
-                      </span>
+                      {user.isTeamResponsible ? (
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-netflix-gray text-netflix-light">
+                          Assinatura não se aplica
+                        </span>
+                      ) : (
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
+                            subActive ? 'bg-green-900/50 text-green-300' : 'bg-red-900/30 text-red-300'
+                          }`}
+                        >
+                          {subActive ? 'Assinatura ativa' : 'Sem assinatura'}
+                        </span>
+                      )}
                       <span className="text-xs text-netflix-light">
                         Cadastro: {formatDate(user.createdAt)}
                       </span>

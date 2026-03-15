@@ -369,7 +369,31 @@ export default function AdminUserDetailPage() {
         {/* Assinatura */}
         <div className="bg-netflix-dark border border-white/10 rounded-lg p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Assinatura</h2>
-          {user.subscription ? (
+          {user.isTeamResponsible ? (
+            <div className="space-y-4">
+              <p className="text-amber-300 text-sm">
+                Responsável de time não utiliza assinatura (nem degustação nem paga). A assinatura não se aplica a este perfil.
+              </p>
+              {user.subscription && isSubscriptionActive && (
+                <p className="text-netflix-light text-sm">
+                  Este usuário possui assinatura ativa por engano. Use o botão abaixo para desativar.
+                </p>
+              )}
+              {user.subscription && isSubscriptionActive ? (
+                <button
+                  onClick={handleDeactivateSubscription}
+                  disabled={subscriptionAction !== null}
+                  className="px-4 py-2 rounded bg-red-900/50 text-red-300 text-sm hover:bg-red-900 disabled:opacity-50"
+                >
+                  {subscriptionAction === 'deactivate' ? 'Desativando...' : 'Desativar assinatura'}
+                </button>
+              ) : user.subscription ? (
+                <p className="text-netflix-light text-sm">
+                  Início: {formatDate(user.subscription.startDate)} • Fim: {formatDate(user.subscription.endDate)} (inativa)
+                </p>
+              ) : null}
+            </div>
+          ) : user.subscription ? (
             <div className="space-y-4">
               <div
                 className={`inline-flex px-3 py-1 rounded text-sm font-medium ${

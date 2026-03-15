@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { isTeamResponsible } from '@/lib/access';
 import { sendTransactionalEmail, normalizeAppBaseUrl } from '@/lib/email/emailService';
 
 // Apenas admin pode ativar assinatura. Em produção, integrar com gateway de pagamento.
@@ -13,6 +14,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const userId = body.userId as string;
+
+    const teamResponsible = await isTeamResponsible(userId);
+    if (teamResponsible) {
+      return NextResponse.json(
+        { error: 'Responsável de time não pode ter assinatura ativa (nem degustação nem paga).' },
+        { status: 400 }
+      );
+    }
     const days = body.days != null ? Math.max(1, Math.min(365, Number(body.days) || 1)) : null;
     const months = body.months != null ? Math.max(1, Math.min(12, Number(body.months) || 1)) : null;
     const maxConcurrentStreams =
