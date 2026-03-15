@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useMemo } from 'react';
 import { useStoreApp } from '@/lib/StoreAppContext';
+import { getSuggestedEmail } from '@/lib/email/domainTypoSuggestions';
 
 function safeRedirect(path: string | null): string {
   if (!path || typeof path !== 'string') return '/';
@@ -21,6 +22,8 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const suggestedEmail = useMemo(() => getSuggestedEmail(email), [email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +81,18 @@ function LoginForm() {
                 className="w-full px-4 py-3 rounded bg-futvar-gray border border-futvar-green/20 text-white placeholder-futvar-light/60 focus:outline-none focus:ring-2 focus:ring-futvar-green focus:border-transparent"
                 placeholder="seu@email.com"
               />
+              {suggestedEmail && suggestedEmail !== email.trim().toLowerCase() && (
+                <p className="mt-2 text-sm text-amber-400 flex flex-wrap items-center gap-2">
+                  <span>Você quis dizer <strong>{suggestedEmail}</strong>?</span>
+                  <button
+                    type="button"
+                    onClick={() => setEmail(suggestedEmail)}
+                    className="underline hover:no-underline font-medium"
+                  >
+                    Usar este e-mail
+                  </button>
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-futvar-light mb-2">

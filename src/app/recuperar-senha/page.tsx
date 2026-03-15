@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useMemo } from 'react';
+import { getSuggestedEmail } from '@/lib/email/domainTypoSuggestions';
 
 function ForgotPasswordForm() {
   const searchParams = useSearchParams();
@@ -17,6 +18,7 @@ function ForgotPasswordForm() {
   const [loading, setLoading] = useState(false);
 
   const isResetMode = !!token;
+  const suggestedEmail = useMemo(() => getSuggestedEmail(email), [email]);
 
   const handleRequestLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,6 +169,18 @@ function ForgotPasswordForm() {
               className="w-full px-4 py-3 rounded bg-netflix-gray border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-netflix-red"
               placeholder="seu@email.com"
             />
+            {suggestedEmail && suggestedEmail !== email.trim().toLowerCase() && (
+              <p className="mt-2 text-sm text-amber-400 flex flex-wrap items-center gap-2">
+                <span>Você quis dizer <strong>{suggestedEmail}</strong>?</span>
+                <button
+                  type="button"
+                  onClick={() => setEmail(suggestedEmail)}
+                  className="underline hover:no-underline font-medium"
+                >
+                  Usar este e-mail
+                </button>
+              </p>
+            )}
           </div>
           <button
             type="submit"
