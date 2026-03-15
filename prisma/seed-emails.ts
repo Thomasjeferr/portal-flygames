@@ -223,13 +223,16 @@ async function main() {
       key: 'LIVE_SCHEDULED',
       subject: 'Nova live programada: {{live_title}} – Fly Games',
       htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
-<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
-<h2 style="color:#0C1222">Nova live programada</h2>
-<p>Olá {{name}}!</p>
-<p>Programamos uma nova transmissão ao vivo para você assistir.</p>
-<p><strong>Live:</strong> {{live_title}}</p>
-<p><strong>Início:</strong> {{live_start_at}}</p>
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+<h2 style="color:#0C1222;margin:0 0 8px 0;font-size:22px">Olá, {{name}}! 👋</h2>
+<p style="color:#374151;margin:0 0 20px 0;font-size:15px;line-height:1.5">Programamos uma nova transmissão ao vivo. Anote na agenda e não perca!</p>
+<div style="background:#f8fafc;border-radius:8px;padding:16px 20px;margin:20px 0;border-left:4px solid {{brand_color}}">
+<p style="margin:0 0 8px 0;font-size:14px;color:#374151"><strong>Live:</strong> {{live_title}}</p>
+<p style="margin:0;font-size:14px;color:#374151"><strong>Início:</strong> {{live_start_at}}</p>
+</div>
+<p style="margin:20px 0 0 0;font-size:15px;color:#374151;line-height:1.5">Clique no botão abaixo para ver os detalhes e garantir seu lugar na transmissão.</p>
 <p style="margin-top:24px"><a href="{{live_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Ver detalhes e assistir</a></p>
+<p style="margin-top:28px;font-size:15px;color:#374151">Até lá! 📺</p>
 <p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
 </div></body></html>`,
     },
@@ -237,11 +240,15 @@ async function main() {
       key: 'LIVE_STARTED',
       subject: 'Ao vivo agora: {{live_title}} – Fly Games',
       htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
-<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
-<h2 style="color:#0C1222">Está ao vivo!</h2>
-<p>Olá {{name}}!</p>
-<p>A live <strong>{{live_title}}</strong> começou. Acesse agora para assistir.</p>
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+<h2 style="color:#0C1222;margin:0 0 8px 0;font-size:22px">Está ao vivo, {{name}}! 🔴</h2>
+<p style="color:#374151;margin:0 0 20px 0;font-size:15px;line-height:1.5">A live que você aguardava começou. Corre que dá tempo de acompanhar do início!</p>
+<div style="background:#fef2f2;border-radius:8px;padding:16px 20px;margin:20px 0;border-left:4px solid #dc2626">
+<p style="margin:0;font-size:14px;color:#374151"><strong>{{live_title}}</strong></p>
+</div>
+<p style="margin:20px 0 0 0;font-size:15px;color:#374151;line-height:1.5">Acesse agora e aproveite a transmissão.</p>
 <p style="margin-top:24px"><a href="{{live_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Assistir agora</a></p>
+<p style="margin-top:28px;font-size:15px;color:#374151">Bom jogo! ⚽</p>
 <p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
 </div></body></html>`,
     },
@@ -249,12 +256,15 @@ async function main() {
       key: 'LIVE_CANCELLED',
       subject: 'Live cancelada: {{live_title}} – Fly Games',
       htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
-<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
-<h2 style="color:#0C1222">Live cancelada</h2>
-<p>Olá {{name}}!</p>
-<p>Informamos que a live <strong>{{live_title}}</strong> foi cancelada.</p>
-<p>{{live_start_line}}</p>
-<p>Fique de olho nas próximas transmissões no site.</p>
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+<h2 style="color:#0C1222;margin:0 0 8px 0;font-size:22px">Olá, {{name}}!</h2>
+<p style="color:#374151;margin:0 0 20px 0;font-size:15px;line-height:1.5">Infelizmente precisamos informar que a live abaixo foi cancelada.</p>
+<div style="background:#f8fafc;border-radius:8px;padding:16px 20px;margin:20px 0;border-left:4px solid #64748b">
+<p style="margin:0 0 8px 0;font-size:14px;color:#374151"><strong>Live:</strong> {{live_title}}</p>
+<p style="margin:0;font-size:14px;color:#374151">{{live_start_line}}</p>
+</div>
+<p style="margin:20px 0 0 0;font-size:15px;color:#374151;line-height:1.5">Fique de olho no site e nas próximas transmissões — em breve teremos mais conteúdo para você.</p>
+<p style="margin-top:28px;font-size:15px;color:#374151">Obrigado por fazer parte do Fly Games.</p>
 <p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
 </div></body></html>`,
     },
@@ -262,13 +272,16 @@ async function main() {
       key: 'GAME_PUBLISHED',
       subject: 'Novo jogo disponível: {{game_title}} – Fly Games',
       htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
-<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
-<h2 style="color:#0C1222">Novo jogo disponível</h2>
-<p>Olá {{name}}!</p>
-<p>Um novo jogo foi publicado e já está disponível para você assistir.</p>
-<p><strong>Jogo:</strong> {{game_title}}</p>
-<p><strong>Campeonato:</strong> {{game_championship}}</p>
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+<h2 style="color:#0C1222;margin:0 0 8px 0;font-size:22px">Olá, {{name}}! 👋</h2>
+<p style="color:#374151;margin:0 0 20px 0;font-size:15px;line-height:1.5">Um novo jogo acaba de ser publicado e já está disponível para você assistir.</p>
+<div style="background:#f8fafc;border-radius:8px;padding:16px 20px;margin:20px 0;border-left:4px solid {{brand_color}}">
+<p style="margin:0 0 8px 0;font-size:14px;color:#374151"><strong>Jogo:</strong> {{game_title}}</p>
+<p style="margin:0;font-size:14px;color:#374151"><strong>Campeonato:</strong> {{game_championship}}</p>
+</div>
+<p style="margin:20px 0 0 0;font-size:15px;color:#374151;line-height:1.5">Clique no botão abaixo e aproveite o conteúdo.</p>
 <p style="margin-top:24px"><a href="{{game_url}}" style="display:inline-block;padding:12px 24px;background:{{brand_color}};color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Assistir agora</a></p>
+<p style="margin-top:28px;font-size:15px;color:#374151">Bom jogo! ⚽</p>
 <p style="margin-top:24px;font-size:12px;color:#6b7280">{{footer_text}}</p>
 </div></body></html>`,
     },
