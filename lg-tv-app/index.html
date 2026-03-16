@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1920, height=1080" />
+  <title>Fly Games - TV</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Rodapé mínimo (patrocinadores + nome app) -->
+    <footer id="tv-footer" class="tv-footer" aria-label="Patrocinadores e Fly Games">
+      <div class="tv-footer-sponsors" id="tv-footer-sponsors"></div>
+      <p class="tv-footer-brand">Fly Games · flygames.app</p>
+    </footer>
+    <!-- Tela de autorização (QR + código) -->
+    <section id="screen-auth" class="screen active">
+      <div class="auth-container">
+        <h1 class="auth-title">Assistir na TV</h1>
+        <ol class="auth-steps">
+          <li>Abra o aplicativo Fly Games na TV (esta tela).</li>
+          <li>Pegue seu celular e abra a <strong>câmera</strong>.</li>
+          <li>Aponte a câmera para o <strong>QR code</strong> abaixo.</li>
+          <li>Toque no link que aparecer e toque em <strong>Autorizar esta TV</strong>.</li>
+        </ol>
+        <div class="auth-qr-wrap">
+          <img id="qr-image" src="" alt="QR Code - escaneie com a câmera do celular" width="320" height="320" />
+        </div>
+        <p class="auth-code-label">Não consegue escanear? Digite este código no celular em flygames.app/tv</p>
+        <p id="auth-code" class="auth-code"></p>
+        <p id="auth-expiry" class="auth-expiry"></p>
+      </div>
+    </section>
+
+    <!-- Tela de catálogo -->
+    <section id="screen-catalog" class="screen">
+      <header class="catalog-header">
+        <h1 class="catalog-title">Fly Games</h1>
+      </header>
+      <div id="catalog-grid" class="catalog-grid" role="list"></div>
+      <p id="catalog-message" class="catalog-message"></p>
+    </section>
+
+    <!-- Tela de player -->
+    <section id="screen-player" class="screen screen-no-footer">
+      <video id="video-player" class="video-player" controls playsinline></video>
+      <button id="player-back" class="player-back" data-focusable>Voltar</button>
+    </section>
+
+    <!-- Sessão expirada -->
+    <section id="screen-expired" class="screen">
+      <div class="auth-container">
+        <h1 class="auth-title">Sessão encerrada</h1>
+        <p class="auth-subtitle">Abra a câmera do celular, escaneie o QR code novamente e autorize a TV para continuar assistindo.</p>
+        <button id="btn-refresh-auth" class="btn-primary" data-focusable>Mostrar QR code</button>
+      </div>
+    </section>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -161,13 +161,15 @@ export default function AdminDashboardPage() {
           icon={icons.subscription()}
           accentColor="emerald"
         />
-        <DashboardMetricCard
-          title="Receita do mês"
-          value={formatCurrency(kpis.monthlyRevenue)}
-          icon={icons.revenue()}
-          accentColor="emerald"
-          growth={revenueGrowth}
-        />
+        <Link href="/admin/vendas" className="block transition-opacity hover:opacity-90">
+          <DashboardMetricCard
+            title="Receita do mês"
+            value={formatCurrency(kpis.monthlyRevenue)}
+            icon={icons.revenue()}
+            accentColor="emerald"
+            growth={revenueGrowth}
+          />
+        </Link>
         <DashboardMetricCard
           title="Compras unitárias (mês)"
           value={kpis.oneTimePurchasesMonth}

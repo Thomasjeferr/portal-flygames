@@ -1,0 +1,12 @@
+{
+  "id": "com.flygames.app.tv",
+  "title": "Fly Games",
+  "main": "index.html",
+  "type": "web",
+  "vendor": "Fly Games",
+  "version": "1.0.0",
+  "icon": "icon_80x80.png",
+  "largeIcon": "icon_130x130.png",
+  "appDescription": "Assista aos jogos na TV. Autorize com o celular.",
+  "resolution": "1920x1080"
+}
