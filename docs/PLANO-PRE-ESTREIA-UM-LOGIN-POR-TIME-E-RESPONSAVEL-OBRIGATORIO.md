@@ -3,7 +3,7 @@
 ## Objetivo
 
 1. **Um e-mail e senha por time:** quando o mesmo time se auto-financia em vários jogos, usar **uma única conta de visualização** (club_viewer); nas primeiras compras criar usuário/senha e enviar; nas seguintes apenas vincular o novo jogo à mesma conta e enviar e-mail “Novo jogo disponível. Mesmo usuário e senha.”
-2. **Responsável obrigatório para comprar:** só quem estiver **logado** e for **responsável do time** (conta de time / TeamManager ou responsibleEmail) pode comprar o slot da pré-estreia; slot 1 = time mandante, slot 2 = time visitante.
+2. **Só o dono do time pode comprar:** quem estiver **logado** e for **dono do time** (TeamManager com role OWNER ou e-mail = Team.responsibleEmail) pode comprar o slot da pré-estreia; slot 1 = time mandante, slot 2 = time visitante. Assistente (ASSISTANT) **não** pode pagar.
 
 ---
 
@@ -18,14 +18,14 @@
 
 ---
 
-## Garantia: só responsáveis dos times da pré-estreia podem pagar
+## Garantia: só o dono do time pode pagar (times se auto-financiam)
 
-Em **pré-estreia auto-financiamento** (Clubes), **apenas as contas que são responsáveis pelos times que estão naquele jogo** podem pagar o slot correspondente:
+Em **pré-estreia auto-financiamento** (Clubes), **somente o dono do time** pode comprar o slot daquele time. Assistentes (TeamManager com role ASSISTANT) **não** podem pagar.
 
-- **Quem pode pagar o slot 1:** somente a conta que é **responsável do time mandante** daquele jogo (preSaleGame.homeTeamId). Nenhum outro usuário (nem responsável de outro time, nem assinante comum) pode pagar o slot 1.
-- **Quem pode pagar o slot 2:** somente a conta que é **responsável do time visitante** daquele jogo (preSaleGame.awayTeamId). Nenhum outro usuário pode pagar o slot 2.
+- **Quem pode pagar o slot 1:** somente a conta que é **dono do time mandante** daquele jogo (preSaleGame.homeTeamId). Ou seja: usuário com **TeamManager** naquele time com **role = OWNER**, ou usuário cujo e-mail é o **Team.responsibleEmail** do time (responsável cadastral).
+- **Quem pode pagar o slot 2:** somente a conta que é **dono do time visitante** daquele jogo (preSaleGame.awayTeamId). Mesma regra: OWNER ou e-mail = responsibleEmail.
 
-**Não podem pagar:** usuários não logados; usuários logados que não são responsáveis de time; responsáveis de **outros** times (que não sejam mandante ou visitante desse jogo); contas apenas de assinante/patrocinador sem vínculo de gestão com um dos dois times do jogo.
+**Não podem pagar:** usuários não logados; usuários logados que não são donos de nenhum dos dois times; **assistentes** (TeamManager com role ASSISTANT); responsáveis de **outros** times; contas apenas de assinante/patrocinador sem vínculo de dono com mandante ou visitante.
 
 Essa regra deve ser aplicada **sempre** no checkout (API e, na UI, exigir login antes de permitir pagamento). O admin deve garantir que todo jogo de pré-estreia clubes tenha **mandante e visitante** cadastrados; caso contrário o checkout pode ser bloqueado até que os times estejam definidos.
 
@@ -34,10 +34,10 @@ Essa regra deve ser aplicada **sempre** no checkout (API e, na UI, exigir login 
 ## Regra de negócio: quem pode comprar (detalhe técnico)
 
 - **Exigir sessão** no checkout (usuário logado).
-- **Exigir que o usuário seja responsável do time** correspondente ao slot **desse jogo**:
+- **Exigir que o usuário seja dono do time** correspondente ao slot **desse jogo**:
   - **Slot 1** → time **mandante** (preSaleGame.homeTeamId).
   - **Slot 2** → time **visitante** (preSaleGame.awayTeamId).
-- Usar a função `isTeamManager(userId, teamId)` (considera TeamManager e responsibleEmail).
+- **Somente dono:** usar uma função que considere **apenas** (1) **TeamManager** com **role = OWNER** para aquele teamId, ou (2) e-mail do usuário = **Team.responsibleEmail** do time aprovado. **Não** considerar TeamManager com role ASSISTANT. Na implementação: criar `isTeamOwner(userId, teamId)` ou ajustar a checagem no checkout para filtrar por `role === 'OWNER'` e responsibleEmail.
 - Se o jogo **não tiver** homeTeamId ou awayTeamId no slot em questão, **bloquear** o checkout com mensagem do tipo: “Este jogo precisa ter time mandante e visitante definidos para compra. Entre em contato com o administrador.”
 
 ---
@@ -96,7 +96,7 @@ Migrações: criar `team_id` em PreSaleClubSlot; criar `team_id` em ClubViewerAc
    - Exigir sessão; se não houver, retornar 401.
    - Carregar slot + preSaleGame (com homeTeamId, awayTeamId).
    - Definir `teamIdForSlot = slot.slotIndex === 1 ? game.homeTeamId : game.awayTeamId`. Se `teamIdForSlot` for null, retornar 400 (“Jogo sem time definido para este slot.”).
-   - Chamar `isTeamManager(session.userId, teamIdForSlot)`. Se false, retornar **403** com corpo contendo `message` e `instruction` (ver seção “Mensagem quando a conta não é do responsável”) para o front exibir a orientação.
+   - Chamar **isTeamOwner(session.userId, teamIdForSlot)** (apenas OWNER ou responsibleEmail). Se false, retornar **403** com corpo contendo `message` e `instruction` (ver seção “Mensagem quando a conta não é do responsável”) para o front exibir a orientação.
    - (Opcional) Pré-preencher nome/e-mail do responsável com os dados do usuário logado (ou do time) para não deixar outro e-mail.
    - Ao atualizar o slot antes de gerar o PIX, gravar também `teamId: teamIdForSlot` no slot (para o webhook usar depois).
 
@@ -137,10 +137,11 @@ Migrações: criar `team_id` em PreSaleClubSlot; criar `team_id` em ClubViewerAc
   - [ ] ClubViewerAccount: adicionar `teamId` (opcional, único); mudar para 1:N com PreSaleClubSlot (slot tem FK para account). Ajustar loginUsername para ser único por conta (ex.: por teamId) na primeira criação.
   - [ ] Backfill: slots existentes manter comportamento atual (um account por slot) ou preencher teamId a partir de home/away do jogo onde possível.
 
-- [ ] **Checkout: só responsável dos times da pré-estreia pode pagar**
+- [ ] **Checkout: só o dono do time pode pagar**
   - [ ] Página checkout: exigir login; redirecionar para entrar com returnUrl; enviar credentials no POST.
-  - [ ] API checkout: validar sessão (401 se não logado); obter teamId do slot (slot 1 = homeTeamId, slot 2 = awayTeamId); retornar 400 se time não definido para esse slot; retornar 403 se !isTeamManager(userId, teamId) — garantindo que **apenas** a conta responsável do time mandante (slot 1) ou do time visitante (slot 2) daquele jogo pode pagar; gravar teamId no slot ao atualizar dados antes do PIX.
-  - [ ] **403 (conta pessoal):** API retornar `message` e `instruction` no corpo; front exibir em destaque a mensagem e a instrução para usar a conta da Área do time ou o responsável fazer login (ver seção "Mensagem quando a conta não é do responsável").
+  - [ ] API checkout: validar sessão (401 se não logado); obter teamId do slot (slot 1 = homeTeamId, slot 2 = awayTeamId); retornar 400 se time não definido para esse slot; usar **isTeamOwner(userId, teamId)** (apenas OWNER ou responsibleEmail), retornar 403 se false; gravar teamId no slot ao atualizar dados antes do PIX.
+  - [ ] **Implementar isTeamOwner:** retornar true se (1) TeamManager com userId e teamId e role = OWNER, ou (2) user.email = Team.responsibleEmail do time aprovado; não considerar ASSISTANT.
+  - [ ] **403 (conta pessoal):** API retornar `message` e `instruction` no corpo; front exibir em destaque a mensagem e a instrução para usar a conta da Área do time (dono) ou o dono fazer login (ver seção "Mensagem quando a conta não é do responsável").
 
 - [ ] **Conta clube: um por time**
   - [ ] Refatorar createClubViewerAccountForSlot: buscar ou criar ClubViewerAccount por teamId; se existir, vincular slot à conta e enviar e-mail “novo jogo, mesmo usuário/senha”; se não, criar User + ClubViewerAccount com teamId e enviar credenciais.
@@ -159,7 +160,7 @@ Migrações: criar `team_id` em PreSaleClubSlot; criar `team_id` em ClubViewerAc
 ## Ordem sugerida de implementação
 
 1. Migration e schema (teamId no slot; clubViewerAccountId no slot; teamId e 1:N em ClubViewerAccount).
-2. Checkout: exigir login + isTeamManager para o time do slot; gravar teamId no slot.
+2. Checkout: exigir login + isTeamOwner (só dono: OWNER ou responsibleEmail) para o time do slot; gravar teamId no slot.
 3. Refatorar createClubViewerAccountForSlot para “um por time” e e-mail “novo jogo, mesmo login”.
 4. Ajustar start-session (e se necessário stream-playback) para resolver slot quando o usuário é club_viewer com vários slots.
 5. Ajustes de admin e regenerar senha (opcional na primeira entrega).

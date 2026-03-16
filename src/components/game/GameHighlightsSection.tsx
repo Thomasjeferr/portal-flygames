@@ -39,13 +39,13 @@ export function GameHighlightsSection({
     <section className={`mt-12 pt-10 border-t border-white/10 lg:mt-0 lg:pt-0 lg:border-t-0 ${className}`.trim()}>
       <h2 className="text-xl font-bold text-white mb-2">Melhores momentos</h2>
       <p className="text-futvar-light text-sm mb-6">Cortes e melhores lances</p>
-      <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+      <div className="grid grid-cols-1 gap-4">
         {highlights.map((h) => (
           <button
             key={h.id}
             type="button"
             onClick={() => setModalHighlight(h)}
-            className="flex-shrink-0 w-[280px] sm:w-[320px] rounded-xl overflow-hidden border border-white/10 bg-futvar-dark hover:border-emerald-400/40 hover:shadow-lg hover:shadow-emerald-500/10 transition-all text-left focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
+            className="w-full rounded-xl overflow-hidden border border-white/10 bg-futvar-dark hover:border-emerald-400/40 hover:shadow-lg hover:shadow-emerald-500/10 transition-all text-left focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
           >
             <div className="relative aspect-video bg-black">
               {h.thumbnailUrl ? (
