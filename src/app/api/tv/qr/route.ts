@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' },
     });
-    const res = new NextResponse(png, {
+    const body = new Uint8Array(png);
+    const res = new NextResponse(body, {
       headers: {
         'Content-Type': 'image/png',
         'Cache-Control': 'no-store',
