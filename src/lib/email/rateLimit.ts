@@ -219,3 +219,15 @@ export async function incrementTrialGrantedByIp(ip: string): Promise<void> {
     TRIAL_GRANTED_IP_WINDOW_MS
   );
 }
+
+// Código de TV (QR): máx. 1 novo código por IP a cada 90 segundos (evita spam da TV)
+const TV_CODE_LIMIT = 1;
+const TV_CODE_WINDOW_MS = 90 * 1000;
+
+export async function checkTvCodeRateLimit(ip: string): Promise<boolean> {
+  return checkRateLimit(`tv_code:ip:${ip}`, TV_CODE_LIMIT, TV_CODE_WINDOW_MS);
+}
+
+export async function incrementTvCodeRateLimit(ip: string): Promise<void> {
+  return incrementRateLimit(`tv_code:ip:${ip}`, TV_CODE_LIMIT, TV_CODE_WINDOW_MS);
+}

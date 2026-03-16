@@ -41,6 +41,7 @@ model User {
   liveLikes         LiveLike[]
   gameComments      GameComment[]
   liveComments      LiveComment[]
+  tvSessions        TvSession[]
 }
 
 model Session {
@@ -689,6 +690,40 @@ model UserStreamSession {
 
   @@unique([userId, deviceId])
   @@index([userId])
+}
+
+// Código de uso único exibido na TV para autorização via celular (QR code)
+model TvAuthCode {
+  id          String    @id @default(cuid())
+  code        String    @unique @map("code")
+  expiresAt   DateTime  @map("expires_at")
+  usedAt      DateTime? @map("used_at")
+  tvSessionId String?   @map("tv_session_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  tvSession TvSession? @relation(fields: [tvSessionId], references: [id], onDelete: SetNull)
+
+  @@index([code])
+  @@index([expiresAt])
+  @@map("tv_auth_codes")
+}
+
+// Sessão de TV autorizada (após usuário escanear QR e confirmar no celular)
+model TvSession {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique @map("token")
+  deviceId  String   @map("device_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  authCodes  TvAuthCode[]
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("tv_sessions")
 }
 
 // Configurações gerais do site (contato, redes, CNPJ)

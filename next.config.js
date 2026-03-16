@@ -21,6 +21,11 @@ const nextConfig = {
         source: '/:path*',
         headers: securityHeaders,
       },
+      // CORS para app Samsung TV (origem pode ser file:// ou widget:// no .wgt)
+      { source: '/api/tv/:path*', headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }] },
+      { source: '/api/games', headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }] },
+      { source: '/api/games/:path*', headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }] },
+      { source: '/api/video/stream-playback', headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }] },
     ];
   },
   images: {

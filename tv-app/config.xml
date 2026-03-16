@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets"
+        xmlns:tizen="http://tizen.org/ns/widgets"
+        id="https://flygames.app/tv"
+        version="1.0.0">
+  <access origin="*" subdomains="true"/>
+  <tizen:application id="flygames.tv.FlyGamesTV" package="flygames.tv" required_version="2.3"/>
+  <content src="index.html"/>
+  <icon src="icon.png"/>
+  <name>Fly Games</name>
+  <tizen:metadata key="http://samsung.com/tv/metadata/prelaunch.support" value="false"/>
+  <tizen:privilege name="http://tizen.org/privilege/internet"/>
+  <tizen:privilege name="http://developer.samsung.com/privilege/network.public"/>
+</widget>

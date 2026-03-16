@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { canAccessGameBySlug, getSponsorMaxScreens, getSubscriptionMaxScreens, hasFullAccess } from '@/lib/access';
 import { prisma } from '@/lib/db';
 import { getSignedPlaybackUrls } from '@/lib/cloudflare-stream';
+import { getTvSessionByToken } from '@/lib/tv-session';
 
 const STREAM_SESSION_ACTIVE_MS = 15 * 60 * 1000; // 15 min
 
@@ -12,25 +13,39 @@ export async function GET(request: NextRequest) {
   const gameSlug = searchParams.get('gameSlug');
   const preSaleSlug = searchParams.get('preSaleSlug');
   const sessionToken = searchParams.get('sessionToken');
-  const deviceId = searchParams.get('deviceId')?.trim() || null;
+  const tvSessionToken = searchParams.get('tvSessionToken')?.trim() || null;
+  const deviceIdParam = searchParams.get('deviceId')?.trim() || null;
 
   if (!videoId?.trim()) {
     return NextResponse.json({ error: 'videoId obrigatório' }, { status: 400 });
   }
 
   const session = await getSession();
+  let effectiveUserId: string | null = session?.userId ?? null;
+  let effectiveDeviceId: string | null = deviceIdParam;
+
+  if (tvSessionToken) {
+    const tvSession = await getTvSessionByToken(tvSessionToken);
+    if (!tvSession) {
+      return NextResponse.json(
+        { error: 'Sessão da TV expirada. Escaneie o QR code novamente na TV.' },
+        { status: 401 }
+      );
+    }
+    effectiveUserId = tvSession.userId;
+    effectiveDeviceId = tvSession.deviceId;
+  }
 
   // Verificar acesso: gameSlug OU preSaleSlug
   if (gameSlug) {
-    if (!session) {
+    if (!effectiveUserId) {
       return NextResponse.json({ error: 'Faça login para assistir' }, { status: 401 });
     }
-    const hasAccess = await canAccessGameBySlug(session.userId, gameSlug);
+    const hasAccess = await canAccessGameBySlug(effectiveUserId, gameSlug);
     if (!hasAccess) {
       return NextResponse.json({ error: 'Sem acesso a este jogo' }, { status: 403 });
     }
-    // Para jogos, deviceId é obrigatório (web e app): permite aplicar limite de telas e sessão única por dispositivo.
-    if (!deviceId) {
+    if (!effectiveDeviceId) {
       return NextResponse.json(
         { error: 'Identificador do dispositivo é necessário. Atualize o app e tente novamente.' },
         { status: 400 }
@@ -38,19 +53,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Limite de telas: patrocínio tem prioridade; senão assinatura
-    let maxScreens = await getSponsorMaxScreens(session.userId);
-    if (maxScreens == null) maxScreens = await getSubscriptionMaxScreens(session.userId);
+    let maxScreens = await getSponsorMaxScreens(effectiveUserId);
+    if (maxScreens == null) maxScreens = await getSubscriptionMaxScreens(effectiveUserId);
     if (maxScreens != null) {
       const now = new Date();
       const activeSince = new Date(now.getTime() - STREAM_SESSION_ACTIVE_MS);
       const activeSessions = await prisma.userStreamSession.findMany({
         where: {
-          userId: session.userId,
+          userId: effectiveUserId,
           lastHeartbeatAt: { gte: activeSince },
         },
         select: { deviceId: true },
       });
-      const isThisDeviceActive = activeSessions.some((s) => s.deviceId === deviceId);
+      const isThisDeviceActive = activeSessions.some((s) => s.deviceId === effectiveDeviceId);
       if (activeSessions.length >= maxScreens && !isThisDeviceActive) {
         return NextResponse.json(
           { error: `Limite de ${maxScreens} tela(s) simultânea(s) atingido. Feche o player em outro dispositivo ou aguarde alguns minutos.` },
@@ -59,11 +74,11 @@ export async function GET(request: NextRequest) {
       }
       await prisma.userStreamSession.upsert({
         where: {
-          userId_deviceId: { userId: session.userId, deviceId },
+          userId_deviceId: { userId: effectiveUserId, deviceId: effectiveDeviceId },
         },
         create: {
-          userId: session.userId,
-          deviceId,
+          userId: effectiveUserId,
+          deviceId: effectiveDeviceId,
           lastHeartbeatAt: now,
         },
         update: { lastHeartbeatAt: now },
@@ -87,6 +102,8 @@ export async function GET(request: NextRequest) {
     } else if (session?.role === 'admin') {
       allowed = true;
     } else if (session && (await hasFullAccess(session.userId))) {
+      allowed = true;
+    } else if (effectiveUserId && (await hasFullAccess(effectiveUserId))) {
       allowed = true;
     }
     if (!allowed) {
