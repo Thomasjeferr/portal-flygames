@@ -110,8 +110,11 @@ function TvPageContent() {
         <div className="w-full max-w-md">
           <div className="bg-futvar-dark/95 border border-futvar-green/20 rounded-2xl p-8 shadow-2xl shadow-futvar-green/5">
             <h1 className="text-2xl font-bold text-white mb-2">Autorizar TV</h1>
+            <p className="text-futvar-light text-sm mb-2">
+              Escaneie o QR code da TV com a câmera do celular.
+            </p>
             <p className="text-futvar-light text-sm mb-6">
-              Escaneie o QR code na tela da TV ou digite o código de 6 caracteres abaixo.
+              Ou digite o código de 6 caracteres que aparece na TV.
             </p>
             <form onSubmit={handleSubmitCode} className="space-y-4">
               {error && (

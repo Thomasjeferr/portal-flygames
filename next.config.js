@@ -26,6 +26,7 @@ const nextConfig = {
       { source: '/api/games', headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }] },
       { source: '/api/games/:path*', headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }] },
       { source: '/api/video/stream-playback', headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }] },
+      { source: '/api/public/sponsors', headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }] },
     ];
   },
   images: {
