@@ -41,20 +41,19 @@ export default function PreEstreiaCheckoutPage() {
     if (!id) return;
     const codeFromUrl = searchParams.get('code');
     if (codeFromUrl) setClubCode(codeFromUrl);
+    const returnUrl = `/pre-estreia/${id}/checkout${codeFromUrl ? `?code=${encodeURIComponent(codeFromUrl)}` : ''}`;
     fetch('/api/auth/me', { credentials: 'include' })
-      .then((r) => {
-        if (!r.ok) {
-          const returnUrl = `/pre-estreia/${id}/checkout${codeFromUrl ? `?code=${encodeURIComponent(codeFromUrl)}` : ''}`;
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({}));
+        // /api/auth/me retorna 200 com { user: null } quando não há sessão (não é 401)
+        if (!r.ok || !data.user?.id) {
           router.replace(`/entrar?redirect=${encodeURIComponent(returnUrl)}`);
           return;
         }
-        return r.json();
-      })
-      .then((user) => {
-        if (user?.id) setAuthChecked(true);
+        setAuthChecked(true);
       })
       .catch(() => {
-        router.replace(`/entrar?redirect=${encodeURIComponent(`/pre-estreia/${id}/checkout`)}`);
+        router.replace(`/entrar?redirect=${encodeURIComponent(returnUrl)}`);
       });
   }, [id, router, searchParams]);
 
