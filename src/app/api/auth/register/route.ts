@@ -22,7 +22,8 @@ const schema = z.object({
   name: z
     .string()
     .trim()
-    .min(3, 'Informe seu nome completo'),
+    .min(3, 'Informe seu nome completo')
+    .refine((s) => s.split(/\s+/).filter(Boolean).length >= 2, 'Informe nome e sobrenome (pelo menos dois nomes).'),
 });
 
 function getClientIp(req: NextRequest): string {
