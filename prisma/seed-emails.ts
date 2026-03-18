@@ -106,18 +106,20 @@ async function main() {
       subject: 'Acesso à pré-estreia: {{game_title}}',
       htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
 <div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
-<h2 style="color:#111">Acesso à pré-estreia - Credenciais</h2>
-<p>Olá,</p>
-<p>{{intro_text}}</p>
-<p><strong>Jogo:</strong> {{game_title}}</p>
-<p><strong>Link para assistir:</strong> <a href="{{watch_url}}">{{watch_url}}</a></p>
-<p><strong>Usuário:</strong> <code style="background:#f0f0f0;padding:2px 6px">{{username}}</code></p>
-<p><strong>Senha:</strong> <code style="background:#f0f0f0;padding:2px 6px">{{password}}</code></p>
-<p style="margin-top:16px;padding:12px;background:#fef3c7;border-left:4px solid #f59e0b;font-weight:bold"><strong>{{limite_dispositivos}}</strong></p>
-<p style="margin-top:16px;padding:12px;background:#f0fdf4;border-left:4px solid #22c55e"><strong>{{info_assinante}}</strong></p>
-<p>Compartilhe o usuário e a senha com os membros do clube. Este acesso vale apenas para este jogo de pré-estreia.</p>
-<p>Para comprar planos ou outros jogos no site, é necessário criar uma conta normal (cadastro).</p>
-<p style="margin-top:24px;color:#666;font-size:12px">{{footer_text}}</p>
+<p style="font-size:16px;color:#111;margin:0 0 16px 0;"><strong>Acesso à pré-estreia - credenciais do clube</strong></p>
+<p style="margin:0 0 12px 0;color:#111;">Olá,</p>
+<p style="margin:0 0 12px 0;color:#111;">{{intro_text}}</p>
+<p style="margin:0 0 8px 0;color:#111;"><strong>Jogo:</strong> {{game_title}}</p>
+<p style="margin:0 0 8px 0;color:#111;"><strong>Link para assistir:</strong> <a href="{{watch_url}}" style="color:#111;text-decoration:underline;">{{watch_url}}</a></p>
+<p style="margin:16px 0 4px 0;color:#111;"><strong>Usuário para acesso:</strong></p>
+<p style="margin:0 0 8px 0;"><code style="background:#f3f4f6;padding:4px 8px;border-radius:4px;font-family:SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;font-size:13px;">{{username}}</code></p>
+<p style="margin:8px 0 4px 0;color:#111;"><strong>Senha:</strong></p>
+<p style="margin:0 0 12px 0;"><code style="background:#f3f4f6;padding:4px 8px;border-radius:4px;font-family:SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;font-size:13px;">{{password}}</code></p>
+<p style="margin:12px 0;color:#111;"><strong>{{limite_dispositivos}}</strong></p>
+<p style="margin:0 0 12px 0;color:#111;">{{info_assinante}}</p>
+<p style="margin:0 0 12px 0;color:#111;">Compartilhe o usuário e a senha com os membros do clube apenas para este jogo de pré-estreia.</p>
+<p style="margin:0 0 12px 0;color:#111;">Para comprar planos ou outros jogos no site, é necessário criar uma conta normal (cadastro).</p>
+<p style="margin-top:24px;color:#6b7280;font-size:12px;">{{footer_text}}</p>
 </div></body></html>`,
     },
     {
@@ -125,17 +127,19 @@ async function main() {
       subject: 'Nova senha - Pré-estreia: {{game_title}}',
       htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
 <div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
-<h2 style="color:#111">Nova senha de acesso à pré-estreia</h2>
-<p>Olá,</p>
-<p>Foi gerada uma nova senha para o acesso à pré-estreia.</p>
-<p><strong>Jogo:</strong> {{game_title}}</p>
-<p><strong>Link para assistir:</strong> <a href="{{watch_url}}">{{watch_url}}</a></p>
-<p><strong>Usuário:</strong> <code style="background:#f0f0f0;padding:2px 6px">{{username}}</code></p>
-<p><strong>Senha:</strong> <code style="background:#f0f0f0;padding:2px 6px">{{password}}</code></p>
-<p style="margin-top:16px;padding:12px;background:#fef3c7;border-left:4px solid #f59e0b;font-weight:bold"><strong>{{limite_dispositivos}}</strong></p>
-<p style="margin-top:16px;padding:12px;background:#f0fdf4;border-left:4px solid #22c55e"><strong>{{info_assinante}}</strong></p>
-<p>Compartilhe o usuário e a senha com os membros do clube. Este acesso vale apenas para este jogo de pré-estreia.</p>
-<p style="margin-top:24px;color:#666;font-size:12px">{{footer_text}}</p>
+<p style="font-size:16px;color:#111;margin:0 0 16px 0;"><strong>Nova senha de acesso à pré-estreia</strong></p>
+<p style="margin:0 0 12px 0;color:#111;">Olá,</p>
+<p style="margin:0 0 12px 0;color:#111;">Foi gerada uma nova senha para o acesso à pré-estreia.</p>
+<p style="margin:0 0 8px 0;color:#111;"><strong>Jogo:</strong> {{game_title}}</p>
+<p style="margin:0 0 8px 0;color:#111;"><strong>Link para assistir:</strong> <a href="{{watch_url}}" style="color:#111;text-decoration:underline;">{{watch_url}}</a></p>
+<p style="margin:16px 0 4px 0;color:#111;"><strong>Usuário para acesso:</strong></p>
+<p style="margin:0 0 8px 0;"><code style="background:#f3f4f6;padding:4px 8px;border-radius:4px;font-family:SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;font-size:13px;">{{username}}</code></p>
+<p style="margin:8px 0 4px 0;color:#111;"><strong>Nova senha:</strong></p>
+<p style="margin:0 0 12px 0;"><code style="background:#f3f4f6;padding:4px 8px;border-radius:4px;font-family:SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;font-size:13px;">{{password}}</code></p>
+<p style="margin:12px 0;color:#111;"><strong>{{limite_dispositivos}}</strong></p>
+<p style="margin:0 0 12px 0;color:#111;">{{info_assinante}}</p>
+<p style="margin:0 0 12px 0;color:#111;">Compartilhe o usuário e a senha com os membros do clube apenas para este jogo de pré-estreia.</p>
+<p style="margin-top:24px;color:#6b7280;font-size:12px;">{{footer_text}}</p>
 </div></body></html>`,
     },
     {

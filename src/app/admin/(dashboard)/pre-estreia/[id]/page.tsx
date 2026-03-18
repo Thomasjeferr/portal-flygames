@@ -40,6 +40,7 @@ export default function AdminPreEstreiaDetailPage() {
   const [generating, setGenerating] = useState(false);
   const [regeneratingSlotId, setRegeneratingSlotId] = useState<string | null>(null);
   const [modalPassword, setModalPassword] = useState<{ slotIndex: number; password: string } | null>(null);
+  const [passwordCopied, setPasswordCopied] = useState(false);
 
   const fetchGame = () => {
     fetch(`/api/admin/pre-sale-games/${id}`)
@@ -80,6 +81,7 @@ export default function AdminPreEstreiaDetailPage() {
       const data = await res.json();
       if (res.ok && data.password) {
         setModalPassword({ slotIndex: slot.slotIndex, password: data.password });
+        setPasswordCopied(false);
       }
     } finally {
       setRegeneratingSlotId(null);
@@ -89,7 +91,14 @@ export default function AdminPreEstreiaDetailPage() {
   const copyPassword = () => {
     if (modalPassword) {
       navigator.clipboard.writeText(modalPassword.password);
+      setPasswordCopied(true);
+      setTimeout(() => setPasswordCopied(false), 2000);
     }
+  };
+
+  const closeModal = () => {
+    setModalPassword(null);
+    setPasswordCopied(false);
   };
 
   if (loading || !game) {
@@ -185,26 +194,49 @@ export default function AdminPreEstreiaDetailPage() {
       </div>
 
       {modalPassword && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true">
-          <div className="bg-netflix-dark border border-white/20 rounded-lg p-6 max-w-sm w-full shadow-xl">
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-netflix-dark border border-white/20 rounded-lg p-6 max-w-sm w-full shadow-xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={closeModal}
+              className="absolute right-3 top-3 text-netflix-light hover:text-white"
+              aria-label="Fechar"
+            >
+              ×
+            </button>
             <h3 className="text-lg font-semibold text-white mb-2">Nova senha (Slot {modalPassword.slotIndex})</h3>
             <p className="text-netflix-light text-sm mb-3">Exiba e copie a senha agora. Ela nao sera mostrada novamente.</p>
             <p className="font-mono text-white bg-white/10 rounded px-3 py-2 mb-4 break-all">{modalPassword.password}</p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={copyPassword}
-                className="flex-1 px-4 py-2 rounded bg-futvar-green text-white font-medium hover:bg-futvar-green/90"
-              >
-                Copiar
-              </button>
-              <button
-                type="button"
-                onClick={() => setModalPassword(null)}
-                className="flex-1 px-4 py-2 rounded bg-white/20 text-white hover:bg-white/30"
-              >
-                Fechar
-              </button>
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={copyPassword}
+                  className="flex-1 px-4 py-2 rounded bg-futvar-green text-white font-medium hover:bg-futvar-green/90"
+                >
+                  {passwordCopied ? 'Copiado!' : 'Copiar'}
+                </button>
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="flex-1 px-4 py-2 rounded bg-white/20 text-white hover:bg-white/30"
+                >
+                  Fechar
+                </button>
+              </div>
+              {passwordCopied && (
+                <p className="text-xs text-futvar-green text-center">
+                  Senha copiada para a área de transferência. Você já pode fechar esta janela.
+                </p>
+              )}
             </div>
           </div>
         </div>
