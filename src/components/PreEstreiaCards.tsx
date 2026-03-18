@@ -3,6 +3,8 @@
 import { useStoreApp } from '@/lib/StoreAppContext';
 import { GameCard } from '@/components/GameCard';
 
+type TeamInfo = { id: string; name: string; shortName: string | null; crestUrl: string | null };
+
 type PreSaleGame = {
   id: string;
   slug: string;
@@ -10,6 +12,8 @@ type PreSaleGame = {
   fundedClubsCount: number;
   thumbnailUrl: string | null;
   createdAt: string;
+  homeTeam?: TeamInfo | null;
+  awayTeam?: TeamInfo | null;
 };
 
 export function PreEstreiaCards({ games }: { games: PreSaleGame[] }) {
@@ -19,6 +23,7 @@ export function PreEstreiaCards({ games }: { games: PreSaleGame[] }) {
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
       {games.map((g, i) => {
         const patrocinioOk = g.fundedClubsCount === 2;
+        const showTeams = g.homeTeam && g.awayTeam;
         return (
           <div key={g.id} className="animate-scale-in opacity-0" style={{ animationDelay: `${0.15 + i * 0.05}s` }}>
             <GameCard
@@ -29,10 +34,19 @@ export function PreEstreiaCards({ games }: { games: PreSaleGame[] }) {
               gameDate={g.createdAt}
               featured={false}
               href={isStoreApp ? `/pre-estreia/assistir/${g.slug}` : `/pre-estreia/${g.id}`}
-              badgeText={isStoreApp ? undefined : (patrocinioOk ? undefined : 'APOIAR')}
+              badgeText={isStoreApp ? undefined : (patrocinioOk ? undefined : 'RESP. DO TIME')}
               showAssistir={!patrocinioOk}
               sponsorOkLabel={patrocinioOk ? 'Patrocínio OK' : undefined}
-              sponsorOkSubtitle={patrocinioOk ? (isStoreApp ? 'Em breve disponível.' : 'Em breve disponível para membros dos clubes e assinantes.') : undefined}
+              sponsorOkSubtitle={
+                patrocinioOk
+                  ? isStoreApp
+                    ? 'Em breve disponível.'
+                    : 'Em breve disponível para membros dos clubes e assinantes.'
+                  : 'Responsáveis do mandante ou visitante pagam o slot aqui.'
+              }
+              homeTeam={showTeams ? g.homeTeam : undefined}
+              awayTeam={showTeams ? g.awayTeam : undefined}
+              preEstreiaClubes
             />
           </div>
         );

@@ -52,11 +52,13 @@ export default function PreEstreiaCheckoutPage() {
         }
         const data = d as CheckoutFormData;
         setCtx(data);
+        const maxMembers = data.maxSimultaneousPerClub ?? 10;
         setForm((f) => ({
           ...f,
           responsibleName: data.prefill.responsibleName || f.responsibleName,
           responsibleEmail: data.prefill.responsibleEmail || f.responsibleEmail,
           clubName: data.prefill.clubName || f.clubName,
+          teamMemberCount: String(maxMembers),
         }));
       } catch {
         router.replace(`/pre-estreia/${id}`);

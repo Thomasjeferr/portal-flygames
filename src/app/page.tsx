@@ -66,6 +66,10 @@ async function getPreSaleForClubs() {
         thumbnailUrl: true,
         fundedClubsCount: true,
         createdAt: true,
+        homeTeamId: true,
+        awayTeamId: true,
+        homeTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
+        awayTeam: { select: { id: true, name: true, shortName: true, crestUrl: true } },
       },
     });
     return games;
@@ -537,6 +541,8 @@ export default async function HomePage() {
                   fundedClubsCount: g.fundedClubsCount,
                   thumbnailUrl: g.thumbnailUrl,
                   createdAt: g.createdAt.toISOString ? g.createdAt.toISOString() : String(g.createdAt),
+                  homeTeam: g.homeTeam ? { id: g.homeTeam.id, name: g.homeTeam.name, shortName: g.homeTeam.shortName, crestUrl: g.homeTeam.crestUrl } : null,
+                  awayTeam: g.awayTeam ? { id: g.awayTeam.id, name: g.awayTeam.name, shortName: g.awayTeam.shortName, crestUrl: g.awayTeam.crestUrl } : null,
                 }))}
               />
             </div>
