@@ -24,6 +24,14 @@ export function PreEstreiaCards({ games }: { games: PreSaleGame[] }) {
       {games.map((g, i) => {
         const patrocinioOk = g.fundedClubsCount === 2;
         const showTeams = g.homeTeam && g.awayTeam;
+        // Quando ainda não está financiado (2/2), sempre manda para a página de pré-estreia [id],
+        // para o responsável pelo time ver o fluxo de pagamento (mobile ou desktop). Só usa "assistir"
+        // quando o jogo já está disponível para assistir (patrocínio ok).
+        const cardHref =
+          patrocinioOk
+            ? (isStoreApp ? `/pre-estreia/assistir/${g.slug}` : `/pre-estreia/${g.id}`)
+            : `/pre-estreia/${g.id}`;
+
         return (
           <div key={g.id} className="animate-scale-in opacity-0" style={{ animationDelay: `${0.15 + i * 0.05}s` }}>
             <GameCard
@@ -33,7 +41,7 @@ export function PreEstreiaCards({ games }: { games: PreSaleGame[] }) {
               thumbnailUrl={g.thumbnailUrl}
               gameDate={g.createdAt}
               featured={false}
-              href={isStoreApp ? `/pre-estreia/assistir/${g.slug}` : `/pre-estreia/${g.id}`}
+              href={cardHref}
               badgeText={isStoreApp ? undefined : (patrocinioOk ? undefined : 'RESP. DO TIME')}
               showAssistir={!patrocinioOk}
               sponsorOkLabel={patrocinioOk ? 'Patrocínio OK' : undefined}
