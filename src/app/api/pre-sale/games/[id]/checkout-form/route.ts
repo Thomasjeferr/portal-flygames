@@ -29,6 +29,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         clubAPrice: true,
         clubBPrice: true,
         maxSimultaneousPerClub: true,
+        fundedClubsCount: true,
       },
     }),
     prisma.team.findUnique({
@@ -47,10 +48,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const slotLabel = resolved.slotIndex === 1 ? 'Mandante' : 'Visitante';
 
   return NextResponse.json({
+    slotId: resolved.slotId,
     slotIndex: resolved.slotIndex,
     slotLabel,
     price,
     maxSimultaneousPerClub: game.maxSimultaneousPerClub,
+    fundedClubsCount: game.fundedClubsCount,
     game: {
       title: game.title,
       description: game.description,

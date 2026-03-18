@@ -6,10 +6,12 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 type CheckoutFormData = {
+  slotId: string;
   slotIndex: number;
   slotLabel: string;
   price: number;
   maxSimultaneousPerClub: number;
+  fundedClubsCount: number;
   game: { title: string; description: string; thumbnailUrl: string };
   prefill: { responsibleName: string; responsibleEmail: string; clubName: string };
 };
@@ -31,7 +33,11 @@ export default function PreEstreiaCheckoutPage() {
     teamMemberCount: '1',
     termsAccepted: false,
   });
-  const [pixQr, setPixQr] = useState<{ qrCodeImage?: string; qrCode?: string; amount?: number } | null>(null);
+  const [pixQr, setPixQr] = useState<{ qrCodeImage?: string; qrCode?: string; amount?: number; expiresAt?: string } | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid' | null>(null);
+  const [fundedClubsCount, setFundedClubsCount] = useState<number | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -52,6 +58,8 @@ export default function PreEstreiaCheckoutPage() {
         }
         const data = d as CheckoutFormData;
         setCtx(data);
+        setPaymentStatus('pending');
+        setFundedClubsCount(data.fundedClubsCount ?? null);
         const maxMembers = data.maxSimultaneousPerClub ?? 10;
         setForm((f) => ({
           ...f,
@@ -112,13 +120,63 @@ export default function PreEstreiaCheckoutPage() {
         setError(data.error || 'Erro ao gerar pagamento');
         return;
       }
-      setPixQr({ qrCodeImage: data.qrCodeImage, qrCode: data.qrCode, amount: data.amount });
+      setPixQr({ qrCodeImage: data.qrCodeImage, qrCode: data.qrCode, amount: data.amount, expiresAt: data.expiresAt });
+      setPaymentStatus('pending');
     } catch {
       setError('Erro de conexao');
     } finally {
       setSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (!pixQr || !ctx) return;
+    let active = true;
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/pre-sale/slots/${ctx.slotId}/status`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          paymentStatus: string;
+          fundedClubsCount: number;
+          totalClubs: number;
+        };
+        if (!active) return;
+        setFundedClubsCount(data.fundedClubsCount ?? null);
+        if (data.paymentStatus === 'PAID') {
+          setPaymentStatus('paid');
+        }
+      } catch {
+        // silencioso
+      }
+    };
+
+    poll();
+    const idInterval = setInterval(poll, 5000);
+
+    return () => {
+      active = false;
+      clearInterval(idInterval);
+    };
+  }, [pixQr, ctx]);
+
+  // Timer de expiração (15 minutos Woovi / expiresAt da cobrança)
+  useEffect(() => {
+    if (!pixQr?.expiresAt) {
+      setRemainingSeconds(null);
+      return;
+    }
+    const expires = new Date(pixQr.expiresAt).getTime();
+    const tick = () => {
+      const now = Date.now();
+      const diff = Math.floor((expires - now) / 1000);
+      setRemainingSeconds(diff > 0 ? diff : 0);
+    };
+    tick();
+    const idInterval = setInterval(tick, 1000);
+    return () => clearInterval(idInterval);
+  }, [pixQr?.expiresAt]);
 
   if (loading) {
     return (
@@ -159,6 +217,17 @@ export default function PreEstreiaCheckoutPage() {
   const memberCount = parseInt(form.teamMemberCount, 10) || 0;
   const exceedsMemberLimit = memberCount > maxMembers;
 
+  const handleCopyCode = async () => {
+    if (!pixQr?.qrCode) return;
+    try {
+      await navigator.clipboard.writeText(pixQr.qrCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   if (pixQr) {
     return (
       <div className="pt-24 pb-16 px-4 min-h-screen bg-futvar-darker">
@@ -170,7 +239,45 @@ export default function PreEstreiaCheckoutPage() {
               <Image src={pixQr.qrCodeImage} alt="QR Code Pix" width={256} height={256} unoptimized />
             </div>
           )}
-          <p className="text-sm text-futvar-light">Valor: R$ {pixQr.amount?.toFixed(2).replace('.', ',')}</p>
+          <p className="text-sm text-futvar-light mb-2">Valor: R$ {pixQr.amount?.toFixed(2).replace('.', ',')}</p>
+          {pixQr.qrCode && (
+            <div className="mb-4 flex flex-col items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-futvar-green text-futvar-darker text-sm font-semibold hover:bg-futvar-green-light"
+              >
+                Copiar código Pix (copia e cola)
+              </button>
+              {copied && <p className="text-xs text-futvar-green">Código copiado para a área de transferência.</p>}
+            </div>
+          )}
+          {remainingSeconds !== null && remainingSeconds > 0 && (
+            <p className="text-xs text-futvar-light mb-4">
+              Este QR Code expira em{' '}
+              <span className="font-semibold text-white">
+                {String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:
+                {String(remainingSeconds % 60).padStart(2, '0')}
+              </span>
+              . Após o tempo expirar, gere um novo pagamento.
+            </p>
+          )}
+          {paymentStatus === 'paid' ? (
+            <p className="text-sm text-futvar-green mb-4">
+              Pagamento confirmado. Financiados:{' '}
+              <span className="font-semibold">
+                {fundedClubsCount ?? 1}/2
+              </span>
+              . {fundedClubsCount === 2
+                ? 'Os dois clubes já financiaram a pré-estreia. Nossa equipe seguirá o contrato combinado.'
+                : 'Assim que o outro clube pagar, nossa equipe seguirá o contrato combinado.'}
+            </p>
+          ) : (
+            <p className="text-sm text-futvar-light mb-4">
+              Aguardando confirmação do Pix. Isso pode levar alguns segundos após o pagamento ser concluído no seu
+              banco.
+            </p>
+          )}
           <Link href="/conta" className="mt-6 inline-block text-futvar-green hover:underline">
             Ir para minha conta
           </Link>
