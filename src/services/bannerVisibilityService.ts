@@ -193,7 +193,7 @@ async function resolveCta(
       isPreSaleMode = !isPublishedMode;
       primary = isPublishedMode
         ? { text: 'Assistir agora', url: `/pre-estreia/assistir/${b.preSale.slug}` }
-        : { text: 'Garantir pré-estreia', url: `/pre-estreia/${b.preSale.id}/checkout` };
+        : { text: 'Garantir pré-estreia', url: `/pre-estreia/${b.preSale.id}` };
       secondary = null;
     }
   }

@@ -28,7 +28,7 @@ export function PreEstreiaCards({ games }: { games: PreSaleGame[] }) {
               thumbnailUrl={g.thumbnailUrl}
               gameDate={g.createdAt}
               featured={false}
-              href={isStoreApp ? `/pre-estreia/assistir/${g.slug}` : `/pre-estreia/${g.id}/checkout`}
+              href={isStoreApp ? `/pre-estreia/assistir/${g.slug}` : `/pre-estreia/${g.id}`}
               badgeText={isStoreApp ? undefined : (patrocinioOk ? undefined : 'APOIAR')}
               showAssistir={!patrocinioOk}
               sponsorOkLabel={patrocinioOk ? 'Patrocínio OK' : undefined}

@@ -177,7 +177,7 @@ export default function AdminPreEstreiaDetailPage() {
                 </button>
               </>
             )}
-            <Link href={`/pre-estreia/${id}/checkout`} className="mt-2 inline-block text-futvar-green text-sm hover:underline">
+            <Link href={`/pre-estreia/${id}`} className="mt-2 inline-block text-futvar-green text-sm hover:underline">
               Checkout publico
             </Link>
           </div>

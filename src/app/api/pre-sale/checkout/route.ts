@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { isTeamOwner } from '@/lib/access';
 import { clubCheckoutSchema } from '@/lib/pre-sale/validations';
 import { CONTRACT_VERSION } from '@/lib/pre-sale/enums';
 import { createWooviCharge } from '@/lib/payments/woovi';
+import { resolveSlotForResponsible } from '@/lib/pre-sale/resolve-slot-for-owner';
 
 const NOT_OWNER_MESSAGE =
   'Para comprar o slot da pré-estreia, é necessário usar a conta de responsável pelo time (mandante ou visitante deste jogo). A conta com a qual você está logado não é responsável por nenhum dos times desta pré-estreia.';
@@ -26,33 +26,35 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { responsibleName, responsibleEmail, clubName, clubCode, teamMemberCount } = parsed.data;
+    const { preSaleGameId, responsibleName, responsibleEmail, clubName, teamMemberCount } = parsed.data;
 
-    const slot = await prisma.preSaleClubSlot.findUnique({
-      where: { clubCode },
-      include: { preSaleGame: { select: { id: true, title: true, homeTeamId: true, awayTeamId: true, maxSimultaneousPerClub: true, clubAPrice: true, clubBPrice: true } } },
-    });
-
-    if (!slot) return NextResponse.json({ error: 'Código do clube inválido' }, { status: 400 });
-    if (slot.paymentStatus === 'PAID') return NextResponse.json({ error: 'Este slot já foi pago' }, { status: 400 });
-
-    const teamIdForSlot = slot.slotIndex === 1 ? slot.preSaleGame.homeTeamId : slot.preSaleGame.awayTeamId;
-    if (!teamIdForSlot) {
-      return NextResponse.json(
-        {
-          error:
-            'Este jogo precisa ter time mandante e visitante definidos para compra. Entre em contato com o administrador.',
-        },
-        { status: 400 }
-      );
+    const resolved = await resolveSlotForResponsible(preSaleGameId, session.userId);
+    if (!resolved.ok) {
+      if (resolved.code === 'NOT_OWNER') {
+        return NextResponse.json(
+          { error: NOT_OWNER_MESSAGE, message: NOT_OWNER_MESSAGE, instruction: NOT_OWNER_INSTRUCTION },
+          { status: 403 }
+        );
+      }
+      return NextResponse.json({ error: resolved.error }, { status: 400 });
     }
 
-    const isOwner = await isTeamOwner(session.userId, teamIdForSlot);
-    if (!isOwner) {
-      return NextResponse.json(
-        { error: NOT_OWNER_MESSAGE, message: NOT_OWNER_MESSAGE, instruction: NOT_OWNER_INSTRUCTION },
-        { status: 403 }
-      );
+    const slot = await prisma.preSaleClubSlot.findUnique({
+      where: { id: resolved.slotId },
+      include: {
+        preSaleGame: {
+          select: {
+            id: true,
+            title: true,
+            maxSimultaneousPerClub: true,
+            clubAPrice: true,
+            clubBPrice: true,
+          },
+        },
+      },
+    });
+    if (!slot || slot.paymentStatus !== 'PENDING') {
+      return NextResponse.json({ error: 'Este slot não está disponível para pagamento.' }, { status: 400 });
     }
 
     const maxMembers = slot.preSaleGame.maxSimultaneousPerClub ?? 999;
@@ -86,7 +88,7 @@ export async function POST(request: NextRequest) {
           responsibleEmail: responsibleEmail.trim(),
           clubName,
           teamMemberCount,
-          teamId: teamIdForSlot,
+          teamId: resolved.teamIdForSlot,
           contractVersion: CONTRACT_VERSION,
           termsAcceptedAt: new Date(),
           paymentReference: charge.id,
