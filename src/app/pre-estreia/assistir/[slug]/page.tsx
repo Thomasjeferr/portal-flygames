@@ -298,7 +298,7 @@ export default function PreEstreiaWatchPage() {
                   value={loginUsername}
                   onChange={(e) => setLoginUsername(e.target.value)}
                   required
-                  placeholder="Ex: clube-abc123-1"
+                  placeholder="Ex: clube-seu-time-1234@clubviewer.interno.portal"
                   className="w-full px-4 py-3 rounded bg-futvar-darker border border-white/20 text-white placeholder:text-futvar-light/50"
                 />
               </div>

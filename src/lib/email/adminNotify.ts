@@ -91,7 +91,7 @@ export async function sendAdminNewUserNotification(user: {
       <h2 style="color: #0C1222;">Novo cadastro na plataforma</h2>
       <p><strong>E-mail:</strong> ${user.email}</p>
       <p><strong>Nome:</strong> ${name}</p>
-      <p><a href="${appBaseUrl}/admin/usuarios">Ver usuários no painel</a></p>
+      <p style="margin-top:16px"><a href="${appBaseUrl}/admin/usuarios" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Ver usuários no painel</a></p>
     `
   );
 }
@@ -115,7 +115,7 @@ export async function sendAdminPurchaseNotification(params: {
       <p><strong>Plano/Produto:</strong> ${params.planName}</p>
       <p><strong>Valor:</strong> ${params.amountFormatted}</p>
       <p><strong>Cliente:</strong> ${name} &lt;${params.userEmail}&gt;</p>
-      <p><a href="${appBaseUrl}/admin/dashboard">Ver dashboard</a></p>
+      <p style="margin-top:16px"><a href="${appBaseUrl}/admin/dashboard" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Ver dashboard</a></p>
     `
   );
 }
@@ -137,7 +137,7 @@ export async function sendAdminSponsorNotification(params: {
       <p><strong>Plano:</strong> ${params.planName}</p>
       <p><strong>Valor:</strong> ${params.amountFormatted}</p>
       <p><strong>E-mail:</strong> ${params.email}</p>
-      <p><a href="${appBaseUrl}/admin/sponsor-orders">Ver pedidos de patrocínio</a></p>
+      <p style="margin-top:16px"><a href="${appBaseUrl}/admin/sponsor-orders" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Ver pedidos de patrocínio</a></p>
     `
   );
 }
@@ -157,7 +157,7 @@ export async function sendAdminPreSaleNotification(params: {
       <p><strong>Jogo:</strong> ${params.gameTitle}</p>
       <p><strong>Slot:</strong> ${params.slotLabel}</p>
       <p><strong>Valor:</strong> ${params.amountFormatted}</p>
-      <p><a href="${appBaseUrl}/admin/pre-estreia">Ver pré-estreias</a></p>
+      <p style="margin-top:16px"><a href="${appBaseUrl}/admin/pre-estreia" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Ver pré-estreias</a></p>
     `
   );
 }
@@ -177,7 +177,7 @@ export async function sendAdminTeamRequestNotification(params: {
       <p><strong>Time:</strong> ${params.teamName}</p>
       ${params.city ? `<p><strong>Cidade:</strong> ${params.city}</p>` : ''}
       ${params.phone ? `<p><strong>Telefone:</strong> ${params.phone}</p>` : ''}
-      <p><a href="${appBaseUrl}/admin/team-requests">Ver solicitações</a></p>
+      <p style="margin-top:16px"><a href="${appBaseUrl}/admin/team-requests" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Ver solicitações</a></p>
     `
   );
 }
@@ -197,7 +197,7 @@ export async function sendAdminTeamPortalNotification(params: {
       <h2 style="color: #0C1222;">Novo time cadastrado (aguardando aprovação)</h2>
       <p><strong>Time:</strong> ${params.teamName}</p>
       <p><strong>Responsável:</strong> ${name} &lt;${params.userEmail}&gt;</p>
-      <p><a href="${appBaseUrl}/admin/times">Ver times</a></p>
+      <p style="margin-top:16px"><a href="${appBaseUrl}/admin/times" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Ver times</a></p>
     `
   );
 }
@@ -221,7 +221,7 @@ export async function sendAdminPartnerNotification(params: {
       <p><strong>Tipo:</strong> ${params.type}</p>
       <p><strong>WhatsApp:</strong> ${params.whatsapp}</p>
       <p><strong>E-mail da conta:</strong> ${params.userEmail}</p>
-      <p><a href="${appBaseUrl}/admin/partners">Ver parceiros</a></p>
+      <p style="margin-top:16px"><a href="${appBaseUrl}/admin/partners" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600">Ver parceiros</a></p>
     `
   );
 }

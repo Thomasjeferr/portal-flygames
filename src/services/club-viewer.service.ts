@@ -48,12 +48,13 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
   const watchUrl = `${baseUrl}/pre-estreia/assistir/${slot.preSaleGame.slug}`;
+  // Garantir que o responsável do time receba sempre: primeiro slot.responsibleEmail (gravado no checkout), depois fallback no time
+  const responsibleEmail =
+    slot.responsibleEmail?.trim() ||
+    (teamId ? (await prisma.team.findUnique({ where: { id: teamId }, select: { responsibleEmail: true } }))?.responsibleEmail?.trim() : null) ||
+    null;
   const recipients: string[] = [];
-  if (slot.responsibleEmail?.trim()) recipients.push(slot.responsibleEmail.trim());
-  if (recipients.length === 0 && teamId) {
-    const team = await prisma.team.findUnique({ where: { id: teamId }, select: { responsibleEmail: true } });
-    if (team?.responsibleEmail?.trim()) recipients.push(team.responsibleEmail.trim());
-  }
+  if (responsibleEmail) recipients.push(responsibleEmail);
   const siteSettings = await prisma.siteSettings.findFirst();
   if (siteSettings?.adminCredentialsEmail?.trim()) recipients.push(siteSettings.adminCredentialsEmail.trim());
   const uniqueRecipients = Array.from(new Set(recipients));
@@ -90,7 +91,7 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
     return { ok: true };
   }
 
-  // Nova conta: criar User + ClubViewerAccount
+  // Nova conta: criar User + ClubViewerAccount. Login em formato e-mail (com @) para funcionar no campo E-mail da página Entrar.
   let loginUsername: string;
   if (teamId) {
     const team = await prisma.team.findUnique({
@@ -107,17 +108,16 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
       .replace(/^-+|-+$/g, '')
       .slice(0, 18);
     const suffix = Math.floor(1000 + Math.random() * 9000).toString(); // 4 dígitos
-    loginUsername = `clube-${normalized || 'time'}-${suffix}`;
+    loginUsername = `clube-${normalized || 'time'}-${suffix}@${INTERNAL_EMAIL_DOMAIN}`;
   } else {
-    loginUsername = `clube-${slot.id.slice(-8)}`;
+    loginUsername = `clube-${slot.id.slice(-8)}@${INTERNAL_EMAIL_DOMAIN}`;
   }
   const plainPassword = generatePassword(10);
   const passwordHash = await hashPassword(plainPassword);
-  const internalEmail = `clubviewer-${slot.id}@${INTERNAL_EMAIL_DOMAIN}`;
 
   const user = await prisma.user.create({
     data: {
-      email: internalEmail,
+      email: loginUsername,
       passwordHash,
       role: 'club_viewer',
       name: `Clube ${slot.clubName} (Slot ${slot.slotIndex})`,
@@ -145,12 +145,13 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
   const watchUrl = `${baseUrl}/pre-estreia/assistir/${slot.preSaleGame.slug}`;
+  // Garantir que o responsável do time receba sempre: primeiro slot.responsibleEmail (gravado no checkout), depois fallback no time
+  const responsibleEmail =
+    slot.responsibleEmail?.trim() ||
+    (teamId ? (await prisma.team.findUnique({ where: { id: teamId }, select: { responsibleEmail: true } }))?.responsibleEmail?.trim() : null) ||
+    null;
   const recipients: string[] = [];
-  if (slot.responsibleEmail?.trim()) recipients.push(slot.responsibleEmail.trim());
-  if (recipients.length === 0 && teamId) {
-    const team = await prisma.team.findUnique({ where: { id: teamId }, select: { responsibleEmail: true } });
-    if (team?.responsibleEmail?.trim()) recipients.push(team.responsibleEmail.trim());
-  }
+  if (responsibleEmail) recipients.push(responsibleEmail);
   const siteSettings = await prisma.siteSettings.findFirst();
   if (siteSettings?.adminCredentialsEmail?.trim()) recipients.push(siteSettings.adminCredentialsEmail.trim());
   const uniqueRecipients = Array.from(new Set(recipients));
@@ -209,8 +210,14 @@ export async function regenerateClubViewerPassword(slotId: string): Promise<{ pa
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
   const watchUrl = `${baseUrl}/pre-estreia/assistir/${slot.preSaleGame.slug}`;
+  const teamId =
+    slot.teamId ?? (slot.slotIndex === 1 ? slot.preSaleGame.homeTeamId : slot.preSaleGame.awayTeamId) ?? null;
+  const responsibleEmail =
+    slot.responsibleEmail?.trim() ||
+    (teamId ? (await prisma.team.findUnique({ where: { id: teamId }, select: { responsibleEmail: true } }))?.responsibleEmail?.trim() : null) ||
+    null;
   const recipients: string[] = [];
-  if (slot.responsibleEmail?.trim()) recipients.push(slot.responsibleEmail.trim());
+  if (responsibleEmail) recipients.push(responsibleEmail);
   const siteSettings = await prisma.siteSettings.findFirst();
   if (siteSettings?.adminCredentialsEmail?.trim()) recipients.push(siteSettings.adminCredentialsEmail.trim());
   const uniqueRecipients = Array.from(new Set(recipients));

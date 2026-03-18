@@ -110,7 +110,8 @@ async function main() {
 <p style="margin:0 0 12px 0;color:#111;">Olá,</p>
 <p style="margin:0 0 12px 0;color:#111;">{{intro_text}}</p>
 <p style="margin:0 0 8px 0;color:#111;"><strong>Jogo:</strong> {{game_title}}</p>
-<p style="margin:0 0 8px 0;color:#111;"><strong>Link para assistir:</strong> <a href="{{watch_url}}" style="color:#111;text-decoration:underline;">{{watch_url}}</a></p>
+<p style="margin:16px 0 16px 0;color:#111;"><strong>Assistir à pré-estreia:</strong></p>
+<p style="margin:0 0 16px 0;"><a href="{{watch_url}}" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;">Assistir agora</a></p>
 <p style="margin:16px 0 4px 0;color:#111;"><strong>Usuário para acesso:</strong></p>
 <p style="margin:0 0 8px 0;"><code style="background:#f3f4f6;padding:4px 8px;border-radius:4px;font-family:SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;font-size:13px;">{{username}}</code></p>
 <p style="margin:8px 0 4px 0;color:#111;"><strong>Senha:</strong></p>
@@ -131,7 +132,8 @@ async function main() {
 <p style="margin:0 0 12px 0;color:#111;">Olá,</p>
 <p style="margin:0 0 12px 0;color:#111;">Foi gerada uma nova senha para o acesso à pré-estreia.</p>
 <p style="margin:0 0 8px 0;color:#111;"><strong>Jogo:</strong> {{game_title}}</p>
-<p style="margin:0 0 8px 0;color:#111;"><strong>Link para assistir:</strong> <a href="{{watch_url}}" style="color:#111;text-decoration:underline;">{{watch_url}}</a></p>
+<p style="margin:16px 0 16px 0;color:#111;"><strong>Assistir à pré-estreia:</strong></p>
+<p style="margin:0 0 16px 0;"><a href="{{watch_url}}" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;">Assistir agora</a></p>
 <p style="margin:16px 0 4px 0;color:#111;"><strong>Usuário para acesso:</strong></p>
 <p style="margin:0 0 8px 0;"><code style="background:#f3f4f6;padding:4px 8px;border-radius:4px;font-family:SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;font-size:13px;">{{username}}</code></p>
 <p style="margin:8px 0 4px 0;color:#111;"><strong>Nova senha:</strong></p>
