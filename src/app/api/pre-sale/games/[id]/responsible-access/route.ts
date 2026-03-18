@@ -29,13 +29,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   ]);
   const canAccessCheckout = ownerHome || ownerAway;
 
-  // Verifica se o slot do time deste responsável já está pago
+  // Verifica se o slot do time DESTE responsável já está pago (slot 1 = mandante, 2 = visitante)
   let slotAlreadyPaid = false;
   if (canAccessCheckout && game.clubSlots.length > 0) {
-    const paidSlot = game.clubSlots.find((s) => s.paymentStatus === 'PAID');
-    if (paidSlot) {
-      slotAlreadyPaid = true;
-    }
+    const slotHome = game.clubSlots.find((s) => s.slotIndex === 1);
+    const slotAway = game.clubSlots.find((s) => s.slotIndex === 2);
+    const homePaid = slotHome?.paymentStatus === 'PAID';
+    const awayPaid = slotAway?.paymentStatus === 'PAID';
+    slotAlreadyPaid = (ownerHome && homePaid) || (ownerAway && awayPaid);
   }
 
   return NextResponse.json({
