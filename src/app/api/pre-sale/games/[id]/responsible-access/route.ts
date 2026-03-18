@@ -11,7 +11,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const id = (await params).id;
   const game = await prisma.preSaleGame.findUnique({
     where: { id },
-    select: { id: true, homeTeamId: true, awayTeamId: true },
+    select: { id: true, homeTeamId: true, awayTeamId: true, clubSlots: { select: { id: true, slotIndex: true, paymentStatus: true } } },
   });
   if (!game) return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
 
@@ -29,10 +29,20 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   ]);
   const canAccessCheckout = ownerHome || ownerAway;
 
+  // Verifica se o slot do time deste responsável já está pago
+  let slotAlreadyPaid = false;
+  if (canAccessCheckout && game.clubSlots.length > 0) {
+    const paidSlot = game.clubSlots.find((s) => s.paymentStatus === 'PAID');
+    if (paidSlot) {
+      slotAlreadyPaid = true;
+    }
+  }
+
   return NextResponse.json({
     loggedIn: true,
     canAccessCheckout,
     isOwnerHome: ownerHome,
     isOwnerAway: ownerAway,
+    slotAlreadyPaid,
   });
 }

@@ -29,11 +29,7 @@ export async function GET(
 
   // Fallback automático: se ainda está PENDING mas temos cobrança Woovi,
   // consulta o status direto na Woovi e, se estiver COMPLETED, marca como pago.
-  if (
-    slot.paymentStatus === 'PENDING' &&
-    slot.paymentProvider === 'WOOVI' &&
-    slot.paymentReference
-  ) {
+  if (slot.paymentStatus === 'PENDING' && slot.paymentReference) {
     try {
       const charge = await getWooviChargeStatus(slot.paymentReference);
       const status = charge?.status?.toUpperCase?.() ?? '';

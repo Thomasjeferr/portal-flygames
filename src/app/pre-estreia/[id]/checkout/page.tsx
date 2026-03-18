@@ -229,6 +229,54 @@ export default function PreEstreiaCheckoutPage() {
   };
 
   if (pixQr) {
+    // Tela de sucesso após confirmação do pagamento
+    if (paymentStatus === 'paid') {
+      return (
+        <div className="pt-24 pb-16 px-4 min-h-screen bg-futvar-darker">
+          <div className="max-w-lg mx-auto text-center">
+            <h1 className="text-2xl font-bold text-white mb-3">Pagamento confirmado</h1>
+            <p className="text-futvar-light mb-4">
+              O pagamento do slot <span className="font-semibold text-white">{ctx.slotLabel}</span> foi confirmado com
+              sucesso.
+            </p>
+            <p className="text-futvar-green text-sm mb-4">
+              Financiados:{' '}
+              <span className="font-semibold">
+                {fundedClubsCount ?? 1}/2
+              </span>
+              .{' '}
+              {fundedClubsCount === 2
+                ? 'Os dois clubes já financiaram esta pré-estreia. Nossa equipe seguirá o contrato combinado.'
+                : 'Assim que o outro clube pagar, nossa equipe seguirá o contrato combinado.'}
+            </p>
+            <p className="text-futvar-light text-sm mb-6">
+              As credenciais de acesso do time foram enviadas para o e-mail do responsável. Compartilhe com o grupo que
+              vai assistir à pré-estreia.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
+              <Link
+                href="/conta"
+                className="px-5 py-3 rounded-lg bg-futvar-green text-futvar-darker font-semibold hover:bg-futvar-green-light"
+              >
+                Ir para minha conta
+              </Link>
+              <Link
+                href={`/pre-estreia/${id}`}
+                className="px-5 py-3 rounded-lg bg-futvar-dark text-futvar-light font-semibold hover:text-white border border-futvar-green/40"
+              >
+                Ver página do jogo
+              </Link>
+            </div>
+            <p className="text-xs text-futvar-light/80">
+              Se não encontrar o e-mail na caixa de entrada, verifique o lixo eletrônico/spam ou atualize seus dados na
+              conta.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // Tela de QR Code enquanto aguarda confirmação
     return (
       <div className="pt-24 pb-16 px-4 min-h-screen bg-futvar-darker">
         <div className="max-w-md mx-auto text-center">
@@ -262,22 +310,9 @@ export default function PreEstreiaCheckoutPage() {
               . Após o tempo expirar, gere um novo pagamento.
             </p>
           )}
-          {paymentStatus === 'paid' ? (
-            <p className="text-sm text-futvar-green mb-4">
-              Pagamento confirmado. Financiados:{' '}
-              <span className="font-semibold">
-                {fundedClubsCount ?? 1}/2
-              </span>
-              . {fundedClubsCount === 2
-                ? 'Os dois clubes já financiaram a pré-estreia. Nossa equipe seguirá o contrato combinado.'
-                : 'Assim que o outro clube pagar, nossa equipe seguirá o contrato combinado.'}
-            </p>
-          ) : (
-            <p className="text-sm text-futvar-light mb-4">
-              Aguardando confirmação do Pix. Isso pode levar alguns segundos após o pagamento ser concluído no seu
-              banco.
-            </p>
-          )}
+          <p className="text-sm text-futvar-light mb-4">
+            Aguardando confirmação do Pix. Isso pode levar alguns segundos após o pagamento ser concluído no seu banco.
+          </p>
           <Link href="/conta" className="mt-6 inline-block text-futvar-green hover:underline">
             Ir para minha conta
           </Link>

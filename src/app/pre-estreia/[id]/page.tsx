@@ -16,6 +16,7 @@ type GameInfo = {
 type Access = {
   loggedIn: boolean;
   canAccessCheckout: boolean;
+  slotAlreadyPaid?: boolean;
 };
 
 export default function PreEstreiaClubesLandingPage() {
@@ -150,8 +151,37 @@ export default function PreEstreiaClubesLandingPage() {
           </div>
         )}
 
+        {/* Responsável cujo time JÁ pagou este jogo */}
+        {access?.loggedIn && access.canAccessCheckout && access.slotAlreadyPaid && (
+          <div className="p-6 rounded-xl bg-futvar-green/10 border border-futvar-green/40 mb-6">
+            <p className="text-white font-semibold mb-2">Seu time já pagou esta pré-estreia</p>
+            <p className="text-futvar-light text-sm mb-4">
+              Identificamos que o slot do <strong className="text-white">seu time</strong> neste jogo já foi quitado.
+              Não é necessário realizar outro pagamento.
+            </p>
+            <p className="text-futvar-light text-sm mb-4">
+              As credenciais de acesso foram enviadas para o e-mail do responsável após o pagamento. Use-as para
+              compartilhar o acesso com os membros do time.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link
+                href="/conta"
+                className="inline-block text-center py-2 px-4 rounded-lg bg-futvar-green text-futvar-darker hover:bg-futvar-green-light text-sm font-semibold"
+              >
+                Ir para minha conta
+              </Link>
+              <Link
+                href={`/pre-estreia/assistir/${game.id}`}
+                className="inline-block text-center py-2 px-4 rounded-lg bg-futvar-dark text-futvar-light hover:text-white border border-futvar-green/40 text-sm font-semibold"
+              >
+                Ver área de assistir
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Responsável — checkout direto (slot pelo login) */}
-        {access?.loggedIn && access.canAccessCheckout && (
+        {access?.loggedIn && access.canAccessCheckout && !access.slotAlreadyPaid && (
           <div className="p-6 rounded-xl bg-futvar-green/10 border border-futvar-green/40 mb-6">
             <p className="text-white font-semibold mb-2">Você pode concluir o pagamento do slot</p>
             <p className="text-futvar-light text-sm mb-6">

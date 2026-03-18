@@ -13,11 +13,6 @@ function generatePassword(length = 10): string {
   return result;
 }
 
-/** Gera login único para nova conta (primeiro slot do time). */
-function generateLoginUsername(teamId: string, slotId: string): string {
-  return `clube-${teamId}-${slotId.slice(-8)}`;
-}
-
 /**
  * Cria ou vincula conta de visualizador do clube para o slot (após pagamento).
  * Um login por time: se já existir ClubViewerAccount para o teamId do slot, apenas vincula o slot e envia e-mail "Novo jogo, mesmo usuário e senha".
@@ -86,7 +81,26 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
   }
 
   // Nova conta: criar User + ClubViewerAccount
-  const loginUsername = teamId ? generateLoginUsername(teamId, slot.id) : `clube-${slot.id.slice(-12)}`;
+  let loginUsername: string;
+  if (teamId) {
+    const team = await prisma.team.findUnique({
+      where: { id: teamId },
+      select: { slug: true, shortName: true, name: true },
+    });
+    const baseName = (team?.shortName || team?.slug || team?.name || slot.clubName || 'clube')
+      .toLowerCase()
+      .trim();
+    const normalized = baseName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 18);
+    const suffix = Math.floor(1000 + Math.random() * 9000).toString(); // 4 dígitos
+    loginUsername = `clube-${normalized || 'time'}-${suffix}`;
+  } else {
+    loginUsername = `clube-${slot.id.slice(-8)}`;
+  }
   const plainPassword = generatePassword(10);
   const passwordHash = await hashPassword(plainPassword);
   const internalEmail = `clubviewer-${slot.id}@${INTERNAL_EMAIL_DOMAIN}`;
