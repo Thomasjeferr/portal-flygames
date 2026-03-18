@@ -8,6 +8,7 @@ import { SponsorsSection } from '@/components/SponsorsSection';
 import { PreSaleShareButton } from '@/components/PreSaleShareButton';
 import { StoreAppHide } from '@/components/StoreAppHide';
 import { PreEstreiaCards } from '@/components/PreEstreiaCards';
+import { CarouselWithArrows } from '@/components/CarouselWithArrows';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { getGamesAccessMap, hasFullAccess } from '@/lib/access';
@@ -561,10 +562,10 @@ export default async function HomePage() {
               <p className="text-futvar-light mb-6 max-w-2xl">
                 Assista às transmissões que já rolaram, disponíveis como replay para quem tem acesso.
               </p>
-              <div className="overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0">
-                <div className="flex gap-5" style={{ width: 'max-content', minWidth: '100%' }}>
+              <CarouselWithArrows>
+                <div className="flex gap-5 items-stretch h-[380px]" style={{ width: 'max-content', minWidth: '100%' }}>
                   {liveReplays.map((live, i) => (
-                    <div key={live.id} className="flex-shrink-0 w-[280px] sm:w-[300px] animate-scale-in opacity-0" style={{ animationDelay: `${0.18 + i * 0.05}s` }}>
+                    <div key={live.id} className="flex-shrink-0 w-[280px] sm:w-[300px] h-full flex flex-col animate-scale-in opacity-0" style={{ animationDelay: `${0.18 + i * 0.05}s` }}>
                       <GameCard
                         slug={live.id}
                         title={live.title}
@@ -578,7 +579,7 @@ export default async function HomePage() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </CarouselWithArrows>
             </div>
           )}
 
@@ -610,14 +611,14 @@ export default async function HomePage() {
                           Ver todos →
                         </Link>
                       </div>
-                      <div className="overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0">
-                        <div className="flex gap-5" style={{ width: 'max-content', minWidth: '100%' }}>
+                      <CarouselWithArrows>
+                        <div className="flex gap-5 items-stretch h-[380px]" style={{ width: 'max-content', minWidth: '100%' }}>
                           {slice.map((game) => {
                             const isPublicWithMedia = game.displayMode === 'public_with_media';
                             const canWatch = isPublicWithMedia && !!gameAccessMap[game.id];
                             const locked = isPublicWithMedia && !canWatch;
                             return (
-                              <div key={game.id + game.slug} className="flex-shrink-0 w-[280px] sm:w-[300px]">
+                              <div key={game.id + game.slug} className="flex-shrink-0 w-[280px] sm:w-[300px] h-full flex flex-col">
                                 <GameCard
                                   slug={game.slug}
                                   title={game.title}
@@ -636,7 +637,7 @@ export default async function HomePage() {
                             );
                           })}
                         </div>
-                      </div>
+                      </CarouselWithArrows>
                     </div>
                   );
                 })}

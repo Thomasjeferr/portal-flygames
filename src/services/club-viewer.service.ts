@@ -87,6 +87,15 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
         where: { id: slotId },
         data: { credentialsSentAt: new Date() },
       });
+      // Enviar cópia dos termos da pré-estreia para os mesmos destinatários (responsável + admin)
+      const termsUrl = `${baseUrl}/pre-estreia/termos`;
+      for (const to of uniqueRecipients) {
+        await sendTransactionalEmail({
+          to,
+          templateKey: 'PRE_ESTREIA_TERMS',
+          vars: { game_title: slot.preSaleGame.title, terms_url: termsUrl },
+        }).catch((e) => console.error('[club-viewer] Falha ao enviar e-mail de termos pré-estreia para', to, e));
+      }
     }
     return { ok: true };
   }
@@ -185,6 +194,15 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
       where: { id: slotId },
       data: { credentialsSentAt: new Date() },
     });
+    // Enviar cópia dos termos da pré-estreia para os mesmos destinatários (responsável + admin)
+    const termsUrl = `${baseUrl}/pre-estreia/termos`;
+    for (const to of uniqueRecipients) {
+      await sendTransactionalEmail({
+        to,
+        templateKey: 'PRE_ESTREIA_TERMS',
+        vars: { game_title: slot.preSaleGame.title, terms_url: termsUrl },
+      }).catch((e) => console.error('[club-viewer] Falha ao enviar e-mail de termos pré-estreia para', to, e));
+    }
   }
 
   return { ok: true };

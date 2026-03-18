@@ -13,6 +13,7 @@ const TEMPLATE_LABELS: Record<string, string> = {
   LIVE_PURCHASE_CONFIRMATION: 'Confirmação de compra de live',
   PRE_SALE_CREDENTIALS: 'Pré-estreia: credenciais de acesso',
   PRE_SALE_CREDENTIALS_NEW_PASSWORD: 'Pré-estreia: nova senha',
+  PRE_ESTREIA_TERMS: 'Pré-estreia: termos e condições',
 };
 
 const TEMPLATE_VARS: Record<string, string[]> = {
@@ -25,6 +26,7 @@ const TEMPLATE_VARS: Record<string, string[]> = {
   LIVE_PURCHASE_CONFIRMATION: ['name', 'live_title', 'amount'],
   PRE_SALE_CREDENTIALS: ['game_title', 'watch_url', 'username', 'password', 'intro_text', 'max_simultaneous', 'limite_dispositivos', 'info_assinante'],
   PRE_SALE_CREDENTIALS_NEW_PASSWORD: ['game_title', 'watch_url', 'username', 'password', 'max_simultaneous', 'limite_dispositivos', 'info_assinante'],
+  PRE_ESTREIA_TERMS: ['game_title', 'terms_url'],
 };
 
 type Template = { id: string; key: string; subject: string; htmlBody: string; isActive: boolean };

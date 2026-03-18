@@ -145,6 +145,20 @@ async function main() {
 </div></body></html>`,
     },
     {
+      key: 'PRE_ESTREIA_TERMS',
+      subject: 'Termos e Condições da Pré-estreia – {{game_title}}',
+      htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">
+<div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-radius:12px">
+<p style="font-size:16px;color:#111;margin:0 0 16px 0;"><strong>Termos e Condições – Pré-estreia Clubes</strong></p>
+<p style="margin:0 0 12px 0;color:#111;">Olá,</p>
+<p style="margin:0 0 12px 0;color:#111;">O pagamento do slot da pré-estreia <strong>{{game_title}}</strong> foi aprovado e as credenciais de acesso foram enviadas no e-mail anterior.</p>
+<p style="margin:0 0 12px 0;color:#111;">Segue o link para consulta dos <strong>Termos e Condições da Pré-estreia Clubes</strong> (regras de tempo e troca de bateria da aeronave, pagamento, cancelamento e demais cláusulas). Recomendamos guardar este e-mail para referência.</p>
+<p style="margin:16px 0 16px 0;"><a href="{{terms_url}}" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff!important;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;">Ver Termos e Condições da pré-estreia</a></p>
+<p style="margin:0 0 8px 0;color:#6b7280;font-size:13px;">Link direto: {{terms_url}}</p>
+<p style="margin-top:24px;color:#6b7280;font-size:12px;">{{footer_text}}</p>
+</div></body></html>`,
+    },
+    {
       key: 'SUMULA_DISPONIVEL',
       subject: 'Súmula disponível para aprovação – {{title}}',
       htmlBody: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;font-family:sans-serif;padding:24px;background:#f4f4f5">

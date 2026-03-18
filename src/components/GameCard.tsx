@@ -59,7 +59,7 @@ function TeamCrest({ team, size = 14, compact }: { team: TeamInfo; size?: number
         </div>
       )}
       <span
-        className="text-[10px] sm:text-xs text-white font-medium text-center w-full block line-clamp-2 leading-tight"
+        className="text-[10px] sm:text-xs text-white font-medium text-center w-full block truncate leading-tight min-h-[1.25em]"
         title={team.name}
       >
         {displayName}
@@ -100,13 +100,13 @@ export function GameCard({
   return (
     <Link
       href={linkHref}
-      className={`block game-card rounded-xl overflow-hidden bg-futvar-darker border group transition-colors duration-300 ${
+      className={`block h-full min-h-0 flex-1 w-full game-card rounded-xl overflow-hidden bg-futvar-darker border group transition-colors duration-300 flex flex-col ${
         preEstreiaClubes
           ? 'border-futvar-gold/50 hover:border-futvar-gold'
           : 'border-futvar-green/20 hover:border-futvar-green/40'
       }`}
     >
-      <div className="relative aspect-video bg-futvar-gray overflow-hidden">
+      <div className="relative aspect-video bg-futvar-gray overflow-hidden flex-shrink-0">
         {thumbnailUrl ? (
           <Image
             src={thumbnailUrl.startsWith('http') ? thumbnailUrl : thumbnailUrl}
@@ -149,30 +149,30 @@ export function GameCard({
           </div>
         )}
       </div>
-      <div className="p-3 sm:p-4">
+      <div className="p-3 sm:p-4 flex-1 flex flex-col min-h-0">
         {(showWatchUi || (locked && lockedBadgeText)) && (
-          <div className="mb-1.5 sm:mb-2 flex justify-center">
+          <div className="mb-1.5 sm:mb-2 flex justify-center flex-shrink-0">
             <span className="inline-flex items-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full border border-futvar-green/40 text-[10px] sm:text-xs font-semibold text-futvar-green bg-futvar-green/5 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
               {locked && lockedBadgeText ? lockedBadgeText : badgeText}
             </span>
           </div>
         )}
         {showTeams ? (
-          <div className="flex items-center justify-between gap-1 sm:gap-2 mb-1.5 sm:mb-2">
+          <div className="flex items-center justify-between gap-1 sm:gap-2 mb-1.5 sm:mb-2 flex-shrink-0">
             <TeamCrest team={homeTeam} size={crestSize} compact={preEstreiaClubes} />
             <span className="text-futvar-light text-xs sm:text-sm font-semibold flex-shrink-0">x</span>
             <TeamCrest team={awayTeam} size={crestSize} compact={preEstreiaClubes} />
           </div>
         ) : (
-          <h3 className="font-bold text-white line-clamp-2 text-sm sm:text-base leading-tight">{title}</h3>
+          <h3 className="font-bold text-white line-clamp-2 text-sm sm:text-base leading-tight flex-shrink-0">{title}</h3>
         )}
-        <p className="text-xs sm:text-sm text-futvar-green font-medium mt-0.5 sm:mt-1 truncate">{championship}</p>
+        <p className="text-xs sm:text-sm text-futvar-green font-medium mt-0.5 sm:mt-1 truncate flex-shrink-0">{championship}</p>
         {sponsorOkSubtitle && (
-          <p className="text-[10px] sm:text-xs text-futvar-green/90 mt-0.5 sm:mt-1 font-medium line-clamp-2 sm:line-clamp-none">
+          <p className="text-[10px] sm:text-xs text-futvar-green/90 mt-0.5 sm:mt-1 font-medium line-clamp-2 sm:line-clamp-none flex-shrink-0">
             {sponsorOkSubtitle}
           </p>
         )}
-        <p className="text-[10px] sm:text-xs text-futvar-light mt-0.5 sm:mt-1">{date}</p>
+        <p className="text-[10px] sm:text-xs text-futvar-light mt-auto pt-0.5 sm:pt-1 flex-shrink-0">{date}</p>
       </div>
     </Link>
   );

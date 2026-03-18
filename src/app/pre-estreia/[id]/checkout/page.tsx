@@ -409,9 +409,9 @@ export default function PreEstreiaCheckoutPage() {
               className="mt-1"
             />
             <span className="text-sm text-futvar-light">
-              Li e aceito o{' '}
-              <Link href="/contrato-direitos-imagem" target="_blank" className="text-futvar-green hover:underline">
-                contrato de direitos de imagem
+              Li e aceito os{' '}
+              <Link href="/pre-estreia/termos" target="_blank" className="text-futvar-green hover:underline">
+                termos e condições da pré-estreia
               </Link>
               .
             </span>

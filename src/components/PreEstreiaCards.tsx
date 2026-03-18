@@ -20,7 +20,7 @@ export function PreEstreiaCards({ games }: { games: PreSaleGame[] }) {
   const isStoreApp = useStoreApp();
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5 items-stretch">
       {games.map((g, i) => {
         const patrocinioOk = g.fundedClubsCount === 2;
         const showTeams = g.homeTeam && g.awayTeam;
@@ -33,7 +33,7 @@ export function PreEstreiaCards({ games }: { games: PreSaleGame[] }) {
             : `/pre-estreia/${g.id}`;
 
         return (
-          <div key={g.id} className="animate-scale-in opacity-0" style={{ animationDelay: `${0.15 + i * 0.05}s` }}>
+          <div key={g.id} className="h-full flex flex-col animate-scale-in opacity-0" style={{ animationDelay: `${0.15 + i * 0.05}s` }}>
             <GameCard
               slug={g.slug}
               title={g.title}

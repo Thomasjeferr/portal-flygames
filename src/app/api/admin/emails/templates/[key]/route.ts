@@ -12,6 +12,7 @@ const KEYS = [
   'LIVE_PURCHASE_CONFIRMATION',
   'PRE_SALE_CREDENTIALS',
   'PRE_SALE_CREDENTIALS_NEW_PASSWORD',
+  'PRE_ESTREIA_TERMS',
 ] as const;
 
 export async function GET(

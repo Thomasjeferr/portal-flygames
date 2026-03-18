@@ -434,6 +434,10 @@ export default function CadastrarTimePage() {
               <Link href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-futvar-green hover:underline">
                 Termos de Uso
               </Link>
+              , o{' '}
+              <Link href="/contrato-direitos-imagem" target="_blank" rel="noopener noreferrer" className="text-futvar-green hover:underline">
+                contrato de direitos de imagem
+              </Link>
               {' '}e condições do Fly Games para cadastro de time.
             </span>
           </label>

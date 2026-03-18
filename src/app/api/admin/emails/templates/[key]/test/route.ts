@@ -13,6 +13,7 @@ const KEYS = [
   'LIVE_PURCHASE_CONFIRMATION',
   'PRE_SALE_CREDENTIALS',
   'PRE_SALE_CREDENTIALS_NEW_PASSWORD',
+  'PRE_ESTREIA_TERMS',
 ] as const;
 const schema = z.object({ to: z.string().email() });
 
@@ -44,6 +45,10 @@ const SAMPLE_VARS: Record<string, Record<string, string>> = {
     limite_dispositivos: 'LIMITE: 10 DISPOSITIVOS SIMULTÂNEOS',
     info_assinante:
       'Se o membro do time for patrocinador ativo (conta paga), desconsidere o usuário e senha abaixo: ele assiste na grade normal conforme o plano.',
+  },
+  PRE_ESTREIA_TERMS: {
+    game_title: 'Amistoso Clube A x Clube B',
+    terms_url: 'https://flygames.app/pre-estreia/termos',
   },
 };
 
