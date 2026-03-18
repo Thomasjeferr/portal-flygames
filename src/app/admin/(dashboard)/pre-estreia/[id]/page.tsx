@@ -39,6 +39,7 @@ export default function AdminPreEstreiaDetailPage() {
   const [recalculating, setRecalculating] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [regeneratingSlotId, setRegeneratingSlotId] = useState<string | null>(null);
+  const [sendingCredentialsSlotId, setSendingCredentialsSlotId] = useState<string | null>(null);
   const [modalPassword, setModalPassword] = useState<{ slotIndex: number; password: string } | null>(null);
   const [passwordCopied, setPasswordCopied] = useState(false);
 
@@ -85,6 +86,18 @@ export default function AdminPreEstreiaDetailPage() {
       }
     } finally {
       setRegeneratingSlotId(null);
+    }
+  };
+
+  /** Dispara envio de credenciais para slot já pago que ainda não teve e-mail enviado (ex.: localhost sem webhook). */
+  const handleSendCredentials = async (slot: Slot) => {
+    if (slot.paymentStatus !== 'PAID' || slot.credentialsSentAt) return;
+    setSendingCredentialsSlotId(slot.id);
+    try {
+      await fetch(`/api/pre-sale/slots/${slot.id}/status`, { cache: 'no-store' });
+      fetchGame();
+    } finally {
+      setSendingCredentialsSlotId(null);
     }
   };
 
@@ -176,14 +189,26 @@ export default function AdminPreEstreiaDetailPage() {
                     ? new Date(slot.credentialsSentAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
                     : '—'}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => handleRegeneratePassword(slot)}
-                  disabled={!!regeneratingSlotId}
-                  className="mt-2 px-3 py-1.5 rounded bg-amber-500/20 text-amber-400 text-sm hover:bg-amber-500/30 disabled:opacity-50"
-                >
-                  {regeneratingSlotId === slot.id ? 'Gerando...' : 'Gerar nova senha'}
-                </button>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {!slot.credentialsSentAt && (
+                    <button
+                      type="button"
+                      onClick={() => handleSendCredentials(slot)}
+                      disabled={!!sendingCredentialsSlotId}
+                      className="px-3 py-1.5 rounded bg-futvar-green/20 text-futvar-green text-sm hover:bg-futvar-green/30 disabled:opacity-50"
+                    >
+                      {sendingCredentialsSlotId === slot.id ? 'Enviando...' : 'Enviar credenciais'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleRegeneratePassword(slot)}
+                    disabled={!!regeneratingSlotId}
+                    className="px-3 py-1.5 rounded bg-amber-500/20 text-amber-400 text-sm hover:bg-amber-500/30 disabled:opacity-50"
+                  >
+                    {regeneratingSlotId === slot.id ? 'Gerando...' : 'Gerar nova senha'}
+                  </button>
+                </div>
               </>
             )}
             <Link href={`/pre-estreia/${id}`} className="mt-2 inline-block text-futvar-green text-sm hover:underline">

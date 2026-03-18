@@ -18,6 +18,7 @@ export async function GET(
       paymentStatus: true,
       paymentProvider: true,
       paymentReference: true,
+      credentialsSentAt: true,
       preSaleGameId: true,
       preSaleGame: { select: { fundedClubsCount: true } },
     },
@@ -27,26 +28,46 @@ export async function GET(
     return NextResponse.json({ error: 'Slot não encontrado' }, { status: 404 });
   }
 
-  // Fallback automático: se ainda está PENDING mas temos cobrança Woovi,
-  // consulta o status direto na Woovi e, se estiver COMPLETED, marca como pago.
-  if (slot.paymentStatus === 'PENDING' && slot.paymentReference) {
-    try {
-      const charge = await getWooviChargeStatus(slot.paymentReference);
-      const status = charge?.status?.toUpperCase?.() ?? '';
-      if (status === 'COMPLETED') {
-        await markSlotAsPaid(slot.id, Provider.WOOVI, slot.paymentReference);
-        await createClubViewerAccountForSlot(slot.id);
-        // Recarrega slot já com estado atualizado
-        slot = await prisma.preSaleClubSlot.findUnique({
-          where: { id: slotId },
-          select: {
-            paymentStatus: true,
-            preSaleGame: { select: { fundedClubsCount: true } },
-          },
-        }) as typeof slot;
+  // 1) PENDING: consulta Woovi e, se COMPLETED, marca como pago e envia credenciais
+  if (slot.paymentStatus === 'PENDING') {
+    const refsToTry: string[] = slot.paymentReference ? [slot.paymentReference, `presale-${slot.id}`] : [`presale-${slot.id}`];
+    for (const ref of refsToTry) {
+      try {
+        const charge = await getWooviChargeStatus(ref);
+        const status = (charge?.status ?? (charge as { status?: string })?.status)?.toString?.()?.toUpperCase?.() ?? '';
+        if (status === 'COMPLETED') {
+          await markSlotAsPaid(slot.id, Provider.WOOVI, ref);
+          await createClubViewerAccountForSlot(slot.id);
+          slot = await prisma.preSaleClubSlot.findUnique({
+            where: { id: slotId },
+            select: {
+              paymentStatus: true,
+              credentialsSentAt: true,
+              preSaleGame: { select: { fundedClubsCount: true } },
+            },
+          }) as typeof slot;
+          break;
+        }
+      } catch (e) {
+        console.error('[pre-sale][slot-status] erro ao sincronizar Woovi (ref=', ref, '):', e);
       }
+    }
+  }
+
+  // 2) PAID mas credenciais nunca enviadas (ex.: webhook não rodou em localhost): envia agora
+  if (slot.paymentStatus === 'PAID' && !slot.credentialsSentAt) {
+    try {
+      await createClubViewerAccountForSlot(slot.id);
+      slot = await prisma.preSaleClubSlot.findUnique({
+        where: { id: slotId },
+        select: {
+          paymentStatus: true,
+          credentialsSentAt: true,
+          preSaleGame: { select: { fundedClubsCount: true } },
+        },
+      }) as typeof slot;
     } catch (e) {
-      console.error('[pre-sale][slot-status] erro ao sincronizar Woovi:', e);
+      console.error('[pre-sale][slot-status] erro ao enviar credenciais (slot já pago):', e);
     }
   }
 

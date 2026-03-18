@@ -153,11 +153,17 @@ export default function PreEstreiaCheckoutPage() {
     };
 
     poll();
-    const idInterval = setInterval(poll, 5000);
+    const idInterval = setInterval(poll, 3000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') poll();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
       active = false;
       clearInterval(idInterval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, [pixQr, ctx]);
 

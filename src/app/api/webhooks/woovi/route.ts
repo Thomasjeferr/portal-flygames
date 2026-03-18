@@ -64,15 +64,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    // Woovi envia charge.correlationID; aceitar também camelCase (correlationId) e no body
+    // Woovi/OpenPix envia correlationID em charge ou no body; aceitar camelCase e pix.*
+    const pix = body.pix ?? body.charge ?? {};
     const correlationId =
       (charge?.correlationID as string | undefined) ??
       (charge as { correlationId?: string })?.correlationId ??
+      (pix?.correlationID as string | undefined) ??
+      (pix as { correlationId?: string })?.correlationId ??
       (body.correlationID as string | undefined) ??
       (body.correlationId as string | undefined);
 
     if (!correlationId) {
-      console.error('[Woovi webhook] correlationID ausente no payload. body.event=', rawEvent, 'charge keys=', charge && typeof charge === 'object' ? Object.keys(charge) : 'n/a');
+      console.error('[Woovi webhook] correlationID ausente no payload. event=', rawEvent, 'charge keys=', charge && typeof charge === 'object' ? Object.keys(charge) : 'n/a', 'body keys=', typeof body === 'object' ? Object.keys(body) : 'n/a');
       return NextResponse.json({ error: 'correlationID missing' }, { status: 400 });
     }
 
@@ -96,16 +99,25 @@ export async function POST(request: NextRequest) {
       console.warn('[Woovi webhook] Valor do charge não encontrado; gravando com valor da Purchase. charge keys=', Object.keys(charge));
     }
 
-    // Pré-estreia: externalId = presale-{slotId}
-    if (typeof correlationId === 'string' && correlationId.startsWith('presale-')) {
-      const slotId = correlationId.replace('presale-', '');
-      await markSlotAsPaid(slotId, Provider.WOOVI, body.id ?? correlationId);
-      createClubViewerAccountForSlot(slotId).catch((e) =>
+    // Pré-estreia clubes: envia APENAS PRE_SALE_CREDENTIALS (usuário/senha únicos). Não usa Purchase nem SUBSCRIPTION_ACTIVATED.
+    // correlationID = presale-{slotId} ou, em alguns payloads, apenas o slotId
+    let presaleSlotId: string | null = null;
+    if (typeof correlationId === 'string') {
+      if (correlationId.startsWith('presale-')) {
+        presaleSlotId = correlationId.replace('presale-', '');
+      } else {
+        const slotExists = await prisma.preSaleClubSlot.findUnique({ where: { id: correlationId }, select: { id: true } });
+        if (slotExists) presaleSlotId = correlationId;
+      }
+    }
+    if (presaleSlotId) {
+      await markSlotAsPaid(presaleSlotId, Provider.WOOVI, body.id ?? correlationId);
+      await createClubViewerAccountForSlot(presaleSlotId).catch((e) =>
         console.error('[Woovi] Erro ao criar conta clube:', e)
       );
       const { sendAdminPreSaleNotification } = await import('@/lib/email/adminNotify');
       const slot = await prisma.preSaleClubSlot.findUnique({
-        where: { id: slotId },
+        where: { id: presaleSlotId },
         include: { preSaleGame: true },
       });
       if (slot?.preSaleGame) {

@@ -14,9 +14,12 @@ function generatePassword(length = 10): string {
 }
 
 /**
- * Cria ou vincula conta de visualizador do clube para o slot (após pagamento).
- * Um login por time: se já existir ClubViewerAccount para o teamId do slot, apenas vincula o slot e envia e-mail "Novo jogo, mesmo usuário e senha".
- * Caso contrário, cria User + ClubViewerAccount e envia credenciais.
+ * Pré-estreia clubes: cria ou vincula conta de visualizador e envia e-mail com credenciais ÚNICAS.
+ * Usa APENAS os templates PRE_SALE_CREDENTIALS e (em regenerateClubViewerPassword) PRE_SALE_CREDENTIALS_NEW_PASSWORD.
+ * Não envia SUBSCRIPTION_ACTIVATED nem PURCHASE_CONFIRMATION; esse fluxo é exclusivo da pré-estreia.
+ *
+ * Um login por time: se já existir ClubViewerAccount para o teamId do slot, vincula o slot e envia "mesmo usuário e senha".
+ * Caso contrário, cria User + ClubViewerAccount com usuário/senha novos e envia PRE_SALE_CREDENTIALS.
  * Idempotente: se o slot já tiver clubViewerAccountId e credentialsSentAt, não envia de novo.
  */
 export async function createClubViewerAccountForSlot(slotId: string): Promise<{ ok: boolean; error?: string }> {
@@ -43,18 +46,22 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
       data: { clubViewerAccountId: existingAccount.id },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
-    const watchUrl = `${baseUrl}/pre-estreia/assistir/${slot.preSaleGame.slug}`;
-    const recipients: string[] = [];
-    if (slot.responsibleEmail?.trim()) recipients.push(slot.responsibleEmail.trim());
-    const siteSettings = await prisma.siteSettings.findFirst();
-    if (siteSettings?.adminCredentialsEmail?.trim()) recipients.push(siteSettings.adminCredentialsEmail.trim());
-    const uniqueRecipients = Array.from(new Set(recipients));
-    const maxSimultaneous = slot.preSaleGame.maxSimultaneousPerClub ?? 10;
-    const limiteDispositivos = `LIMITE: ${maxSimultaneous} DISPOSITIVOS SIMULTÂNEOS`;
-    const introText =
-      'Novo jogo disponível na pré-estreia. Use o mesmo usuário e senha de clube que você já recebeu anteriormente.';
-    const vars: Record<string, string> = {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
+  const watchUrl = `${baseUrl}/pre-estreia/assistir/${slot.preSaleGame.slug}`;
+  const recipients: string[] = [];
+  if (slot.responsibleEmail?.trim()) recipients.push(slot.responsibleEmail.trim());
+  if (recipients.length === 0 && teamId) {
+    const team = await prisma.team.findUnique({ where: { id: teamId }, select: { responsibleEmail: true } });
+    if (team?.responsibleEmail?.trim()) recipients.push(team.responsibleEmail.trim());
+  }
+  const siteSettings = await prisma.siteSettings.findFirst();
+  if (siteSettings?.adminCredentialsEmail?.trim()) recipients.push(siteSettings.adminCredentialsEmail.trim());
+  const uniqueRecipients = Array.from(new Set(recipients));
+  const maxSimultaneous = slot.preSaleGame.maxSimultaneousPerClub ?? 10;
+  const limiteDispositivos = `LIMITE: ${maxSimultaneous} DISPOSITIVOS SIMULTÂNEOS`;
+  const introText =
+    'Novo jogo disponível na pré-estreia. Use o mesmo usuário e senha de clube que você já recebeu anteriormente.';
+  const vars: Record<string, string> = {
       game_title: slot.preSaleGame.title,
       watch_url: watchUrl,
       username: existingAccount.loginUsername,
@@ -65,18 +72,21 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
       info_assinante:
         'Se o membro do time for patrocinador ativo (conta paga), desconsidere o usuário e senha abaixo: ele assiste na grade normal conforme o plano.',
     };
+    let atLeastOneSent = false;
     for (const to of uniqueRecipients) {
-      await sendTransactionalEmail({
-        to,
-        templateKey: 'PRE_SALE_CREDENTIALS',
-        vars,
-      }).catch((e) => console.error('[club-viewer] Email novo jogo mesmo login:', e));
+      const result = await sendTransactionalEmail({ to, templateKey: 'PRE_SALE_CREDENTIALS', vars });
+      if (result.success) atLeastOneSent = true;
+      else console.error('[club-viewer] Falha ao enviar email novo jogo mesmo login para', to, result.error);
     }
-
-    await prisma.preSaleClubSlot.update({
-      where: { id: slotId },
-      data: { credentialsSentAt: new Date() },
-    });
+    if (uniqueRecipients.length === 0) {
+      console.warn('[club-viewer] Slot', slotId, 'sem destinatários para credenciais (conta existente)');
+    }
+    if (atLeastOneSent) {
+      await prisma.preSaleClubSlot.update({
+        where: { id: slotId },
+        data: { credentialsSentAt: new Date() },
+      });
+    }
     return { ok: true };
   }
 
@@ -137,6 +147,10 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
   const watchUrl = `${baseUrl}/pre-estreia/assistir/${slot.preSaleGame.slug}`;
   const recipients: string[] = [];
   if (slot.responsibleEmail?.trim()) recipients.push(slot.responsibleEmail.trim());
+  if (recipients.length === 0 && teamId) {
+    const team = await prisma.team.findUnique({ where: { id: teamId }, select: { responsibleEmail: true } });
+    if (team?.responsibleEmail?.trim()) recipients.push(team.responsibleEmail.trim());
+  }
   const siteSettings = await prisma.siteSettings.findFirst();
   if (siteSettings?.adminCredentialsEmail?.trim()) recipients.push(siteSettings.adminCredentialsEmail.trim());
   const uniqueRecipients = Array.from(new Set(recipients));
@@ -155,18 +169,21 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
     limite_dispositivos: limiteDispositivos,
     info_assinante: infoAssinante,
   };
+  let atLeastOneSent = false;
   for (const to of uniqueRecipients) {
-    await sendTransactionalEmail({
-      to,
-      templateKey: 'PRE_SALE_CREDENTIALS',
-      vars,
-    }).catch((e) => console.error('[club-viewer] Email credenciais:', e));
+    const result = await sendTransactionalEmail({ to, templateKey: 'PRE_SALE_CREDENTIALS', vars });
+    if (result.success) atLeastOneSent = true;
+    else console.error('[club-viewer] Falha ao enviar credenciais pré-estreia para', to, result.error);
   }
-
-  await prisma.preSaleClubSlot.update({
-    where: { id: slotId },
-    data: { credentialsSentAt: new Date() },
-  });
+  if (uniqueRecipients.length === 0) {
+    console.warn('[club-viewer] Slot', slotId, 'sem destinatários para credenciais (nova conta)');
+  }
+  if (atLeastOneSent) {
+    await prisma.preSaleClubSlot.update({
+      where: { id: slotId },
+      data: { credentialsSentAt: new Date() },
+    });
+  }
 
   return { ok: true };
 }
