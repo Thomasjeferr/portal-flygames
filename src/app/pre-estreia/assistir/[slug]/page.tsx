@@ -25,6 +25,7 @@ interface PreSaleGame {
   videoUrl: string | null;
   status: string;
   maxSimultaneousPerClub: number;
+  premiereAt?: string | null;
 }
 
 type MeResponse = {
@@ -192,9 +193,48 @@ export default function PreEstreiaWatchPage() {
 
   if (game.status !== 'PUBLISHED' || !game.videoUrl) {
     return (
-      <div className="min-h-screen bg-futvar-darker flex flex-col items-center justify-center text-futvar-light px-6">
-        <p className="text-lg mb-4">Este jogo ainda não está disponível para assistir.</p>
-        <Link href="/" className="text-futvar-green hover:underline">Voltar ao início</Link>
+      <div className="min-h-screen bg-futvar-darker pt-20 sm:pt-24 pb-12 px-4 sm:px-6">
+        <div className="max-w-lg mx-auto">
+          <Link
+            href="/"
+            className="text-futvar-green hover:text-futvar-green-light text-sm font-semibold inline-flex items-center gap-2 mb-8"
+          >
+            Voltar ao início
+          </Link>
+          <div className="bg-futvar-dark border border-white/10 rounded-2xl p-8 text-center">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-futvar-green/20 flex items-center justify-center">
+              <svg className="w-8 h-8 text-futvar-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-bold text-white mb-2">{game.title}</h1>
+            {game.premiereAt && (
+              <p className="text-futvar-green font-semibold mb-3">
+                {new Date(game.premiereAt).toLocaleString('pt-BR', {
+                  dateStyle: 'long',
+                  timeStyle: 'short',
+                })}
+              </p>
+            )}
+            <p className="text-futvar-light mb-6">
+              Este jogo ainda não está disponível para assistir. A transmissão será liberada na data do jogo.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href={`/pre-estreia/${game.id}`}
+                className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-futvar-green text-futvar-darker font-bold hover:bg-futvar-green-light transition-colors"
+              >
+                Ver página do jogo
+              </Link>
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/30 text-futvar-light font-semibold hover:bg-white/5 transition-colors"
+              >
+                Voltar ao início
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

@@ -11,7 +11,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const id = (await params).id;
   const game = await prisma.preSaleGame.findUnique({
     where: { id },
-    select: { id: true, homeTeamId: true, awayTeamId: true, clubSlots: { select: { id: true, slotIndex: true, paymentStatus: true } } },
+    select: { id: true, slug: true, homeTeamId: true, awayTeamId: true, clubSlots: { select: { id: true, slotIndex: true, paymentStatus: true } } },
   });
   if (!game) return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
 
@@ -21,6 +21,23 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       loggedIn: false,
       canAccessCheckout: false,
     });
+  }
+
+  // Se for club_viewer (membro com usuário/senha da pré-estreia), verificar se tem slot deste jogo → redirecionar para o player
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { role: true },
+  });
+  let clubViewerHasAccess = false;
+  if (user?.role === 'club_viewer' && game.slug) {
+    const slot = await prisma.preSaleClubSlot.findFirst({
+      where: {
+        preSaleGameId: id,
+        clubViewerAccount: { userId: session.userId },
+      },
+      select: { id: true },
+    });
+    clubViewerHasAccess = !!slot;
   }
 
   const [ownerHome, ownerAway] = await Promise.all([
@@ -45,5 +62,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     isOwnerHome: ownerHome,
     isOwnerAway: ownerAway,
     slotAlreadyPaid,
+    clubViewerHasAccess: user?.role === 'club_viewer' ? clubViewerHasAccess : false,
+    gameSlug: clubViewerHasAccess ? game.slug : undefined,
   });
 }

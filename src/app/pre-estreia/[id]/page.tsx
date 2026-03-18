@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
 type GameInfo = {
   id: string;
+  slug?: string;
   title: string;
   description: string;
   thumbnailUrl: string;
@@ -17,10 +18,13 @@ type Access = {
   loggedIn: boolean;
   canAccessCheckout: boolean;
   slotAlreadyPaid?: boolean;
+  clubViewerHasAccess?: boolean;
+  gameSlug?: string;
 };
 
 export default function PreEstreiaClubesLandingPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params?.id as string;
   const [game, setGame] = useState<GameInfo | null>(null);
   const [access, setAccess] = useState<Access | null>(null);
@@ -37,10 +41,14 @@ export default function PreEstreiaClubesLandingPage() {
       .then(([g, a]) => {
         setGame(g?.id ? g : null);
         setAccess(a);
+        // Usuário/senha da pré-estreia (club_viewer) com acesso a este jogo → vai direto para o player
+        if (a?.clubViewerHasAccess && a?.gameSlug) {
+          router.replace(`/pre-estreia/assistir/${a.gameSlug}`);
+        }
       })
       .catch(() => setGame(null))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, router]);
 
   if (loading) {
     return (
@@ -171,7 +179,7 @@ export default function PreEstreiaClubesLandingPage() {
                 Ir para minha conta
               </Link>
               <Link
-                href={`/pre-estreia/assistir/${game.id}`}
+                href={`/pre-estreia/assistir/${game.slug || game.id}`}
                 className="inline-block text-center py-2 px-4 rounded-lg bg-futvar-dark text-futvar-light hover:text-white border border-futvar-green/40 text-sm font-semibold"
               >
                 Ver área de assistir

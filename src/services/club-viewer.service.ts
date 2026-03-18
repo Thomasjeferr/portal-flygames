@@ -120,6 +120,7 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
       email: loginUsername,
       passwordHash,
       role: 'club_viewer',
+      emailVerified: true, // conta pré-estreia: não exige verificação de e-mail (login direto com usuário/senha)
       name: `Clube ${slot.clubName} (Slot ${slot.slotIndex})`,
     },
   });
