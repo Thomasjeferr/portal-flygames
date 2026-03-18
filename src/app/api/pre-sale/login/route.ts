@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       where: { loginUsername: username.trim() },
       include: {
         user: true,
-        preSaleClubSlot: { include: { preSaleGame: true } },
+        preSaleClubSlots: { include: { preSaleGame: true } },
       },
     });
 
@@ -45,11 +45,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Usuário ou senha incorretos' }, { status: 401 });
     }
 
-    if (slug && clubAccount.preSaleClubSlot.preSaleGame.slug !== slug) {
-      return NextResponse.json(
-        { error: 'Este acesso não é válido para este jogo' },
-        { status: 403 }
-      );
+    if (slug) {
+      const hasAccessToGame = clubAccount.preSaleClubSlots.some((s) => s.preSaleGame.slug === slug);
+      if (!hasAccessToGame) {
+        return NextResponse.json(
+          { error: 'Este acesso não é válido para este jogo' },
+          { status: 403 }
+        );
+      }
     }
 
     const token = await createSession(clubAccount.user.id);

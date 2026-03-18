@@ -515,6 +515,7 @@ model PreSaleClubSlot {
   preSaleGameId       String     @map("pre_sale_game_id")
   slotIndex           Int        @map("slot_index") // 1 or 2
   clubCode            String     @unique @map("club_code")
+  teamId              String?    @map("team_id") // time dono do slot (mandante slot 1, visitante slot 2)
   responsibleName     String     @map("responsible_name")
   responsibleEmail    String?    @map("responsible_email")
   clubName            String     @map("club_name")
@@ -526,22 +527,23 @@ model PreSaleClubSlot {
   paymentReference    String?    @map("payment_reference")
   paidAt              DateTime?  @map("paid_at")
   credentialsSentAt   DateTime?  @map("credentials_sent_at")
-  createdAt           DateTime   @default(now()) @map("created_at")
-  updatedAt           DateTime   @updatedAt @map("updated_at")
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+  clubViewerAccountId   String?    @map("club_viewer_account_id") // 1:N: vários slots → mesma conta
 
-  preSaleGame      PreSaleGame       @relation(fields: [preSaleGameId], references: [id], onDelete: Cascade)
-  clubViewerAccount ClubViewerAccount?
+  preSaleGame       PreSaleGame       @relation(fields: [preSaleGameId], references: [id], onDelete: Cascade)
+  clubViewerAccount ClubViewerAccount? @relation(fields: [clubViewerAccountId], references: [id], onDelete: SetNull)
 }
 
 model ClubViewerAccount {
   id                 String   @id @default(cuid())
   userId             String   @unique @map("user_id")
-  preSaleClubSlotId  String   @unique @map("pre_sale_club_slot_id")
+  teamId             String?  @unique @map("team_id") // uma conta por time; vários slots (jogos) por conta
   loginUsername      String   @unique @map("login_username") // usuário exibido ao clube e no admin
   createdAt          DateTime @default(now()) @map("created_at")
 
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  preSaleClubSlot PreSaleClubSlot @relation(fields: [preSaleClubSlotId], references: [id], onDelete: Cascade)
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preSaleClubSlots PreSaleClubSlot[]   // 1:N: vários slots (jogos) para o mesmo time
 }
 
 model ClubStreamSession {

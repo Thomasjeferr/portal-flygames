@@ -13,14 +13,16 @@ function generatePassword(length = 10): string {
   return result;
 }
 
-function generateUsername(slotId: string, slotIndex: number): string {
-  const suffix = slotId.slice(-6);
-  return `clube-${suffix}-${slotIndex}`;
+/** Gera login único para nova conta (primeiro slot do time). */
+function generateLoginUsername(teamId: string, slotId: string): string {
+  return `clube-${teamId}-${slotId.slice(-8)}`;
 }
 
 /**
- * Cria conta de visualizador do clube para o slot (após pagamento) e envia credenciais por e-mail.
- * Idempotente: se já existir ClubViewerAccount para o slot, não cria outro.
+ * Cria ou vincula conta de visualizador do clube para o slot (após pagamento).
+ * Um login por time: se já existir ClubViewerAccount para o teamId do slot, apenas vincula o slot e envia e-mail "Novo jogo, mesmo usuário e senha".
+ * Caso contrário, cria User + ClubViewerAccount e envia credenciais.
+ * Idempotente: se o slot já tiver clubViewerAccountId e credentialsSentAt, não envia de novo.
  */
 export async function createClubViewerAccountForSlot(slotId: string): Promise<{ ok: boolean; error?: string }> {
   const slot = await prisma.preSaleClubSlot.findUnique({
@@ -30,31 +32,64 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
   if (!slot) return { ok: false, error: 'Slot não encontrado' };
   if (slot.paymentStatus !== 'PAID') return { ok: false, error: 'Slot não está pago' };
 
-  const existing = await prisma.clubViewerAccount.findUnique({
-    where: { preSaleClubSlotId: slotId },
-  });
-  if (existing) return { ok: true }; // já criado
+  const teamId =
+    slot.teamId ?? (slot.slotIndex === 1 ? slot.preSaleGame.homeTeamId : slot.preSaleGame.awayTeamId) ?? null;
 
-  const loginUsername = generateUsername(slot.id, slot.slotIndex);
-  const plainPassword = generatePassword(10);
-  const passwordHash = await hashPassword(plainPassword);
-  const internalEmail = `clubviewer-${slot.id}@${INTERNAL_EMAIL_DOMAIN}`;
+  // Já vinculado a uma conta e credenciais enviadas
+  if (slot.clubViewerAccountId && slot.credentialsSentAt) return { ok: true };
 
-  const existingUserWithEmail = await prisma.user.findUnique({
-    where: { email: internalEmail },
-  });
-  if (existingUserWithEmail) {
-    await prisma.clubViewerAccount.upsert({
-      where: { preSaleClubSlotId: slotId },
-      create: { userId: existingUserWithEmail.id, preSaleClubSlotId: slotId, loginUsername },
-      update: {},
+  const existingAccount = teamId
+    ? await prisma.clubViewerAccount.findUnique({ where: { teamId }, include: { user: true } })
+    : null;
+
+  if (existingAccount) {
+    await prisma.preSaleClubSlot.update({
+      where: { id: slotId },
+      data: { clubViewerAccountId: existingAccount.id },
     });
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
+    const watchUrl = `${baseUrl}/pre-estreia/assistir/${slot.preSaleGame.slug}`;
+    const recipients: string[] = [];
+    if (slot.responsibleEmail?.trim()) recipients.push(slot.responsibleEmail.trim());
+    const siteSettings = await prisma.siteSettings.findFirst();
+    if (siteSettings?.adminCredentialsEmail?.trim()) recipients.push(siteSettings.adminCredentialsEmail.trim());
+    const uniqueRecipients = Array.from(new Set(recipients));
+    const maxSimultaneous = slot.preSaleGame.maxSimultaneousPerClub ?? 10;
+    const limiteDispositivos = `LIMITE: ${maxSimultaneous} DISPOSITIVOS SIMULTÂNEOS`;
+    const introText =
+      'Novo jogo disponível na pré-estreia. Use o mesmo usuário e senha de clube que você já recebeu anteriormente.';
+    const vars: Record<string, string> = {
+      game_title: slot.preSaleGame.title,
+      watch_url: watchUrl,
+      username: existingAccount.loginUsername,
+      password: '(mesma senha anterior)',
+      intro_text: introText,
+      max_simultaneous: String(maxSimultaneous),
+      limite_dispositivos: limiteDispositivos,
+      info_assinante:
+        'Se o membro do time for patrocinador ativo (conta paga), desconsidere o usuário e senha abaixo: ele assiste na grade normal conforme o plano.',
+    };
+    for (const to of uniqueRecipients) {
+      await sendTransactionalEmail({
+        to,
+        templateKey: 'PRE_SALE_CREDENTIALS',
+        vars,
+      }).catch((e) => console.error('[club-viewer] Email novo jogo mesmo login:', e));
+    }
+
     await prisma.preSaleClubSlot.update({
       where: { id: slotId },
       data: { credentialsSentAt: new Date() },
     });
     return { ok: true };
   }
+
+  // Nova conta: criar User + ClubViewerAccount
+  const loginUsername = teamId ? generateLoginUsername(teamId, slot.id) : `clube-${slot.id.slice(-12)}`;
+  const plainPassword = generatePassword(10);
+  const passwordHash = await hashPassword(plainPassword);
+  const internalEmail = `clubviewer-${slot.id}@${INTERNAL_EMAIL_DOMAIN}`;
 
   const user = await prisma.user.create({
     data: {
@@ -68,9 +103,20 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
   await prisma.clubViewerAccount.create({
     data: {
       userId: user.id,
-      preSaleClubSlotId: slotId,
+      teamId,
       loginUsername,
     },
+  });
+
+  const account = await prisma.clubViewerAccount.findUnique({
+    where: { userId: user.id },
+    select: { id: true },
+  });
+  if (!account) return { ok: false, error: 'Erro ao criar conta clube' };
+
+  await prisma.preSaleClubSlot.update({
+    where: { id: slotId },
+    data: { clubViewerAccountId: account.id },
   });
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flygames.app';
@@ -78,8 +124,7 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
   const recipients: string[] = [];
   if (slot.responsibleEmail?.trim()) recipients.push(slot.responsibleEmail.trim());
   const siteSettings = await prisma.siteSettings.findFirst();
-  if (siteSettings?.adminCredentialsEmail?.trim())
-    recipients.push(siteSettings.adminCredentialsEmail.trim());
+  if (siteSettings?.adminCredentialsEmail?.trim()) recipients.push(siteSettings.adminCredentialsEmail.trim());
   const uniqueRecipients = Array.from(new Set(recipients));
 
   const maxSimultaneous = slot.preSaleGame.maxSimultaneousPerClub ?? 10;
@@ -114,7 +159,7 @@ export async function createClubViewerAccountForSlot(slotId: string): Promise<{ 
 
 /**
  * Gera nova senha para a conta clube do slot e envia por e-mail.
- * Retorna a nova senha em texto para exibir uma vez no admin.
+ * Se a conta for compartilhada (vários slots), a nova senha vale para todos os jogos desse time.
  */
 export async function regenerateClubViewerPassword(slotId: string): Promise<{ password: string; error?: string }> {
   const slot = await prisma.preSaleClubSlot.findUnique({
@@ -136,8 +181,7 @@ export async function regenerateClubViewerPassword(slotId: string): Promise<{ pa
   const recipients: string[] = [];
   if (slot.responsibleEmail?.trim()) recipients.push(slot.responsibleEmail.trim());
   const siteSettings = await prisma.siteSettings.findFirst();
-  if (siteSettings?.adminCredentialsEmail?.trim())
-    recipients.push(siteSettings.adminCredentialsEmail.trim());
+  if (siteSettings?.adminCredentialsEmail?.trim()) recipients.push(siteSettings.adminCredentialsEmail.trim());
   const uniqueRecipients = Array.from(new Set(recipients));
   const maxSimultaneous = slot.preSaleGame.maxSimultaneousPerClub ?? 10;
   const limiteDispositivos = `LIMITE: ${maxSimultaneous} DISPOSITIVOS SIMULTÂNEOS`;

@@ -36,16 +36,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Faça login com o usuário do clube' }, { status: 401 });
       }
       const clubAccount = await prisma.clubViewerAccount.findFirst({
-        where: {
-          userId: session.userId,
-          preSaleClubSlot: { preSaleGameId: game.id },
-        },
-        include: { preSaleClubSlot: true },
+        where: { userId: session.userId },
+        include: { preSaleClubSlots: { where: { preSaleGameId: game.id }, take: 1 } },
       });
-      if (!clubAccount) {
+      const slotForGame = clubAccount?.preSaleClubSlots?.[0];
+      if (!clubAccount || !slotForGame) {
         return NextResponse.json({ error: 'Este acesso não é válido para este jogo' }, { status: 403 });
       }
-      slot = clubAccount.preSaleClubSlot;
+      slot = slotForGame;
     } else if (bodyClubCode?.trim()) {
       slot = game.clubSlots.find((s) => s.clubCode === bodyClubCode.trim()) ?? null;
     }

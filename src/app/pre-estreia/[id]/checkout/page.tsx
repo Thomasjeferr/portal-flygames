@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
@@ -19,11 +19,14 @@ interface PreSaleGame {
 export default function PreEstreiaCheckoutPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params?.id as string;
   const [game, setGame] = useState<PreSaleGame | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [errorInstruction, setErrorInstruction] = useState('');
   const [clubCode, setClubCode] = useState('');
   const [form, setForm] = useState({
     responsibleName: '',
@@ -36,16 +39,38 @@ export default function PreEstreiaCheckoutPage() {
 
   useEffect(() => {
     if (!id) return;
+    const codeFromUrl = searchParams.get('code');
+    if (codeFromUrl) setClubCode(codeFromUrl);
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((r) => {
+        if (!r.ok) {
+          const returnUrl = `/pre-estreia/${id}/checkout${codeFromUrl ? `?code=${encodeURIComponent(codeFromUrl)}` : ''}`;
+          router.replace(`/entrar?redirect=${encodeURIComponent(returnUrl)}`);
+          return;
+        }
+        return r.json();
+      })
+      .then((user) => {
+        if (user?.id) setAuthChecked(true);
+      })
+      .catch(() => {
+        router.replace(`/entrar?redirect=${encodeURIComponent(`/pre-estreia/${id}/checkout`)}`);
+      });
+  }, [id, router, searchParams]);
+
+  useEffect(() => {
+    if (!id || !authChecked) return;
     fetch(`/api/pre-sale/games/${id}`)
       .then((r) => r.json())
       .then((g) => setGame(g?.id ? g : null))
       .catch(() => setGame(null))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, authChecked]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setErrorInstruction('');
     if (!form.termsAccepted) {
       setError('Aceite os termos para continuar.');
       return;
@@ -59,14 +84,26 @@ export default function PreEstreiaCheckoutPage() {
       const res = await fetch('/api/pre-sale/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           ...form,
           clubCode: clubCode.trim(),
           teamMemberCount: parseInt(form.teamMemberCount, 10) || 1,
           responsibleEmail: form.responsibleEmail.trim(),
+          termsAccepted: true,
         }),
       });
       const data = await res.json();
+      if (res.status === 401) {
+        const returnUrl = `/pre-estreia/${id}/checkout${clubCode.trim() ? `?code=${encodeURIComponent(clubCode.trim())}` : ''}`;
+        router.replace(`/entrar?redirect=${encodeURIComponent(returnUrl)}`);
+        return;
+      }
+      if (res.status === 403 && (data.message || data.instruction)) {
+        setError(data.message || data.error || 'Esta conta não é de responsável pelo time.');
+        setErrorInstruction(data.instruction || '');
+        return;
+      }
       if (!res.ok) {
         setError(data.error || 'Erro ao gerar pagamento');
         return;
@@ -79,7 +116,13 @@ export default function PreEstreiaCheckoutPage() {
     }
   };
 
-  if (loading) return <div className="pt-24 px-4 text-center text-futvar-light">Carregando...</div>;
+  if (!authChecked || loading) {
+    return (
+      <div className="pt-24 px-4 text-center text-futvar-light">
+        {!authChecked ? 'Verificando login...' : 'Carregando...'}
+      </div>
+    );
+  }
   if (!game) return (
     <div className="pt-24 px-4 text-center">
       <p className="text-futvar-light">Jogo nao encontrado.</p>
@@ -122,6 +165,15 @@ export default function PreEstreiaCheckoutPage() {
         <h1 className="text-2xl font-bold text-white mb-2">{game.title}</h1>
         <p className="text-futvar-light text-sm mb-6">{game.description}</p>
 
+        {(error || errorInstruction) && (
+          <div className="mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200">
+            <p className="font-medium">{error}</p>
+            {errorInstruction && <p className="mt-2 text-sm opacity-90">{errorInstruction}</p>}
+            <p className="mt-2 text-sm">
+              Esta conta não é de responsável pelo time. Para efetuar o pagamento da pré-estreia, use a conta com a qual você acessa a Área do time (painel do clube). Se for outra pessoa o responsável pelo time, ela deve fazer login e realizar a compra.
+            </p>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-white mb-2">Codigo do clube *</label>
