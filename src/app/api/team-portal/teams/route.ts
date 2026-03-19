@@ -139,6 +139,12 @@ export async function POST(request: NextRequest) {
       data: { userId: session.userId, teamId: team.id, role: 'OWNER' },
     });
 
+    // Responsável não tem assinatura nem degustação: revoga qualquer assinatura ativa ao virar dono do time
+    await prisma.subscription.updateMany({
+      where: { userId: session.userId, active: true },
+      data: { active: false, endDate: new Date() },
+    });
+
     sendAdminTeamPortalNotification({
       teamName: team.name,
       userEmail: user.email ?? '',

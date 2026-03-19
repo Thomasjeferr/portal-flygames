@@ -53,6 +53,11 @@ export async function POST(
             role: 'OWNER',
           },
         });
+        // Responsável não tem assinatura nem degustação: revoga qualquer assinatura ativa ao aprovar o time
+        await prisma.subscription.updateMany({
+          where: { userId: user.id, active: true },
+          data: { active: false, endDate: new Date() },
+        });
       }
     }
 
