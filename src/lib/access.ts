@@ -359,6 +359,55 @@ export async function hasActiveRecurringAccess(
 }
 
 /**
+ * Credencial de contrato direto (fora da plataforma): acesso só ao jogo vinculado, com flag do jogo ativa.
+ */
+export async function hasGameContractAccessToGame(userId: string, gameId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  if (user?.role !== 'game_contract_viewer') return false;
+
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    select: { contractCredentialsEnabled: true },
+  });
+  if (!game?.contractCredentialsEnabled) return false;
+
+  const cred = await prisma.gameTeamCredential.findFirst({
+    where: {
+      gameId,
+      userId,
+      active: true,
+      revokedAt: null,
+    },
+    select: { id: true },
+  });
+  return !!cred;
+}
+
+/** Limite de telas para conta game_contract_viewer neste jogo; null se não aplicável. */
+export async function getGameContractMaxScreensForGame(userId: string, gameId: string): Promise<number | null> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  if (user?.role !== 'game_contract_viewer') return null;
+
+  const cred = await prisma.gameTeamCredential.findFirst({
+    where: {
+      gameId,
+      userId,
+      active: true,
+      revokedAt: null,
+      game: { contractCredentialsEnabled: true },
+    },
+    select: { maxConcurrentStreams: true },
+  });
+  return cred?.maxConcurrentStreams ?? null;
+}
+
+export async function getGameContractMaxScreensBySlug(userId: string, gameSlug: string): Promise<number | null> {
+  const game = await prisma.game.findUnique({ where: { slug: gameSlug }, select: { id: true } });
+  if (!game) return null;
+  return getGameContractMaxScreensForGame(userId, game.id);
+}
+
+/**
  * Verifica se o usuário pode assistir a um jogo específico.
  * Retorna true se: tem assinatura/patrocínio recorrente ativo (acesso livre) OU comprou o jogo (plano unitário pago e não expirado).
  */
@@ -366,6 +415,8 @@ export async function canAccessGame(userId: string, gameId: string): Promise<boo
   if (await hasActiveRecurringAccess(userId)) return true;
 
   if (await hasFullAccess(userId)) return true;
+
+  if (await hasGameContractAccessToGame(userId, gameId)) return true;
 
   const purchase = await prisma.purchase.findFirst({
     where: {
@@ -491,8 +542,26 @@ export async function getGamesAccessMap(
     purchases.filter((p) => p.plan?.active).map((p) => p.gameId),
   );
 
+  const contractRows = await prisma.gameTeamCredential.findMany({
+    where: {
+      userId,
+      gameId: { in: uniqueIds },
+      active: true,
+      revokedAt: null,
+      game: { contractCredentialsEnabled: true },
+    },
+    select: { gameId: true },
+  });
+  const contractGameIds = new Set(contractRows.map((r) => r.gameId));
+  const userRole = await prisma.user
+    .findUnique({ where: { id: userId }, select: { role: true } })
+    .then((u) => u?.role);
+  const isContractViewer = userRole === 'game_contract_viewer';
+
   uniqueIds.forEach((id) => {
-    result[id] = purchasedIds.has(id);
+    const viaPurchase = purchasedIds.has(id);
+    const viaContract = isContractViewer && contractGameIds.has(id);
+    result[id] = viaPurchase || viaContract;
   });
 
   return result;

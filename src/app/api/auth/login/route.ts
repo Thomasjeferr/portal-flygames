@@ -75,8 +75,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'E-mail ou senha incorretos' }, { status: 401 });
     }
 
-    // Contas de pré-estreia (club_viewer) e admin não precisam verificar e-mail
-    if (!user.emailVerified && user.role !== 'admin' && user.role !== 'club_viewer') {
+    // Contas de pré-estreia (club_viewer), contrato por jogo (game_contract_viewer) e admin não precisam verificar e-mail
+    if (
+      !user.emailVerified &&
+      user.role !== 'admin' &&
+      user.role !== 'club_viewer' &&
+      user.role !== 'game_contract_viewer'
+    ) {
       return NextResponse.json(
         {
           error: 'Verifique seu e-mail para entrar. Enviamos um código de 6 dígitos.',

@@ -13,7 +13,7 @@ model User {
   email            String    @unique
   name             String?
   passwordHash     String    @map("password_hash")
-  role             String    @default("user") // "user" | "admin" | "club_viewer"
+  role             String    @default("user") // "user" | "admin" | "club_viewer" | "game_contract_viewer"
   emailVerified    Boolean   @default(false) @map("email_verified")
   mustChangePassword Boolean @default(false) @map("must_change_password")
   resetToken       String?   @map("reset_token")
@@ -38,6 +38,7 @@ model User {
   teamRequests      TeamRequest[]
   tournamentSubscriptions TournamentSubscription[]
   gameLikes         GameLike[]
+  gameTeamCredentials GameTeamCredential[]
   liveLikes         LiveLike[]
   gameComments      GameComment[]
   liveComments      LiveComment[]
@@ -249,6 +250,28 @@ model Game {
   gameLikes       GameLike[]
   gameComments    GameComment[]
   highlights      GameHighlight[]
+  contractCredentialsEnabled Boolean @default(false) @map("contract_credentials_enabled")
+  contractCredentials       GameTeamCredential[]
+}
+
+// Acesso por contrato direto (fora da plataforma): um login por mandante ou visitante, com limite de telas.
+model GameTeamCredential {
+  id                     String    @id @default(cuid())
+  gameId                 String    @map("game_id")
+  side                   String    @map("side") // home | away
+  userId                 String    @unique @map("user_id")
+  maxConcurrentStreams   Int       @map("max_concurrent_streams")
+  active                 Boolean   @default(true)
+  credentialsSentAt      DateTime? @map("credentials_sent_at")
+  revokedAt              DateTime? @map("revoked_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, side])
+  @@map("game_team_credentials")
 }
 
 // Cortes / melhores momentos do jogo (exibidos na página do jogo)

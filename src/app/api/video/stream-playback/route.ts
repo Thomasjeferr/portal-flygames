@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { canAccessGameBySlug, getSponsorMaxScreens, getSubscriptionMaxScreens, hasFullAccess } from '@/lib/access';
+import {
+  canAccessGameBySlug,
+  getGameContractMaxScreensBySlug,
+  getSponsorMaxScreens,
+  getSubscriptionMaxScreens,
+  hasFullAccess,
+} from '@/lib/access';
 import { prisma } from '@/lib/db';
 import { getSignedPlaybackUrls } from '@/lib/cloudflare-stream';
 import { getTvSessionByToken } from '@/lib/tv-session';
@@ -52,9 +58,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Limite de telas: patrocínio tem prioridade; senão assinatura
+    // Limite de telas: patrocínio → assinatura → credencial de contrato por jogo
     let maxScreens = await getSponsorMaxScreens(effectiveUserId);
     if (maxScreens == null) maxScreens = await getSubscriptionMaxScreens(effectiveUserId);
+    if (maxScreens == null && gameSlug) {
+      maxScreens = await getGameContractMaxScreensBySlug(effectiveUserId, gameSlug);
+    }
     if (maxScreens != null) {
       const now = new Date();
       const activeSince = new Date(now.getTime() - STREAM_SESSION_ACTIVE_MS);

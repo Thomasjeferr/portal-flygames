@@ -28,6 +28,7 @@ const updateSchema = z.object({
   awayScore: z.number().int().min(0).optional().nullable(),
   venue: z.string().optional().nullable(),
   referee: z.string().optional().nullable(),
+  contractCredentialsEnabled: z.boolean().optional(),
 });
 
 export async function GET(
@@ -59,8 +60,33 @@ export async function GET(
   } catch {
     // Tabelas de engajamento podem não existir se a migração não foi aplicada
   }
+  let contractCredentials: Array<{
+    side: string;
+    active: boolean;
+    maxConcurrentStreams: number;
+    loginUsername: string;
+    revokedAt: string | null;
+    credentialsSentAt: string | null;
+  }> = [];
+  try {
+    const creds = await prisma.gameTeamCredential.findMany({
+      where: { gameId: game.id },
+      include: { user: { select: { email: true } } },
+    });
+    contractCredentials = creds.map((c) => ({
+      side: c.side,
+      active: c.active,
+      maxConcurrentStreams: c.maxConcurrentStreams,
+      loginUsername: c.user.email,
+      revokedAt: c.revokedAt?.toISOString() ?? null,
+      credentialsSentAt: c.credentialsSentAt?.toISOString() ?? null,
+    }));
+  } catch {
+    /* prisma pode estar desatualizado até rodar migrate */
+  }
   return NextResponse.json({
     ...game,
+    contractCredentials,
     shareCount: game.shareCount ?? 0,
     pendingComments,
     likeCount,
@@ -111,6 +137,9 @@ export async function PATCH(
     if (data.awayScore !== undefined) update.awayScore = data.awayScore;
     if (data.venue !== undefined) update.venue = data.venue?.trim() || null;
     if (data.referee !== undefined) update.referee = data.referee?.trim() || null;
+    if (data.contractCredentialsEnabled !== undefined) {
+      update.contractCredentialsEnabled = data.contractCredentialsEnabled;
+    }
     if (data.title && data.title !== existing.title) {
       const existingSlugs = (await prisma.game.findMany({ where: { id: { not: id } }, select: { slug: true } })).map((g) => g.slug);
       update.slug = uniqueSlug(data.title, existingSlugs);

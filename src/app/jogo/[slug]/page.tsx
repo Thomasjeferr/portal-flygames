@@ -12,7 +12,13 @@ import { StoreAppOptionalText } from '@/components/StoreAppOptionalText';
 import { GameHighlightsSection } from '@/components/game/GameHighlightsSection';
 import { PlayerCommentSection } from '@/components/player/PlayerCommentSection';
 import { getSession } from '@/lib/auth';
-import { canAccessGameBySlug, getSubscriptionMaxScreens, getSponsorMaxScreens } from '@/lib/access';
+import {
+  canAccessGameBySlug,
+  getGameContractMaxScreensBySlug,
+  getSubscriptionMaxScreens,
+  getSponsorMaxScreens,
+  hasGameContractAccessToGame,
+} from '@/lib/access';
 import { prisma } from '@/lib/db';
 import { isStreamVideo, extractStreamVideoId, getSignedPlaybackUrls } from '@/lib/cloudflare-stream';
 
@@ -66,17 +72,19 @@ export default async function GamePage({ params }: Props) {
     session ? prisma.teamManager.count({ where: { userId: session.userId } }) : 0,
   ]);
   const canWatch = session ? await canAccessGameBySlug(session.userId, slug) : false;
+  const hasContractAccess = session ? await hasGameContractAccessToGame(session.userId, game.id) : false;
   const isTeamManager = teamManagerCount > 0;
   let streamPlaybackUrl: string | undefined;
   let streamHlsUrl: string | undefined;
   // Só preenchemos URLs no servidor quando NÃO há limite de telas; senão o cliente deve buscar via /api/video/stream-playback para o limite ser aplicado.
   if (canWatch && game.videoUrl && isStreamVideo(game.videoUrl) && session) {
     try {
-      const [subScreens, sponsorScreens] = await Promise.all([
+      const [subScreens, sponsorScreens, contractScreens] = await Promise.all([
         getSubscriptionMaxScreens(session.userId),
         getSponsorMaxScreens(session.userId),
+        getGameContractMaxScreensBySlug(session.userId, slug),
       ]);
-      const hasScreenLimit = subScreens != null || sponsorScreens != null;
+      const hasScreenLimit = subScreens != null || sponsorScreens != null || contractScreens != null;
       if (!hasScreenLimit) {
         const vid = extractStreamVideoId(game.videoUrl);
         if (vid) {
@@ -99,7 +107,9 @@ export default async function GamePage({ params }: Props) {
     timeZone: 'America/Sao_Paulo',
   });
 
-  const hasVideoPublished = displayMode === 'public_with_media' && !!game.videoUrl;
+  // Público na grade OU acesso exclusivo por credencial de contrato (vídeo já configurado)
+  const hasVideoPublished =
+    !!game.videoUrl && (displayMode === 'public_with_media' || hasContractAccess);
 
   const matchPlayerCommonProps = {
     teamA: game.homeTeam

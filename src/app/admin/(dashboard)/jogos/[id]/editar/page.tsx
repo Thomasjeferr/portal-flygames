@@ -15,10 +15,24 @@ export default function EditGamePage() {
   const fileInput = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savedOk, setSavedOk] = useState(false);
   const [error, setError] = useState('');
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [teams, setTeams] = useState<Array<{ id: string; name: string; shortName: string | null; crestUrl: string | null }>>([]);
   const [engagement, setEngagement] = useState<{ shareCount: number; likeCount: number; commentCount: number; pendingComments: number } | null>(null);
+  type ContractCredRow = {
+    side: string;
+    active: boolean;
+    maxConcurrentStreams: number;
+    loginUsername: string;
+    revokedAt: string | null;
+    credentialsSentAt: string | null;
+  };
+  const [contractCredentials, setContractCredentials] = useState<ContractCredRow[]>([]);
+  const [contractBusy, setContractBusy] = useState<'home' | 'away' | null>(null);
+  const [contractFlash, setContractFlash] = useState<{ title: string; body: string } | null>(null);
+  const [maxScreensHome, setMaxScreensHome] = useState('10');
+  const [maxScreensAway, setMaxScreensAway] = useState('10');
   const [form, setForm] = useState({
     title: '',
     championship: '',
@@ -35,6 +49,7 @@ export default function EditGamePage() {
     awayScore: '' as string,
     venue: '',
     referee: '',
+    contractCredentialsEnabled: false,
   });
 
   useEffect(() => {
@@ -79,7 +94,11 @@ export default function EditGamePage() {
           awayScore: data.awayScore != null ? String(data.awayScore) : '',
           venue: data.venue || '',
           referee: data.referee || '',
+          contractCredentialsEnabled: data.contractCredentialsEnabled ?? false,
         });
+        if (Array.isArray(data.contractCredentials)) {
+          setContractCredentials(data.contractCredentials);
+        }
         setEngagement({
           shareCount: data.shareCount ?? 0,
           likeCount: data.likeCount ?? 0,
@@ -107,6 +126,7 @@ export default function EditGamePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSavedOk(false);
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/games/${id}`, {
@@ -120,6 +140,7 @@ export default function EditGamePage() {
           awayTeamId: form.awayTeamId || null,
           homeScore: form.homeScore === '' ? null : Number(form.homeScore),
           awayScore: form.awayScore === '' ? null : Number(form.awayScore),
+          contractCredentialsEnabled: form.contractCredentialsEnabled,
         }),
       });
       const data = await res.json();
@@ -127,7 +148,8 @@ export default function EditGamePage() {
         setError(data.error || 'Erro ao atualizar');
         return;
       }
-      router.push('/admin/jogos');
+      setSavedOk(true);
+      await reloadGameCredentials();
       router.refresh();
     } catch {
       setError('Erro de conexão');
@@ -135,6 +157,47 @@ export default function EditGamePage() {
       setSaving(false);
     }
   };
+
+  const reloadGameCredentials = async () => {
+    const r = await fetch(`/api/admin/games/${id}`);
+    const data = await r.json();
+    if (!data.error) {
+      setForm((f) => ({ ...f, contractCredentialsEnabled: data.contractCredentialsEnabled ?? false }));
+      if (Array.isArray(data.contractCredentials)) setContractCredentials(data.contractCredentials);
+    }
+  };
+
+  const runContractAction = async (body: Record<string, unknown>, side: 'home' | 'away') => {
+    setContractBusy(side);
+    setContractFlash(null);
+    try {
+      const r = await fetch(`/api/admin/games/${id}/contract-credentials`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        setContractFlash({ title: 'Erro', body: data.error || 'Falha na operação' });
+        return;
+      }
+      if (data.username && data.password) {
+        setContractFlash({
+          title: 'Credenciais geradas',
+          body: `Usuário (cole no campo E-mail em Entrar):\n${data.username}\n\nSenha:\n${data.password}`,
+        });
+      } else {
+        setContractFlash({ title: 'OK', body: data.message || 'Operação concluída.' });
+      }
+      await reloadGameCredentials();
+    } catch {
+      setContractFlash({ title: 'Erro', body: 'Falha de conexão' });
+    } finally {
+      setContractBusy(null);
+    }
+  };
+
+  const credFor = (side: string) => contractCredentials.find((c) => c.side === side);
 
   if (loading) {
     return (
@@ -156,7 +219,7 @@ export default function EditGamePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-10">
+    <div className="max-w-4xl mx-auto px-6 py-10">
       <div className="mb-8">
         <Link href="/admin/jogos" className="text-netflix-light hover:text-white text-sm">
           ← Voltar aos jogos
@@ -177,6 +240,11 @@ export default function EditGamePage() {
         </div>
       )}
       <form onSubmit={handleSubmit} className="space-y-5 bg-netflix-dark border border-white/10 rounded-lg p-6">
+        {savedOk && (
+          <p className="text-emerald-200 text-sm bg-emerald-500/10 border border-emerald-500/30 rounded px-3 py-2">
+            Jogo salvo. Você pode gerar credenciais de contrato na seção abaixo do formulário.
+          </p>
+        )}
         {error && (
           <p className="text-netflix-red text-sm bg-red-500/10 border border-red-500/30 rounded px-3 py-2">
             {error}
@@ -393,6 +461,25 @@ export default function EditGamePage() {
             Destacar na página inicial
           </label>
         </div>
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="contractCredentialsEnabled"
+              checked={form.contractCredentialsEnabled}
+              onChange={(e) => setForm((f) => ({ ...f, contractCredentialsEnabled: e.target.checked }))}
+              className="rounded border-white/30 text-emerald-500 focus:ring-emerald-500"
+            />
+            <label htmlFor="contractCredentialsEnabled" className="text-sm font-medium text-white">
+              Acesso por contrato (credenciais por time)
+            </label>
+          </div>
+          <p className="text-xs text-netflix-light leading-relaxed">
+            <strong className="text-emerald-200/90">Desligado por padrão.</strong> Quando ativo, você pode gerar usuário e senha separados para mandante e visitante (pagamento fora da plataforma), cada um com limite de telas.
+            O jogo continua podendo aparecer na grade normal. Assinantes e compradores não são afetados.
+            <span className="block mt-1">Após marcar, clique em <strong>Salvar</strong>; só então use a seção abaixo para gerar credenciais.</span>
+          </p>
+        </div>
         <div className="flex gap-3 pt-2">
           <button
             type="submit"
@@ -409,6 +496,127 @@ export default function EditGamePage() {
           </Link>
         </div>
       </form>
+
+      <div className="mt-8 rounded-lg border border-white/10 bg-netflix-dark p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-white border-l-4 border-emerald-500 pl-3">
+          Credenciais de contrato (mandante / visitante)
+        </h2>
+        {!form.contractCredentialsEnabled && (
+          <p className="text-sm text-amber-200/90">
+            Ative a opção acima, salve o jogo, e recarregue se necessário — assim você poderá gerar logins sem conflito com pré-estreia ou assinaturas.
+          </p>
+        )}
+        {contractFlash && (
+          <div className="rounded border border-white/20 bg-black/30 p-3 text-sm">
+            <p className="font-semibold text-white mb-1">{contractFlash.title}</p>
+            <pre className="text-emerald-100/90 whitespace-pre-wrap break-all text-xs">{contractFlash.body}</pre>
+            <button
+              type="button"
+              onClick={() => setContractFlash(null)}
+              className="mt-2 text-xs text-netflix-light underline"
+            >
+              Fechar
+            </button>
+          </div>
+        )}
+        <div className="grid md:grid-cols-2 gap-6">
+          {(['home', 'away'] as const).map((side) => {
+            const label = side === 'home' ? 'Mandante' : 'Visitante';
+            const c = credFor(side);
+            const active = c?.active && !c?.revokedAt;
+            const busy = contractBusy === side;
+            return (
+              <div key={side} className="rounded-lg border border-white/10 p-4 space-y-3">
+                <h3 className="text-sm font-semibold text-white">{label}</h3>
+                {c ? (
+                  <div className="text-xs text-netflix-light space-y-1">
+                    <p>
+                      Status:{' '}
+                      <strong className={active ? 'text-emerald-400' : 'text-amber-400'}>
+                        {active ? 'Ativa' : 'Revogada / inativa'}
+                      </strong>
+                    </p>
+                    <p className="break-all">
+                      Usuário: <strong className="text-white">{c.loginUsername}</strong>
+                    </p>
+                    <p>Telas simultâneas: {c.maxConcurrentStreams}</p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-netflix-light">Nenhuma credencial gerada.</p>
+                )}
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs text-netflix-light">Limite de telas (nova credencial)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={500}
+                    value={side === 'home' ? maxScreensHome : maxScreensAway}
+                    onChange={(e) =>
+                      side === 'home' ? setMaxScreensHome(e.target.value) : setMaxScreensAway(e.target.value)
+                    }
+                    className="w-full px-3 py-2 rounded bg-netflix-gray border border-white/20 text-white text-sm"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={busy || !form.contractCredentialsEnabled}
+                    onClick={() =>
+                      runContractAction(
+                        {
+                          action: 'generate',
+                          side,
+                          maxConcurrentStreams: parseInt(side === 'home' ? maxScreensHome : maxScreensAway, 10) || 10,
+                        },
+                        side
+                      )
+                    }
+                    className="px-3 py-1.5 rounded bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-500 disabled:opacity-40"
+                  >
+                    {busy ? '...' : 'Gerar credencial'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || !form.contractCredentialsEnabled || !active}
+                    onClick={() => runContractAction({ action: 'regenerate', side }, side)}
+                    className="px-3 py-1.5 rounded bg-netflix-gray text-white text-xs hover:bg-white/20 disabled:opacity-40"
+                  >
+                    Regenerar senha
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || !c}
+                    onClick={() => runContractAction({ action: 'revoke', side }, side)}
+                    className="px-3 py-1.5 rounded bg-red-900/80 text-white text-xs hover:bg-red-800 disabled:opacity-40"
+                  >
+                    Revogar
+                  </button>
+                </div>
+                {c && active && (
+                  <button
+                    type="button"
+                    disabled={busy || !form.contractCredentialsEnabled}
+                    onClick={() =>
+                      runContractAction(
+                        {
+                          action: 'update_max',
+                          side,
+                          maxConcurrentStreams: parseInt(side === 'home' ? maxScreensHome : maxScreensAway, 10) || 10,
+                        },
+                        side
+                      )
+                    }
+                    className="text-xs text-emerald-400 hover:underline disabled:opacity-40"
+                  >
+                    Atualizar só o limite de telas
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <GameHighlightsAdmin gameId={id} />
     </div>
   );

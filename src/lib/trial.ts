@@ -17,15 +17,17 @@ const TRIAL_MAX_STREAMS = 2;
  */
 export async function grantTrialIfEligible(userId: string, ip: string): Promise<boolean> {
   try {
-    const [siteSettings, existingSubscription, teamResponsible] = await Promise.all([
+    const [siteSettings, existingSubscription, teamResponsible, userForRole] = await Promise.all([
       prisma.siteSettings.findFirst({ orderBy: { updatedAt: 'desc' } }),
       prisma.subscription.findUnique({ where: { userId } }),
       isTeamResponsible(userId),
+      prisma.user.findUnique({ where: { id: userId }, select: { role: true } }),
     ]);
 
     if (!siteSettings?.autoTrialEnabled) return false;
     if (existingSubscription) return false;
     if (teamResponsible) return false;
+    if (userForRole?.role === 'club_viewer' || userForRole?.role === 'game_contract_viewer') return false;
 
     const ipAllowed = await checkTrialGrantedByIpLimit(ip);
     if (!ipAllowed) return false;
